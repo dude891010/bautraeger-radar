@@ -1,0 +1,22 @@
+# Secrets nie ins Image
+.env
+
+# Lokale Laufzeitdaten (Volume, nicht Teil des Images)
+data/
+
+# Entwicklungsumgebung
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Tests/Fixtures werden im Image nicht gebraucht
+tests/
+
+# Sonstiges
+.git/
+.gitignore
+README.md
+docs/

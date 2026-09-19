@@ -1,0 +1,102 @@
+# Bauträger-Radar – globale Konfiguration (gilt für alle Quellen).
+# Quellen (Städte/Bezirke) stehen in config/sources.yaml.
+# Keine Secrets hier (API-Key, Kontaktadresse -> .env).
+
+sources_file: "config/sources.yaml"
+
+# Zielgebiet. tier: A = Kerngebiet (Hamburg + Umland), B = weiteres Norddeutschland,
+# C = selektiv. Die Tiers steuern nur Scan-Reihenfolge und Dashboard-Filter, nichts wird ausgeschlossen.
+# VORSCHLAG – bitte mit dem Vertrieb bestätigen. min_units: null = globale Schwelle gilt.
+regions:
+  HH: { name: "Hamburg",                tier: "A", min_units: null }
+  SH: { name: "Schleswig-Holstein",     tier: "A", min_units: null }
+  NI: { name: "Niedersachsen",          tier: "B", min_units: null }
+  HB: { name: "Bremen",                 tier: "B", min_units: null }
+  MV: { name: "Mecklenburg-Vorpommern", tier: "B", min_units: null }
+  BE: { name: "Berlin",                 tier: "C", min_units: null }  # "teilweise": Schwelle klären
+
+scan:
+  months_back: 3     # Erstlauf/Backfill
+  months_ahead: 2    # kommende Sitzungen (Tagesordnung oft schon vorab veröffentlicht)
+
+scraper:
+  user_agent_template: "BautraegerRadar/0.1 (+{contact})"
+  request_delay_seconds: 2.0         # Pause pro Host
+  max_parallel_hosts: 1              # später >1 möglich: parallel nur über verschiedene Hosts, pro Host strikt seriell
+  connect_timeout_seconds: 10
+  read_timeout_seconds: 30
+  max_retries: 3
+  backoff_factor: 1.5
+  respect_robots_txt: true
+  max_pdf_size_mb: 25
+  raw_cache_dir: "data/raw"          # PDFs + HTML werden gecacht (Debugging, Reproduzierbarkeit)
+
+filters:
+  min_units: 6                       # Schwelle für Miet-/geförderte Wohneinheiten (pro Region/Quelle überschreibbar)
+  count_basis: "rental_or_subsidized"  # Mischprojekte zählen, wenn Miet-/geförderte WE >= min_units
+  exclude_pure_ownership: true       # reine ETW-Projekte ausschließen
+  unknown_units_policy: "flag"       # flag = behalten + "prüfen"; drop = verwerfen
+  unknown_tenure_policy: "flag"      # Wohnform (Miete/Eigentum) nicht erkennbar
+
+  # Ausschussnamen sind je Kommune verschieden (Beispiele aus Hamburg-Bergedorf: "Stadtentwicklungsausschuss",
+  # "Fachausschuss für Bauangelegenheiten", "Unterausschuss Bau"; Norderstedt: "Ausschuss für Stadtentwicklung
+  # und Verkehr"). Regex, ohne Groß-/Kleinschreibung. Pro Quelle in sources.yaml überschreibbar.
+  default_committee_patterns:
+    - "stadtentwicklung"
+    - "stadtplanung"
+    - "planung"
+    - "wohnungsbau"
+    - "\\bbau(en|ausschuss|angelegenheiten)?\\b"
+
+  prefilter_keywords:                # Stufe 1 (ohne LLM): nur Vorlagen mit Treffer gehen ans LLM
+    - "Wohneinheit"
+    - "Wohnung"
+    - "Wohnungsbau"
+    - "Mietwohnung"
+    - "geförder"
+    - "Sozialwohnung"
+    - "sozialer Wohnungsbau"
+    - "Förderweg"
+    - "Drittelmix"
+    - "Belegungsbindung"
+    - "Wohnberechtigungsschein"
+    - "Mehrfamilienhaus"
+    - "Bebauungsplan"
+    - "Vorhabenbezogener Bebauungsplan"
+    - "Aufstellungsbeschluss"
+    - "städtebaulicher Vertrag"
+    - "Konzeptvergabe"
+    - "Wohnquartier"
+    - "Wohnbebauung"
+    - "Studierendenwohnen"
+    - "betreutes Wohnen"
+    - "Mikroapartment"
+
+llm:
+  provider: "anthropic"
+  triage_model: "claude-haiku-4-5-20251001"   # günstige Vorprüfung (Ja/Nein/Unklar)
+  extraction_model: "claude-sonnet-5"         # strukturierte Feldextraktion
+  temperature: 0.0
+  max_tokens: 2000
+  max_input_chars: 60000                      # längere Dokumente werden seitenweise gekürzt/gechunkt
+  max_calls_per_run: 300                      # Kostenbremse pro Lauf (über alle Quellen)
+  max_calls_per_source: 40                    # verhindert, dass eine Quelle das Budget aufbraucht
+  cache_dir: "data/llm_cache"                 # Ergebnisse pro Dokument-Hash, spart wiederholte Aufrufe
+  prompts_dir: "config/prompts"
+  context_pages: 1                            # Nachbarseiten um einen Keyword-Treffer herum mitnehmen
+
+database:
+  path: "data/radar.db"
+
+dashboard:
+  statuses:
+    - "Neu"
+    - "In Prüfung"
+    - "Kontaktversuch"
+    - "Archiviert"
+
+scheduler:
+  weekday: 0            # geplanter Lauf (Schritt 7, radar/scheduler.py): 0=Montag ... 6=Sonntag
+  hour: 3
+  minute: 0
+  check_interval_seconds: 60

@@ -1,0 +1,40 @@
+# Bauträger-Radar (Schritt 7). Zwei Dienste aus demselben Image (siehe Dockerfile):
+# - dashboard:  Streamlit-UI, Lauf per Knopfdruck (app.py startet ihn als eigenen Subprozess).
+# - scheduler:  Dauerprozess, führt run_full() wöchentlich aus (config/settings.yaml: scheduler).
+#               Bewusst kein Cron im Container, siehe Docstring von radar/scheduler.py.
+#
+# Streamlit hat keine eigene Authentifizierung (CLAUDE.md) - im Betrieb nur hinter einem
+# Reverse Proxy/SSO der Firmen-IT oder mit Basic Auth exponieren, nicht direkt ins Internet.
+#
+# Start: cp .env.example .env, dann ausfüllen (ANTHROPIC_API_KEY, SCRAPER_CONTACT), dann
+# `docker compose up -d --build`.
+
+services:
+  dashboard:
+    build: .
+    image: bautraeger-radar:latest
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  scheduler:
+    build: .
+    image: bautraeger-radar:latest
+    restart: unless-stopped
+    command: ["python", "-m", "radar", "scheduler"]
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      disable: true

@@ -1,0 +1,229 @@
+# Quellenregister: eine Zeile pro Ratsinformationssystem (Stadt, Gemeinde, Bezirk).
+#
+# id           eindeutig, [a-z0-9_-]
+# bundesland   SH | HH | NI | HB | MV | BE
+# system       sessionnet | allris | oparl | hamburg_transparenz | bv_hh | unknown
+# status       verified  = Systemtyp anhand echter Seitenabrufe bestätigt
+#              candidate = URL bekannt, Systemtyp vermutet/ungeprüft
+#              blocked   = geprüft, aber technisch/rechtlich nicht nutzbar (robots.txt, Bot-Schutz,
+#                          erfordert Architektur, die wir bewusst nicht wollen - Grund in notes)
+# enabled      true nur bei status=verified (wird beim Laden geprüft)
+# tier         optional, überschreibt den Tier der Region (A/B/C)
+# min_units    optional, überschreibt die Schwelle der Region/global
+# committees   optional, Regex-Liste, überschreibt filters.default_committee_patterns
+# options      adapterspezifisch (z. B. Seitennamen bei SessionNet)
+#
+# Neue Quelle finden und einordnen: siehe docs/QUELLENKATALOG.md.
+
+sources:
+  - id: norderstedt
+    name: "Stadt Norderstedt"
+    bundesland: SH
+    system: sessionnet                # Somacos SessionNet 5.5.4 KP1 – NICHT ALLRIS
+    base_url: "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/"
+    status: verified                  # Adapter am 19.09.2026 gegen echte Antworten verifiziert (radar/sources/sessionnet.py)
+    enabled: true
+    tier: A
+    committees:
+      - "^Ausschuss für Stadtentwicklung und Verkehr$"
+    options:
+      entry_page: "info.php"             # zuerst abrufen -> Session-Cookie setzen
+      calendar_page: "si0040.php"        # ?__cjahr=2026&__cmonat=9&__canz=1&__cselect=0
+    notes: >
+      Direktabruf von si0057.php ohne vorherigen Einstieg lieferte eine Fehlerseite -> Cookie-Session
+      nötig (info.php zuerst). Sitzungsdetail si0057.php?__ksinr=<ID> enthält die Tagesordnung inkl.
+      Vorlagen-Verweis (vo0050.php?__kvonr=<ID>, Vorlagen-Nr. z. B. "A 26/0338") und ALLE zugehörigen
+      Dokumente (getfile.php?id=<ID>&type=do) direkt je Tagesordnungspunkt; ein zusätzlicher Abruf
+      der Vorlagen-Detailseite lieferte in der Stichprobe (TOP "A 26/0338") exakt dieselbe
+      Dokumentmenge und wird vom Adapter deshalb nicht gemacht. Tagesordnungspunkt-Detailseite ist
+      to0050.php?__ktonr=<ID> (nicht to0040.php, wie zuvor vermutet) – vom Adapter aktuell nicht
+      benötigt. Nicht jede Sitzung hat eine Detailseite (z. B. "Kinder- und Jugendbeirat"); abgesagte
+      Sitzungen erscheinen als Text "Die Sitzung des ... fällt aus." ohne Link. Fingerprint:
+      <meta name="sessionnet" content="V:050504.L:5"/> im <head>.
+
+  - id: uplengen
+    name: "Gemeinde Uplengen"
+    bundesland: NI
+    system: oparl                     # STERNBERG SD.NET RIM, OParl 1.1 – Adapter gegen echte Antworten verifiziert
+    base_url: "https://uplengen.ratsinfomanagement.net/webservice/oparl/v1.1/system"
+    status: verified                   # Struktur (System/Body/Meeting/Consultation/Paper) am 19.09.2026 live geprüft
+    enabled: false                     # NICHT produktiv nutzen, siehe notes: robots.txt sperrt PDF-Downloads
+    tier: B
+    notes: >
+      System/Body/Meeting-Liste (paginiert über links.next, NICHT chronologisch sortiert - beide
+      Seiten müssen gelesen und selbst nach Datum gefiltert werden), Meeting-Detail mit
+      Tagesordnung, Consultation und Paper (Vorlage mit mainFile/auxiliaryFile) wurden live gegen
+      https://uplengen.ratsinfomanagement.net/ geprüft (radar/sources/oparl.py, Fixtures unter
+      tests/fixtures/uplengen/). PDF-Downloads dieser Quelle wurden dabei BEWUSST NICHT abgerufen:
+      ihre robots.txt sperrt "Disallow: /*.pdf$" - dieses Wildcard-Muster deckte eine Lücke in
+      radar/http_client.py auf (urllib.robotparser versteht *//$ nicht, wurde durch protego
+      ersetzt). Weil bei Uplengen jede Vorlage ausschließlich als PDF vorliegt, wäre die Quelle im
+      Produktivbetrieb wertlos (jeder Download würde korrekt an robots.txt scheitern) - deshalb
+      hier nur als Adapter-Referenz mit status: verified, aber enabled: false. Für den echten
+      Betrieb muss eine OParl-Quelle im Zielgebiet ohne PDF-Sperre gefunden werden (siehe
+      docs/QUELLENKATALOG.md).
+
+  - id: hamburg_transparenz
+    name: "Transparenzportal Hamburg (Bauleitpläne)"
+    bundesland: HH
+    system: hamburg_transparenz          # CKAN-API, kein Ratsinformationssystem, siehe Adapter-Docstring
+    base_url: "https://suche.transparenz.hamburg.de/api/3/action/"
+    status: verified                      # Adapter am 19.09.2026 gegen echte Antworten verifiziert
+    enabled: false                        # NICHT ohne Rücksprache aktivieren, siehe notes
+    committees:
+      - "^Bauleitplanung$"                # jedes Package ist per Registerauswahl schon Bauleitplanung
+    additional_hosts:
+      - "daten-hamburg.de"                 # PDF-Ablage neuerer Pläne, keine eigene robots.txt
+      - "archiv.transparenz.hamburg.de"    # PDF-Ablage älterer Pläne, keine eigene robots.txt
+    ignore_robots_txt: true                 # siehe notes: robots.txt widerspricht der eigenen API-Doku
+    request_delay_seconds: 10               # robots.txt von suche.transparenz.hamburg.de: Crawl-Delay 10
+    notes: >
+      Register "bauleitplaene" der offiziellen CKAN-API, gesetzlich vorgeschrieben durch das
+      Hamburgische Transparenzgesetz, Daten unter Datenlizenz Deutschland (Namensnennung/Zero 2.0,
+      jede Nutzung inkl. kommerziell erlaubt). robots.txt von suche.transparenz.hamburg.de sperrt
+      "/api/" pauschal (Crawl-Delay 10) - widerspricht aber der eigenen, öffentlich dokumentierten
+      API-Anleitung der Stadt ("Hinweise zur API"), die automatisierten Zugriff ausdrücklich
+      beschreibt. Deshalb ignore_robots_txt=true für DIESEN Host; die reinen Datei-Hosts
+      (daten-hamburg.de, archiv.transparenz.hamburg.de) haben ohnehin keine eigene robots.txt.
+      WICHTIG: dieses Register enthält nur bereits RECHTSKRÄFTIGE Bebauungspläne (Satzungsbeschluss,
+      im HmbGVBl veröffentlicht) - die frühen, für den Vertrieb wertvolleren Verfahrensstufen
+      (Aufstellungsbeschluss, Auslegung) stehen hier nicht, dafür ist bv-hh.de (radar/sources/bv_hh.py)
+      als bewusst getrennte, inoffizielle Ergänzung vorgesehen. Vor `enabled: true` mit dem
+      Vertrieb/der IT abstimmen (robots.txt-Auslegung, Vollständigkeit vs. bv-hh.de).
+
+  - id: hh-altona
+    name: "Bezirksversammlung Hamburg-Altona"
+    bundesland: HH
+    system: unknown                   # URL-Muster (/bi/…asp) ist ALLRIS-typisch, aber ungeprüft
+    base_url: "https://sitzungsdienst-altona.hamburg.de/bi/"
+    status: candidate
+    enabled: false
+    tier: A
+    notes: >
+      URL stammt aus einer Bekanntmachung des Bezirksamts Altona (Amtl. Anz. 2025). Am 19.09.2026
+      geprüft: robots.txt sperrt generische Crawler pauschal (Disallow: /), ebenso bei Bergedorf,
+      Eimsbüttel, Wandsbek, Harburg und Hamburg-Mitte (offenbar zentrale Dataport-Hosting-Vorlage
+      für alle 7 Bezirke) - damit für uns nicht direkt nutzbar. Siehe bv_hh_* (inoffizielle
+      Ergänzung, radar/sources/bv_hh.py) und hamburg_transparenz (offizielle, aber auf
+      rechtskräftige Bebauungspläne beschränkte Alternative).
+
+  # -- bv-hh.de: inoffizielles Community-Portal, spiegelt alle 7 Bezirksversammlungen -----------
+  # Deckt die frühen Verfahrensstufen ab, die hamburg_transparenz nicht hat (siehe dort und
+  # radar/sources/bv_hh.py). Bewusst als eigener Systemtyp/eigene Dateien von hamburg_transparenz
+  # getrennt (andere Datenqualität: kein offizieller Betreiber, keine PDF-Anlagen, nur Haupttext).
+  # Committees erweitert gegenüber den globalen Standardmustern um die Bezirksversammlung selbst
+  # (viele B-Plan-Satzungsbeschlüsse werden dort formal bestätigt, nicht nur im Fachausschuss).
+  - id: bv_hh_bergedorf
+    name: "bv-hh.de (Bezirksversammlung Bergedorf)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/bergedorf/"
+    status: verified                  # Adapter am 19.09.2026 gegen echte Antworten verifiziert
+    enabled: false                    # NICHT ohne Rücksprache aktivieren, siehe notes
+    committees: &bv_hh_committees
+      - "stadtentwicklung"
+      - "planung"
+      - "wohnungsbau"
+      - "\\bbau(en|ausschuss|angelegenheiten)?\\b"
+      - "^Bezirksversammlung"
+    notes: &bv_hh_notes >
+      Inoffizielles, von einer Einzelperson gepflegtes Community-Portal (github.com/bv-hh/bv-hh),
+      das die öffentlichen ALLRIS-Daten aller 7 Hamburger Bezirksversammlungen spiegelt (die
+      offiziellen Bezirks-Seiten sperren Crawler pauschal, siehe hh-altona). robots.txt erlaubt
+      alles. Liste der Sitzungen (<bezirk>/meetings?page=<n>) ist eindeutig chronologisch
+      absteigend sortiert - Abbruch sobald eine Seite vor dem Scan-Zeitraum liegt. WICHTIG: bv-hh
+      spiegelt KEINE PDF-Anlagen (an mehreren echten Drucksachen geprüft, "Anhänge"-Sektion war
+      leer) - nur den bereits extrahierten Haupttext je Drucksache (JSON-LD `articleBody`).
+      Wohneinheiten-Zahlen aus separaten Anlagen (Begründung, städtebaulicher Vertrag) sind darüber
+      NICHT erreichbar, entsprechend häufiger nur "prüfen" statt einer genauen Zahl. Keine
+      Verfügbarkeits-/Vollständigkeitsgarantie (Hobby-Projekt, Hosting privat gesponsert) - vor
+      `enabled: true` mit dem Vertrieb abstimmen. Adapter/Fixtures: radar/sources/bv_hh.py,
+      tests/fixtures/bv_hh/. Dieselbe Plattform bedient alle 7 Bezirke identisch (nur Bergedorf
+      im Detail live geprüft, Struktur laut Navigations-/Seitenaufbau für alle Bezirke identisch).
+
+  - id: bv_hh_altona
+    name: "bv-hh.de (Bezirksversammlung Altona)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/altona/"
+    status: verified
+    enabled: false
+    committees: *bv_hh_committees
+    notes: *bv_hh_notes
+
+  - id: bv_hh_eimsbuettel
+    name: "bv-hh.de (Bezirksversammlung Eimsbüttel)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/eimsbuettel/"
+    status: verified
+    enabled: false
+    committees: *bv_hh_committees
+    notes: *bv_hh_notes
+
+  - id: bv_hh_hamburg_mitte
+    name: "bv-hh.de (Bezirksversammlung Hamburg-Mitte)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/hamburg-mitte/"
+    status: verified
+    enabled: false
+    committees: *bv_hh_committees
+    notes: *bv_hh_notes
+
+  - id: bv_hh_hamburg_nord
+    name: "bv-hh.de (Bezirksversammlung Hamburg-Nord)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/hamburg-nord/"
+    status: verified
+    enabled: false
+    committees: *bv_hh_committees
+    notes: *bv_hh_notes
+
+  - id: bv_hh_wandsbek
+    name: "bv-hh.de (Bezirksversammlung Wandsbek)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/wandsbek/"
+    status: verified
+    enabled: false
+    committees: *bv_hh_committees
+    notes: *bv_hh_notes
+
+  - id: bv_hh_harburg
+    name: "bv-hh.de (Bezirksversammlung Harburg)"
+    bundesland: HH
+    system: bv_hh
+    base_url: "https://bv-hh.de/harburg/"
+    status: verified
+    enabled: false
+    committees: *bv_hh_committees
+    notes: *bv_hh_notes
+
+  - id: wedel
+    name: "Stadt Wedel"
+    bundesland: SH
+    system: allris
+    base_url: "https://www.wedel.de/buerger-und-ratsinformationssystem-1"
+    status: blocked                    # geprüft am 19.09.2026, siehe notes - kein Headless-Browser (Architekturentscheidung)
+    enabled: false
+    tier: A
+    notes: >
+      robots.txt erlaubt generische Crawler vollständig (kein Disallow auf das Ratsinformationssystem).
+      Trotzdem nicht nutzbar: läuft auf "ALLRIS net" Version 4.1.7 (Apache Wicket), einer komplett
+      AJAX-basierten Oberfläche - selbst der beim Aufruf von si010 angezeigte Kalendermonat wird nicht
+      serverseitig gerendert, sondern erst durch einen nachgelagerten, zustandsbehafteten AJAX-Aufruf
+      befüllt (sitzungsgebundene Wicket-Komponenten-IDs, keine einfachen GET-Parameter wie beim
+      klassischen ALLRIS `si010.asp`, das im Quellenkatalog dokumentiert war). Dieselbe Version/
+      Architektur auch bei Amt Siek, Amt Hohe Elbgeest und Amt Pinnau gefunden (andere Kandidaten im
+      Hamburger Umland, robots.txt dort ebenfalls offen) - vermutlich der aktuelle Auslieferungsstand
+      von CC e-govs ALLRIS net. Ein Adapter dafür bräuchte entweder eine Nachbildung des Wicket-AJAX-
+      Protokolls (aufwendig, bricht potenziell bei jedem ALLRIS-Update) oder einen Headless-Browser -
+      Letzteres eine bewusste Architekturentscheidung GEGEN, um das System leichtgewichtig, stabil und
+      ohne Browser-Abhängigkeit wartbar zu halten (siehe CLAUDE.md, Abschnitt "Referenzquelle
+      ALLRIS/Hamburger Umland"). Geesthacht (ebenfalls im Umland, robots.txt offen) zusätzlich durch
+      ein explizites Bot-Abwehr-Gate (ALTCHA-Captcha) vor ALLRIS geschützt - erst recht nicht nutzbar.
+      `radar/sources/allris.py` bleibt deshalb vorerst ein Stub. Reaktivieren, falls entweder (a) noch
+      eine klassische, GET-basierte ALLRIS-Installation im Zielgebiet gefunden wird, oder (b) die
+      Architekturentscheidung gegen einen Headless-Browser revidiert wird.

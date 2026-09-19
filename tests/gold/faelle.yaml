@@ -1,0 +1,192 @@
+# Goldstandard für die LLM-Extraktion (Schritt 3), siehe CLAUDE.md "Qualitätssicherung".
+#
+# WICHTIG: Alle Texte hier sind SYNTHETISCH – von Hand zu Testzwecken geschrieben, KEINE echten
+# Sitzungsunterlagen einer Kommune. Sie decken mindestens zwei Bundesländer, positive, negative
+# und unklare Fälle ab. Ausgewertet wird mit `scripts/run_goldstandard.py` (macht echte,
+# kostenpflichtige LLM-Aufrufe, daher kein Teil von `pytest`) – bei jeder Prompt-Änderung erneut
+# laufen lassen und die Trefferquote vergleichen.
+#
+# Jeder Fall: `seiten` (Liste von Seitentexten, wie extract_pdf_text sie liefern würde) und
+# `erwartet`:
+#   relevant: true  -> Pipeline soll bis zur Extraktion durchlaufen (RELEVANT, auch wenn unklar)
+#   relevant: false -> Pipeline soll vorher abbrechen (Stufe 1 oder Triage NEIN)
+#   weitere Felder nur, wenn relevant: true (Vergleich gegen ProjektExtraktion)
+
+faelle:
+  - id: sh-norderstedt-miete
+    bundesland: SH
+    beschreibung: "Klares Mietwohnungsbauvorhaben, Baugenehmigung"
+    seiten:
+      - >
+        Beschlussvorlage Nr. B 26/0410 für den Ausschuss für Stadtentwicklung und Verkehr.
+        Gegenstand: Neubau eines Mehrfamilienhauses "Wohnpark Ochsenzoll", Ochsenzollstraße 12,
+        22850 Norderstedt, Flurstück 245/3. Die Vorhabenträgerin Nordbau Wohnungsbau GmbH plant
+        die Errichtung von 18 Wohneinheiten, sämtlich als frei finanzierte Mietwohnungen. Der
+        Baubeginn ist für das erste Quartal 2027 vorgesehen. Die Baugenehmigung wurde am
+        03.08.2026 erteilt.
+    erwartet:
+      relevant: true
+      wohnform: MIETE
+      verfahrensstand: BAUGENEHMIGUNG
+      we_gesamt: 18
+      we_miete: 18
+      unklar: false
+
+  - id: hh-bergedorf-drittelmix
+    bundesland: HH
+    beschreibung: "Hamburger Drittelmix: Miete, gefördert, Eigentum gemischt"
+    seiten:
+      - >
+        Stadtentwicklungsausschuss Bergedorf, Vorlage 21-1234. Städtebaulicher Vertrag zum
+        Bebauungsplan Bergedorf 84 "Weidenbaumsweg". Auf dem Baufeld B entstehen insgesamt 30
+        Wohneinheiten nach dem Hamburger Drittelmix: 10 Wohnungen im 1. Förderweg (öffentlich
+        gefördert), 10 frei finanzierte Mietwohnungen und 10 Eigentumswohnungen. Die
+        Satzungsbeschlussfassung erfolgte durch die Bezirksversammlung am 12.05.2026.
+    erwartet:
+      relevant: true
+      wohnform: GEMISCHT
+      verfahrensstand: SATZUNGSBESCHLUSS
+      we_gesamt: 30
+      we_gefoerdert_anzahl: 10
+      unklar: false
+
+  - id: ni-foerderweg
+    bundesland: NI
+    beschreibung: "Niedersachsen, vollständig geförderter Wohnungsbau"
+    seiten:
+      - >
+        Vorlage VO/2026/0088, Planungsausschuss der Stadt Buchholz in der Nordheide. Die
+        Wohnungsbaugesellschaft Nordheide eG beantragt die Aufstellungsbeschlussfassung für den
+        Bebauungsplan Nr. 112 "Am Kattenberge". Geplant sind 24 Wohneinheiten im öffentlich
+        geförderten Wohnungsbau (1. Förderweg), Bindungsdauer 25 Jahre. Ein konkreter Baubeginn
+        steht noch nicht fest.
+    erwartet:
+      relevant: true
+      wohnform: GEFOERDERT
+      verfahrensstand: AUFSTELLUNGSBESCHLUSS
+      we_gesamt: 24
+      we_gefoerdert_anzahl: 24
+      unklar: false
+
+  - id: hb-studierendenwohnen
+    bundesland: HB
+    beschreibung: "Sonderwohnform Studierendenwohnen, nicht verwerfen"
+    seiten:
+      - >
+        Bau- und Umweltausschuss Bremen, Vorlage 20/456. Das Studierendenwerk Bremen plant den
+        Neubau eines Wohnheims mit 40 Apartments für Studierende an der Universitätsallee 5,
+        28359 Bremen. Die Auslegung der Planunterlagen erfolgt vom 01.10. bis 31.10.2026.
+        Mietverhältnisse werden ausschließlich mit dem Studierendenwerk als Vermieter
+        abgeschlossen.
+    erwartet:
+      relevant: true
+      wohnform: SONDERWOHNFORM
+      verfahrensstand: AUSLEGUNG
+      we_gesamt: 40
+      unklar: false
+
+  - id: mv-betreutes-wohnen
+    bundesland: MV
+    beschreibung: "Sonderwohnform betreutes Wohnen"
+    seiten:
+      - >
+        Stadtvertretung Greifswald, Ausschuss für Stadtentwicklung, Vorlage 2026/0033. Ein
+        privater Investor errichtet eine Anlage für betreutes Wohnen mit 15 Wohneinheiten in der
+        Wolgaster Straße, 17489 Greifswald. Die Baugenehmigung liegt seit dem 14.07.2026 vor.
+    erwartet:
+      relevant: true
+      wohnform: SONDERWOHNFORM
+      verfahrensstand: BAUGENEHMIGUNG
+      we_gesamt: 15
+      unklar: false
+
+  - id: be-bvv-mix
+    bundesland: BE
+    beschreibung: "Berlin BVV, gemischtes Vorhaben mit Förderquote"
+    seiten:
+      - >
+        Bezirksverordnetenversammlung Pankow, Drucksache VII/1122. Auf dem ehemaligen
+        Bahnhofsgelände entstehen 60 Wohneinheiten, davon 30 % im geförderten Wohnungsbau
+        (Wohnraumförderungsbestimmungen Berlin). Der Rest wird als frei finanzierte
+        Mietwohnungen vermietet. Der Bebauungsplan wurde am 20.06.2026 als Satzung beschlossen.
+    erwartet:
+      relevant: true
+      wohnform: GEMISCHT
+      verfahrensstand: SATZUNGSBESCHLUSS
+      we_gesamt: 60
+      quote_gefoerdert: 0.3
+      unklar: false
+
+  - id: sh-eigentumswohnungen
+    bundesland: SH
+    beschreibung: "Negativfall: reine Eigentumswohnungen, ausgeschlossen"
+    seiten:
+      - >
+        Ausschuss für Stadtentwicklung und Verkehr, Vorlage B 26/0512. Ein privater Bauträger
+        errichtet in der Falkenbergstraße 8 Eigentumswohnungen zur Selbstnutzung bzw. zum Verkauf
+        an Einzelerwerber. Eine Vermietung oder öffentliche Förderung ist nicht vorgesehen. Der
+        Bauantrag wurde genehmigt.
+    erwartet:
+      relevant: false
+
+  - id: hh-gewerbe
+    bundesland: HH
+    beschreibung: "Negativfall: reines Gewerbe ohne Wohnnutzung"
+    seiten:
+      - >
+        Fachausschuss für Bauangelegenheiten Bergedorf, Vorlage 21-0987. Errichtung einer
+        Logistikhalle mit Bürotrakt auf dem Gewerbegrundstück Weidenbaumsweg 40. Es sind keine
+        Wohnnutzungen vorgesehen. Die Baugenehmigung wurde erteilt.
+    erwartet:
+      relevant: false
+
+  - id: ni-garagen
+    bundesland: NI
+    beschreibung: "Negativfall: reine Stellplatzanlage"
+    seiten:
+      - >
+        Planungsausschuss Stade, Vorlage VO/2026/0044. Bau einer Tiefgarage mit 80 Stellplätzen
+        für das bestehende Gewerbegebiet Bützfleth. Keine Wohnnutzung im Rahmen dieses Vorhabens.
+    erwartet:
+      relevant: false
+
+  - id: sh-einfamilienhaus
+    bundesland: SH
+    beschreibung: "Negativfall: einzelnes eigengenutztes Einfamilienhaus"
+    seiten:
+      - >
+        Ausschuss für Stadtentwicklung und Verkehr, Vorlage B 26/0533. Bauantrag für ein
+        eigengenutztes Einfamilienhaus mit Doppelgarage in der Ulzburger Straße. Keine Vermietung,
+        keine weiteren Wohneinheiten geplant.
+    erwartet:
+      relevant: false
+
+  - id: ni-unklar
+    bundesland: NI
+    beschreibung: "Unklarer Fall: Wohnbebauung angekündigt, keine Zahlen"
+    seiten:
+      - >
+        Planungsausschuss Winsen (Luhe), Vorlage VO/2026/0071. Aufstellungsbeschluss für den
+        Bebauungsplan Nr. 55 "Luhewiesen". Ziel ist die Schaffung von Wohnbebauung mit einem
+        Anteil an gefördertem Wohnraum; konkrete Wohneinheiten- oder Förderzahlen liegen im
+        jetzigen frühen Verfahrensstadium noch nicht vor und werden im weiteren Verfahren
+        ermittelt.
+    erwartet:
+      relevant: true
+      verfahrensstand: AUFSTELLUNGSBESCHLUSS
+      unklar: true
+
+  - id: sh-aufstellungsbeschluss-mit-zahl
+    bundesland: SH
+    beschreibung: "Früher Verfahrensstand, aber bereits mit grober Zahl"
+    seiten:
+      - >
+        Ausschuss für Stadtentwicklung und Verkehr, Vorlage B 26/0301. Aufstellungsbeschluss für
+        den Bebauungsplan Nr. 78 "Harkshörn Nord". Vorgesehen sind rund 50 Wohneinheiten,
+        überwiegend als Mietwohnungen. Konkrete Ausführungsplanung liegt noch nicht vor.
+    erwartet:
+      relevant: true
+      wohnform: MIETE
+      verfahrensstand: AUFSTELLUNGSBESCHLUSS
+      we_gesamt: 50
+      unklar: false

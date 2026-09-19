@@ -1,0 +1,14 @@
+# Laufzeit-Abhängigkeiten (Untergrenzen; vor dem Docker-Build per `pip freeze`/uv/pip-compile pinnen)
+requests>=2.32,<3
+beautifulsoup4>=4.12,<5
+lxml>=5.2
+protego>=0.3                 # robots.txt-Parser mit Wildcard-Unterstützung (*, $) - urllib.robotparser kann das nicht
+pdfplumber>=0.11          # MIT-Lizenz. PyMuPDF bewusst NICHT: AGPL, problematisch bei Übergabe an Firmen-IT
+anthropic>=0.40           # LLM-API (strukturierte Extraktion)
+pydantic>=2.7,<3          # Schema + Validierung der LLM-Ausgabe
+tenacity>=8.2             # Retries/Backoff für LLM-Aufrufe
+PyYAML>=6
+python-dotenv>=1.0
+streamlit>=1.35
+pandas>=2.2
+openpyxl>=3.1                # Excel-Export im Dashboard

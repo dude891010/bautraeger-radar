@@ -1,0 +1,1 @@
+"""Adapter pro Ratsinformationssystem-Typ."""

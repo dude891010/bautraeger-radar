@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8
+requests-mock>=1.12       # HTTP-Tests gegen gespeicherte HTML-Fixtures, kein Live-Zugriff
+ruff>=0.5
