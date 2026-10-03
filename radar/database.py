@@ -23,6 +23,7 @@ aber nicht selbst auf. Die Verdrahtung (Lauf -> Analyse -> Speichern) ist ein sp
 
 from __future__ import annotations
 
+import logging
 import re
 import sqlite3
 from datetime import UTC, datetime
@@ -35,6 +36,8 @@ if TYPE_CHECKING:
     from radar.parser import AnalyseErgebnis, ProjektExtraktion
     from radar.scraper import SourceRunResult
     from radar.sources.base import Dokument, Sitzung
+
+logger = logging.getLogger(__name__)
 
 _SCHEMA_V1 = """
 CREATE TABLE quellen (
@@ -142,7 +145,14 @@ CREATE INDEX idx_dokumente_vorlage ON dokumente(vorlage_id);
 CREATE INDEX idx_projekte_status ON projekte(status);
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1]
+# V2: Fehlversuche je Vorlage zählen, damit eine Vorlage, deren Analyse immer wieder scheitert
+# (z. B. ein Dokument, an dem das Modell dauerhaft keine gültige Antwort liefert), nicht in jedem
+# künftigen Lauf erneut LLM-Budget verbraucht (siehe `upsert_vorlage`, llm.max_fehlversuche_pro_vorlage).
+_SCHEMA_V2 = """
+ALTER TABLE vorlagen ADD COLUMN analyse_fehlversuche INTEGER NOT NULL DEFAULT 0;
+"""
+
+_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -311,18 +321,33 @@ def upsert_vorlage(
     external_id: str,
     vorlagen_nr: str | None,
     dokument_hash: str,
+    max_fehlversuche: int = 3,
 ) -> tuple[int, bool]:
     """Liefert `(vorlage_id, braucht_analyse)`. Ist dieser Dokument-Hash für diese Vorlage bereits
     gespeichert (unverändert seit dem letzten Lauf) UND war die letzte Analyse abgeschlossen
     (nicht nur an einem Budget oder Fehler gescheitert), ist `braucht_analyse=False` - der
     Aufrufer kann die LLM-Analyse überspringen. Ändert sich eine Anlage (neuer Hash), entsteht ein
-    neuer Datensatz."""
+    neuer Datensatz.
+
+    Ist die Analyse bereits `max_fehlversuche`-mal mit `FEHLER` gescheitert, wird sie ebenfalls
+    nicht mehr versucht (sonst kostete eine dauerhaft scheiternde Vorlage in jedem Lauf erneut
+    Geld). `BUDGET_ERSCHOEPFT` zählt nicht als Fehlversuch - da wurde gar nicht erst angefragt
+    oder die Notbremse hat (z. B. wegen leerem Guthaben) gegriffen."""
     existing = conn.execute(
-        "SELECT id, analyse_status FROM vorlagen WHERE quelle_id = ? AND external_id = ? AND dokument_hash = ?",
+        "SELECT id, analyse_status, analyse_fehlversuche FROM vorlagen "
+        "WHERE quelle_id = ? AND external_id = ? AND dokument_hash = ?",
         (quelle_id, external_id, dokument_hash),
     ).fetchone()
     if existing is not None:
         braucht_analyse = existing["analyse_status"] in _UNSETTLED_ANALYSE_STATUS
+        if existing["analyse_status"] == "FEHLER" and existing["analyse_fehlversuche"] >= max_fehlversuche:
+            logger.warning(
+                "Vorlage %s (Quelle '%s') nach %d Fehlversuchen aufgegeben, keine weiteren LLM-Anfragen",
+                external_id,
+                quelle_id,
+                existing["analyse_fehlversuche"],
+            )
+            braucht_analyse = False
         return existing["id"], braucht_analyse
 
     cur = conn.execute(
@@ -468,8 +493,13 @@ def speichere_analyse_ergebnis(
     relevant war."""
     when = when or datetime.now(UTC)
     conn.execute(
-        "UPDATE vorlagen SET analyse_status = ?, analysiert_am = ? WHERE id = ?",
-        (ergebnis.status.value, when.isoformat(), vorlage_id),
+        """
+        UPDATE vorlagen
+        SET analyse_status = ?, analysiert_am = ?,
+            analyse_fehlversuche = analyse_fehlversuche + CASE WHEN ? = 'FEHLER' THEN 1 ELSE 0 END
+        WHERE id = ?
+        """,
+        (ergebnis.status.value, when.isoformat(), ergebnis.status.value, vorlage_id),
     )
     conn.commit()
 
@@ -546,4 +576,13 @@ def list_vorlagen_fuer_projekt(conn: sqlite3.Connection, projekt_id: int) -> lis
         ORDER BY s.datum
         """,
         (projekt_id,),
+    ).fetchall()
+
+
+def list_status_log_fuer_projekt(conn: sqlite3.Connection, projekt_id: int) -> list[sqlite3.Row]:
+    """Statusverlauf eines Projekts, älteste Änderung zuerst (Dashboard: Aufklapp-Bereich in der
+    Detailansicht). `_log_status()` schreibt hier hinein - bei Neuanlage (`upsert_projekt()`) und
+    bei jeder manuellen Statusänderung (`set_projekt_status()`)."""
+    return conn.execute(
+        "SELECT * FROM status_log WHERE projekt_id = ? ORDER BY zeitpunkt", (projekt_id,)
     ).fetchall()

@@ -315,3 +315,14 @@ def test_list_documents_skips_files_without_downloadable_url(requests_mock, adap
         source_id="uplengen", external_id="x", gremium="G", datum=date(2026, 1, 1), url=f"{API}/body/1/meeting/1"
     )
     assert adapter.list_documents(sitzung) == []
+
+
+def test_list_sessions_aborts_when_next_link_loops(requests_mock, adapter):
+    """Ein fehlerhafter Server, dessen `links.next` auf eine schon gelesene Seite zeigt, darf nicht
+    zu endlosem Blättern (= endlos vielen Requests) führen."""
+    _mock_system_and_body(requests_mock)
+    schleife = {"data": [], "links": {"next": f"{API}/body/1/meeting"}}
+    requests_mock.get(f"{API}/body/1/meeting", text=json.dumps(schleife))
+    with pytest.raises(SourceLayoutError, match="Endlosschleife"):
+        adapter.list_sessions(date(2026, 1, 1), date(2026, 12, 31))
+

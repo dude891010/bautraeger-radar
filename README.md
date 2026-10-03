@@ -83,3 +83,19 @@ E-Mail-Benachrichtigung bei neuen Treffern (SMTP über `.env`, mehrere kommagetr
 möglich, unabhängig testbar per `python -m radar test-email`), verdrahtet in
 `radar/scheduler.py` (immer) und optional in manuelle Läufe (`python -m radar scrape --notify`,
 Dashboard-Checkbox – Default aus). Details: [CLAUDE.md](CLAUDE.md), Abschnitt "Roadmap".
+
+## Kostenschutz (Anthropic-API)
+Ein Lauf kann nie unkontrolliert API-Kosten verursachen (`radar/parser.py`, `LLMBudget`/`_call`):
+- **Jede HTTP-Anfrage zählt** gegen `llm.max_calls_per_run` (Standard 300, harte Obergrenze 1000 im
+  Code) und `llm.max_calls_per_source` – auch Retries und Reparaturversuche. Die SDK-eigenen Retries
+  sind abgeschaltet, damit nichts am Budget vorbei gesendet wird.
+- **Begrenzte Retries** nur bei vorübergehenden Fehlern (429/5xx/Timeout), höchstens
+  `llm.max_attempts_per_call` Versuche mit Wartezeit (`Retry-After` wird respektiert, max. 60 s).
+- **Notbremse:** Guthaben leer, ungültiger Key, fehlende Berechtigung oder falscher Modellname
+  stoppen sofort alle weiteren Anfragen des Laufs; ebenso `llm.max_consecutive_errors` Fehler in
+  Folge. Das erscheint als Fehler im Quellen-Monitoring und im Exit-Code, nicht nur im Log.
+- **Keine Dauerschleife über Läufe hinweg:** eine Vorlage, die `llm.max_fehlversuche_pro_vorlage`
+  Läufe lang mit Fehler scheitert, wird nicht mehr versucht (Budget-Abbrüche zählen nicht).
+- **Nie zwei Läufe gleichzeitig:** Sperrdatei `data/lauf.lock` (Dashboard-Knopf + Scheduler
+  hätten sonst je ein volles Budget gehabt).
+- Am Ende jedes Laufs steht der Verbrauch im Log (Anfragen, Tokens, ggf. Notbremse).

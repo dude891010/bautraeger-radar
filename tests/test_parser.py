@@ -211,7 +211,7 @@ def settings(monkeypatch):
 
 def test_triage_parses_response(settings):
     client = FakeAnthropicClient([{"entscheidung": "JA", "begruendung": "Miete"}])
-    ergebnis = triage(client, settings, "irgendein Text", "q1")
+    ergebnis = triage(client, settings, LLMBudget(10, 10), "irgendein Text", "q1")
     assert ergebnis.entscheidung is TriageEntscheidung.JA
     assert client.calls[0]["model"] == "fake-triage"
     assert "temperature" not in client.calls[0]  # aktuelle API-Generation kennt keinen Temperatur-Parameter
@@ -219,7 +219,7 @@ def test_triage_parses_response(settings):
 
 def test_extract_parses_valid_response_on_first_try(settings):
     client = FakeAnthropicClient([{"we_gesamt": 12, "wohnform": "MIETE", "konfidenz": 0.8}])
-    ergebnis = extract(client, settings, "irgendein Text", "q1")
+    ergebnis = extract(client, settings, LLMBudget(10, 10), "irgendein Text", "q1")
     assert ergebnis.we_gesamt == 12
     assert len(client.calls) == 1
 
@@ -231,7 +231,7 @@ def test_extract_repairs_after_invalid_first_response(settings):
             {"we_gesamt": 6, "wohnform": "GEFOERDERT", "konfidenz": 0.5},
         ]
     )
-    ergebnis = extract(client, settings, "irgendein Text", "q1")
+    ergebnis = extract(client, settings, LLMBudget(10, 10), "irgendein Text", "q1")
     assert ergebnis is not None
     assert ergebnis.we_gesamt == 6
     assert len(client.calls) == 2
@@ -240,7 +240,7 @@ def test_extract_repairs_after_invalid_first_response(settings):
 
 def test_extract_gives_up_after_two_invalid_responses(settings):
     client = FakeAnthropicClient([{"konfidenz": 5.0}, {"konfidenz": -1.0}])
-    ergebnis = extract(client, settings, "irgendein Text", "q1")
+    ergebnis = extract(client, settings, LLMBudget(10, 10), "irgendein Text", "q1")
     assert ergebnis is None
     assert len(client.calls) == 2
 

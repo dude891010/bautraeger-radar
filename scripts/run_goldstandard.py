@@ -22,7 +22,16 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from radar.config import load_settings  # noqa: E402
-from radar.parser import TriageEntscheidung, build_excerpt, extract, matched_keywords, triage  # noqa: E402
+from radar.parser import (  # noqa: E402
+    LLMBudget,
+    LLMGesperrt,
+    TriageEntscheidung,
+    build_excerpt,
+    extract,
+    make_client,
+    matched_keywords,
+    triage,
+)
 
 GOLD_FILE = Path(__file__).resolve().parent.parent / "tests" / "gold" / "faelle.yaml"
 
@@ -40,7 +49,7 @@ def _check_field(erwartet: dict, feld: str, wert, tol: float = 0.0) -> str | Non
     return None
 
 
-def run_case(client: anthropic.Anthropic, settings, case: dict) -> tuple[bool, str]:
+def run_case(client: anthropic.Anthropic, settings, budget: LLMBudget, case: dict) -> tuple[bool, str]:
     seiten: list[str] = case["seiten"]
     erwartet: dict = case["erwartet"]
     soll_relevant = erwartet.get("relevant", True)
@@ -52,7 +61,7 @@ def run_case(client: anthropic.Anthropic, settings, case: dict) -> tuple[bool, s
 
     excerpt = build_excerpt(seiten, keywords, settings.llm.context_pages, settings.llm.max_input_chars)
 
-    triage_ergebnis = triage(client, settings, excerpt, quelle_id="goldstandard")
+    triage_ergebnis = triage(client, settings, budget, excerpt, quelle_id="goldstandard")
     if triage_ergebnis.entscheidung is TriageEntscheidung.NEIN:
         ok = not soll_relevant
         grund = f"Triage NEIN ({triage_ergebnis.begruendung})"
@@ -61,7 +70,7 @@ def run_case(client: anthropic.Anthropic, settings, case: dict) -> tuple[bool, s
     if not soll_relevant:
         return False, f"Triage {triage_ergebnis.entscheidung.value} – erwartet NICHT relevant"
 
-    extraktion = extract(client, settings, excerpt, quelle_id="goldstandard")
+    extraktion = extract(client, settings, budget, excerpt, quelle_id="goldstandard")
     if extraktion is None:
         return False, "Extraktion nach Reparaturversuchen ungültig"
 
@@ -83,16 +92,27 @@ def run_case(client: anthropic.Anthropic, settings, case: dict) -> tuple[bool, s
 
 def main() -> None:
     settings = load_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)  # wirft früh, falls Key fehlt
+    client = make_client(settings)  # wirft früh, falls Key fehlt; ohne SDK-interne Retries
     faelle = yaml.safe_load(GOLD_FILE.read_text(encoding="utf-8"))["faelle"]
+    # Dieselbe Kostenbremse wie im echten Lauf: jede Anfrage zählt, Notbremse bei Konto-Fehlern.
+    budget = LLMBudget(
+        settings.llm.max_calls_per_run,
+        settings.llm.max_calls_per_run,
+        max_consecutive_errors=settings.llm.max_consecutive_errors,
+    )
 
     treffer = 0
     for case in faelle:
-        ok, detail = run_case(client, settings, case)
+        try:
+            ok, detail = run_case(client, settings, budget, case)
+        except LLMGesperrt as exc:
+            print(f"\nAbgebrochen, keine weiteren API-Anfragen: {exc}")
+            break
         treffer += int(ok)
         print(f"[{'OK  ' if ok else 'FEHL'}] {case['id']} ({case['bundesland']}): {detail}")
 
     print(f"\n{treffer}/{len(faelle)} Fälle bestanden ({treffer / len(faelle):.0%}).")
+    print(f"LLM-Verbrauch: {budget.zusammenfassung()}")
 
 
 if __name__ == "__main__":

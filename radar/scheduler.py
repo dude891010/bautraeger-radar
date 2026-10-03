@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 from radar.config import Settings, load_settings
 from radar.notifier import send_notification
-from radar.scraper import run_full
+from radar.scraper import LaufLaeuftBereits, run_full
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,8 @@ def run_forever(
             results = run_full(settings)
             neue_treffer = [treffer for r in results for treffer in r.neue_treffer]
             send_notification(neue_treffer)  # no-op, falls leer oder SMTP nicht konfiguriert
+        except LaufLaeuftBereits as exc:  # z. B. gerade per Dashboard-Knopf gestartet -> kein Doppellauf
+            logger.warning("Geplanter Lauf übersprungen: %s", exc)
         except Exception:
             logger.exception("Geplanter Lauf fehlgeschlagen")
         runs += 1

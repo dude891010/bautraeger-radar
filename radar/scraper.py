@@ -21,9 +21,13 @@ from __future__ import annotations
 
 import calendar
 import logging
+import os
 import sqlite3
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import anthropic
@@ -41,6 +45,7 @@ from radar.parser import (
     analyze_documents,
     documents_cache_key,
     file_sha256,
+    make_client,
 )
 from radar.sources.base import Dokument, Sitzung, SourceAdapter
 from radar.sources.registry import get_adapter
@@ -62,11 +67,64 @@ class SourceRunResult:
     text_dokumente: int = 0  # Dokumente ohne Download übernommen (Dokument.text), siehe radar/sources/bv_hh.py
     treffer: int = 0  # Vorlagen mit AnalyseStatus.RELEVANT
     neue_treffer: list[NeuerTreffer] = field(default_factory=list)  # nur echte Neuanlagen, für radar/notifier.py
+    llm_anfragen: int = 0  # tatsächlich gesendete API-Anfragen dieser Quelle (inkl. Retries)
+    ohne_llm: int = 0  # Vorlagen, die wegen Budget/Notbremse nicht analysiert wurden (nächster Lauf versucht es)
     fehler: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
         return not self.fehler
+
+
+class LaufLaeuftBereits(RuntimeError):
+    """Ein anderer vollständiger Lauf (Dashboard-Knopf oder Scheduler) ist noch aktiv."""
+
+
+# Eine Sperrdatei, die älter ist, gilt als Überbleibsel eines abgestürzten Laufs. Großzügig
+# bemessen: ein echter Lauf über viele Quellen mit 2 s Pause pro Request dauert Stunden.
+_SPERRE_MAX_ALTER_SEKUNDEN = 12 * 3600
+
+
+def lauf_sperre_pfad(settings: Settings) -> Path:
+    return settings.resolve_path(settings.database.path).parent / "lauf.lock"
+
+
+def lauf_sperre_aktiv(settings: Settings) -> bool:
+    pfad = lauf_sperre_pfad(settings)
+    try:
+        return time.time() - pfad.stat().st_mtime < _SPERRE_MAX_ALTER_SEKUNDEN
+    except FileNotFoundError:
+        return False
+
+
+@contextmanager
+def lauf_sperre(settings: Settings) -> Iterator[None]:
+    """Höchstens ein vollständiger Lauf gleichzeitig. Ohne Sperre hätten Dashboard-Knopf und
+    Scheduler (oder zwei Browser-Tabs) parallel laufen können - jeder mit seinem eigenen, vollen
+    `LLMBudget`, also dem Mehrfachen des konfigurierten Höchstwerts. Prozessübergreifend über eine
+    exklusiv angelegte Datei neben der Datenbank (`data/lauf.lock`)."""
+    pfad = lauf_sperre_pfad(settings)
+    pfad.parent.mkdir(parents=True, exist_ok=True)
+    if lauf_sperre_aktiv(settings):
+        raise LaufLaeuftBereits(f"Ein anderer Lauf ist noch aktiv (Sperrdatei {pfad}: {_lies(pfad)})")
+    pfad.unlink(missing_ok=True)  # veraltete Sperre eines abgestürzten Laufs
+    try:
+        fd = os.open(pfad, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError as exc:  # zeitgleich von einem anderen Prozess angelegt
+        raise LaufLaeuftBereits(f"Ein anderer Lauf ist noch aktiv (Sperrdatei {pfad})") from exc
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(f"pid={os.getpid()} start={datetime.now().isoformat(timespec='seconds')}\n")
+    try:
+        yield
+    finally:
+        pfad.unlink(missing_ok=True)
+
+
+def _lies(pfad: Path) -> str:
+    try:
+        return pfad.read_text(encoding="utf-8").strip()
+    except OSError:
+        return "?"
 
 
 def _shift_months(d: date, months: int) -> date:
@@ -246,7 +304,13 @@ def _collect_and_persist(
             vorlagen_nr = next((d.vorlage_nr for d, _ in geladen if d.vorlage_nr), None)
             dokument_hash = documents_cache_key(dokument_quellen)
             vorlage_id, braucht_analyse = database.upsert_vorlage(
-                conn, source.id, sitzung_id, vorlage_external_id, vorlagen_nr, dokument_hash
+                conn,
+                source.id,
+                sitzung_id,
+                vorlage_external_id,
+                vorlagen_nr,
+                dokument_hash,
+                max_fehlversuche=settings.llm.max_fehlversuche_pro_vorlage,
             )
 
             for dokument, quelle in geladen:
@@ -296,6 +360,8 @@ def _collect_and_persist(
                         )
             elif ergebnis.status is AnalyseStatus.FEHLER:
                 result.fehler.append(f"Analyse Vorlage {vorlage_external_id}: {ergebnis.grund}")
+            elif ergebnis.status is AnalyseStatus.BUDGET_ERSCHOEPFT:
+                result.ohne_llm += 1
 
     result.vorlagen = len(vorlagen_ids)
 
@@ -314,6 +380,7 @@ def run_source_full(
     protokolliert, nie weitergereicht (CLAUDE.md: "Quellen sind voneinander isoliert")."""
     result = SourceRunResult(source_id=source.id)
     database.ensure_quelle(conn, source)  # Fremdschlüssel-Voraussetzung, bevor irgendetwas gespeichert wird
+    gesperrt_vorher = budget.gesperrt_grund
     try:
         http = HttpClient(source, settings)
         adapter = get_adapter(source, http)
@@ -321,6 +388,10 @@ def run_source_full(
     except Exception as exc:
         result.fehler.append(str(exc))
         logger.exception("Quelle '%s' fehlgeschlagen", source.id)
+    result.llm_anfragen = budget.anfragen(source.id)
+    if budget.gesperrt_grund is not None and gesperrt_vorher is None:
+        # Ehrlich im Quellen-Monitoring und im Exit-Code zeigen, nicht nur im Log verstecken.
+        result.fehler.append(f"LLM-Notbremse ausgelöst: {budget.gesperrt_grund}")
     return result
 
 
@@ -332,12 +403,25 @@ def run_full(
     """Vollständiger Lauf: Scraper -> Parser -> Datenbank für alle aktivierten Quellen (Tier A
     zuerst). Ein gemeinsames `LLMBudget` gilt über den ganzen Lauf. `conn`/`client` lassen sich für
     Tests injizieren; ohne Angabe wird die konfigurierte Datenbank/der echte Anthropic-Client
-    verwendet (und am Ende geschlossen, wenn `run_full` die Verbindung selbst geöffnet hat)."""
+    verwendet (und am Ende geschlossen, wenn `run_full` die Verbindung selbst geöffnet hat).
+
+    Läuft bereits ein anderer Lauf, wird sofort `LaufLaeuftBereits` geworfen (siehe `lauf_sperre`)."""
     settings = settings or load_settings()
+    with lauf_sperre(settings):
+        return _run_full_gesperrt(settings, conn, client)
+
+
+def _run_full_gesperrt(
+    settings: Settings, conn: sqlite3.Connection | None, client: anthropic.Anthropic | None
+) -> list[SourceRunResult]:
     own_conn = conn is None
     conn = conn or database.connect(settings)
-    client = client or anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    budget = LLMBudget(settings.llm.max_calls_per_run, settings.llm.max_calls_per_source)
+    client = client or make_client(settings)
+    budget = LLMBudget(
+        settings.llm.max_calls_per_run,
+        settings.llm.max_calls_per_source,
+        max_consecutive_errors=settings.llm.max_consecutive_errors,
+    )
     cache = ResultCache(settings.resolve_path(settings.llm.cache_dir))
 
     sources = enabled_sources(load_sources(settings), settings)
@@ -352,7 +436,7 @@ def run_full(
             results.append(result)
             logger.info(
                 "Quelle '%s': %d Sitzungen, %d relevant, %d Vorlagen (%d bereits analysiert), "
-                "%d Dokumente, %d Downloads, %d ohne Download (Text), %d Treffer, %d Fehler",
+                "%d Dokumente, %d Downloads, %d ohne Download (Text), %d Treffer, %d LLM-Anfragen, %d Fehler",
                 result.source_id,
                 result.sitzungen,
                 result.relevante_sitzungen,
@@ -362,13 +446,22 @@ def run_full(
                 result.heruntergeladen,
                 result.text_dokumente,
                 result.treffer,
+                result.llm_anfragen,
                 len(result.fehler),
             )
+            if result.ohne_llm:
+                logger.warning(
+                    "Quelle '%s': %d Vorlage(n) ohne LLM-Analyse (Budget/Notbremse), nächster Lauf versucht es erneut",
+                    result.source_id,
+                    result.ohne_llm,
+                )
             for fehler in result.fehler:
                 logger.warning("Quelle '%s': %s", result.source_id, fehler)
     finally:
         if own_conn:
             conn.close()
+        log = logger.error if budget.gesperrt_grund is not None else logger.info
+        log("LLM-Verbrauch dieses Laufs: %s", budget.zusammenfassung())
 
     return results
 

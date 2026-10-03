@@ -4,6 +4,11 @@ data/raw/*
 data/*.db
 data/*.db-wal
 data/*.db-shm
+data/lauf.lock
+data/logs/
+data/demo/*.db
+data/demo/*.db-wal
+data/demo/*.db-shm
 !data/raw/.gitkeep
 
 # Python

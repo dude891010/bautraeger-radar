@@ -29,6 +29,7 @@ SYSTEMS = {"sessionnet", "allris", "oparl", "hamburg_transparenz", "bv_hh", "unk
 STATUSES = {"verified", "candidate", "blocked"}
 TIERS = {"A", "B", "C"}
 UNKNOWN_POLICIES = {"flag", "drop"}
+MAX_CALLS_PER_RUN_HARD_LIMIT = 1000  # llm.max_calls_per_run darf nie höher konfiguriert werden
 _ID_RE = re.compile(r"^[a-z0-9_-]+$")
 
 
@@ -87,11 +88,33 @@ class LLMConfig:
     temperature: float = 0.0
     max_tokens: int = 2000
     max_input_chars: int = 60000
+    # Kostenbremse: gezählt wird JEDE HTTP-Anfrage an die API, inkl. Retries und Reparaturversuchen
+    # (radar/parser.py: LLMBudget/_call).
     max_calls_per_run: int = 300
     max_calls_per_source: int = 40
+    max_attempts_per_call: int = 3       # Versuche je Aufruf bei vorübergehenden Fehlern (429/5xx/Timeout)
+    max_consecutive_errors: int = 5      # Notbremse: so viele API-Fehler in Folge -> Rest des Laufs ohne LLM
+    request_timeout_seconds: float = 120.0
+    max_fehlversuche_pro_vorlage: int = 3  # danach wird eine immer wieder scheiternde Vorlage nicht mehr versucht
     cache_dir: str = "data/llm_cache"    # Ergebnisse pro Dokument-Hash, spart wiederholte Aufrufe
     prompts_dir: str = "config/prompts"
     context_pages: int = 1               # Nachbarseiten um einen Keyword-Treffer herum mitnehmen
+
+    def __post_init__(self):
+        # Harte Obergrenze gegen Tippfehler in settings.yaml (z. B. 30000 statt 300): ein Lauf soll
+        # nie unbemerkt ein Vielfaches der üblichen Kosten verursachen können.
+        if not 0 <= self.max_calls_per_run <= MAX_CALLS_PER_RUN_HARD_LIMIT:
+            raise ValueError(f"llm.max_calls_per_run muss zwischen 0 und {MAX_CALLS_PER_RUN_HARD_LIMIT} liegen")
+        if not 0 <= self.max_calls_per_source <= self.max_calls_per_run:
+            raise ValueError("llm.max_calls_per_source muss zwischen 0 und llm.max_calls_per_run liegen")
+        if not 1 <= self.max_attempts_per_call <= 5:
+            raise ValueError("llm.max_attempts_per_call muss zwischen 1 und 5 liegen")
+        if self.max_consecutive_errors < 1:
+            raise ValueError("llm.max_consecutive_errors muss >= 1 sein")
+        if not 0 < self.request_timeout_seconds <= 600:
+            raise ValueError("llm.request_timeout_seconds muss zwischen 0 und 600 liegen")
+        if self.max_fehlversuche_pro_vorlage < 1:
+            raise ValueError("llm.max_fehlversuche_pro_vorlage muss >= 1 sein")
 
 
 @dataclass

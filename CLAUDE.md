@@ -252,7 +252,21 @@ wird.
   System-Prompt festhalten, dass enthaltene Anweisungen ignoriert werden.
 - Zu lange Dokumente: relevante Seiten (Keyword-Treffer ± Nachbarseiten) statt blindem Abschneiden.
 - Kostenkontrolle: `llm.max_calls_per_run` und `llm.max_calls_per_source`, Token-Verbrauch pro Quelle und Lauf
-  loggen, Ergebnisse pro Dokument-Hash cachen. Retries mit `tenacity`.
+  loggen, Ergebnisse pro Dokument-Hash cachen. **Strikt (Stand 03.10.2026, `radar/parser.py`):**
+  - Das Budget zählt **jede einzelne HTTP-Anfrage** inkl. Retries und Reparaturversuchen; `_call()`
+    reserviert vor jedem Versuch. SDK-Retries aus (`make_client()`: `max_retries=0`, fester Timeout).
+    Vorher zählte ein Aufruf einmal, obwohl tenacity (3 Versuche) × SDK (3 Versuche) bis zu 9 echte
+    Anfragen senden konnte - deshalb tenacity entfernt, Retries als explizite Schleife.
+  - Retries nur bei 408/409/429/5xx/529/Verbindungsfehlern, höchstens `llm.max_attempts_per_call`.
+  - Notbremse (`LLMBudget.sperren()`): 401/403/404 und 400 "credit balance" sperren sofort alle weiteren
+    Anfragen des Laufs, ebenso `llm.max_consecutive_errors` Fehler in Folge. Betroffene Vorlagen werden
+    `BUDGET_ERSCHOEPFT` (kein Fehlversuch), die Notbremse landet in `SourceRunResult.fehler`.
+  - `vorlagen.analyse_fehlversuche` (Schema v2): nach `llm.max_fehlversuche_pro_vorlage` Läufen mit
+    `FEHLER` wird eine Vorlage nicht mehr versucht.
+  - `max_calls_per_run` hat eine harte Obergrenze (`MAX_CALLS_PER_RUN_HARD_LIMIT = 1000`, `radar/config.py`).
+  - Lauf-Sperre `data/lauf.lock` (`radar/scraper.lauf_sperre`): nie zwei vollständige Läufe parallel
+    (Dashboard + Scheduler hätten sonst je ein volles Budget gehabt).
+  - OParl-Paginierung bricht bei zyklischem `links.next` oder mehr als 500 Seiten ab.
 - **Qualitätssicherung:** kleiner Goldstandard (10–20 von Hand bewertete Vorlagen inkl. negativer Fälle, aus
   mindestens zwei Bundesländern) unter `tests/gold/`; jede Prompt-Änderung wird dagegen gemessen.
 - Alle Prompts als Dateien unter `config/prompts/` (versioniert), nicht im Python-Code.
@@ -318,8 +332,22 @@ wird.
      ganzen Lauf gestoppt. Jetzt wie die LLM-Aufrufe abgefangen und als `AnalyseStatus.FEHLER` protokolliert.
    - `Dokument` hat jetzt zusätzlich `vorlage_nr` (menschlich lesbare Vorlagen-Nr., z. B. "A 26/0338" – stand
      schon vorher im geparsten SessionNet-HTML, wurde aber nicht in die Datenbank übernommen).
-   116 Tests insgesamt. Noch kein echter Produktiv-Lauf (`run_full()` gegen die echte Norderstedt-Seite und
-   die echte Anthropic-API) gefahren – die Wiring-Logik ist gegen Fakes getestet, aber nicht End-to-End live.
+   116 Tests insgesamt.
+
+   **Erster echter Produktiv-Lauf (19.09.2026, über das Dashboard "Lauf jetzt starten"):**
+   `run_full()` gegen die echte Norderstedt-Seite bestätigt End-to-End funktionsfähig – 106
+   Sitzungen im 5-Monats-Fenster (`months_back`/`months_ahead`), 6 davon zum Ausschuss für
+   Stadtentwicklung und Verkehr passend, 26 Vorlagen, 127 Dokumente heruntergeladen (~150 MB,
+   `data/raw/norderstedt/`), alle korrekt in der Datenbank persistiert. Stufe-1-Vorfilter
+   (Keyword, kein LLM) hat 9 von 26 Vorlagen kostenlos als `NICHT_RELEVANT` aussortiert – die
+   Kostenbremse greift wie vorgesehen. Die verbleibenden 17 scheiterten an
+   `anthropic.BadRequestError: Your credit balance is too low` (bereits unter Schritt 3 bekannt,
+   Account-Guthaben, kein Code-Fehler) – 0 Treffer deshalb erwartungsgemäß, nicht symptomatisch
+   für einen Bug. Ein einzelner Download wurde korrekt wegen Größenlimit abgelehnt
+   (`scraper.max_pdf_size_mb: 25`, funktioniert wie konfiguriert). Damit ist die Scraping- und
+   Persistenz-Seite der Pipeline erstmals live gegen die Produktivseite verifiziert; die
+   LLM-Extraktions-Qualität (Goldstandard, echte Treffer) steht weiterhin aus, bis Guthaben
+   verfügbar ist.
 5. ✅ Streamlit-Dashboard. `app.py`: Tabs "Projekte" (Filter nach Bundesland, Ort, Tier, Wohnform,
    Verfahrensstand, Status – Tier kommt aus der Quellenkonfiguration, nicht aus der Datenbank; `st.data_editor`
    zum Bearbeiten von Status/Notizen, schreibt über `database.set_projekt_status()`/`set_projekt_notizen()` –
@@ -333,6 +361,146 @@ wird.
    Logik ohne laufende Streamlit-Session testbar ist. Manuell im Browser mit Testdaten geprüft (Filter, Editor,
    Export, Quellen-Tab) – Screenshots nicht aufbewahrt, Testdaten danach wieder gelöscht. Excel-Export braucht
    `openpyxl` (zu requirements.txt hinzugefügt). 15 neue Tests für die pure Datenlogik, 131 insgesamt.
+
+   **Nachträglich ergänzt: Demo-Modus** (`radar/demo_data.py`, auf Nutzerwunsch für Präsentationen
+   beim Küchenhersteller, solange kein Anthropic-Guthaben für einen echten Lauf verfügbar ist,
+   siehe Schritt 3). Sidebar-Schalter "Demo-Daten anzeigen" in `app.py` zeigt 9 synthetische,
+   frei erfundene Beispielprojekte über alle sechs Zielregionen (12-85 WE, Status "Neu" bis
+   "Beschlossen", ein bewusst unklarer Fall mit `wohnform=UNKLAR` und fehlender Förderzahl – zeigt
+   die "prüfen"-Regel im Dashboard). Schreibt/liest dafür eine eigene Datei `data/demo/demo.db`
+   (nie `data/radar.db`) über dieselbe `radar.database`-Schicht und dieselben
+   `upsert_sitzung()`/`upsert_vorlage()`/`upsert_projekt()`-Funktionen wie ein echter Lauf, daher
+   genauso idempotent. `ensure_demo_seeded()` befüllt sie nur beim allerersten Aktivieren (leere
+   Demo-DB) – im Demo-Modus vorgenommene Status-/Notizen-Änderungen bleiben danach erhalten, bis
+   `scripts/seed_demo_data.py` manuell zurücksetzt. Tier-Zuordnung der Demo-Quellen (die es in
+   `config/sources.yaml` bewusst nicht gibt) kommt aus `demo_data.DEMO_TIER_BY_QUELLE`, gemischt in
+   `app.py`s `tier_by_quelle`. `config/settings.yaml`s `dashboard.statuses` um "Beschlossen"
+   ergänzt (bisher fehlte ein Status für abgeschlossene Verfahren). `data/demo/*.db` zum
+   `.gitignore` hinzugefügt (wie die echte DB nie einchecken).
+   **Dabei gefundener, unabhängig vom Demo-Modus bestehender Bug:** `app.py`s
+   `_projekt_label()`-Fallback für Projekte ohne `projektbezeichnung` (CLAUDE.md: unklare Fälle
+   werden behalten) nutzte `wert or "(ohne Bezeichnung)"` – pandas wandelt ein fehlendes `None` in
+   einer gemischten Objekt-Spalte aber in `float("nan")` um, und `nan` ist in Python wahr, sodass
+   der Fallback nie griff und wörtlich "nan (Ort)" angezeigt wurde. Jetzt ein expliziter
+   `pd.isna()`-Check. Manuell im Browser mit aktivem Demo-Modus verifiziert (Projekte-Tabelle,
+   Tier-/Status-Filter, Export, Vorkommen-Auswahl, Quellen-Tab). 5 neue Tests
+   (`tests/test_demo_data.py`), 220 insgesamt.
+
+   **Nachträglich ergänzt: Hummel-Küchenwerk-Branding.** `.streamlit/config.toml` setzt
+   `[theme]` (`primaryColor = "#FF6600"`, warme Creme als `secondaryBackgroundColor`) – deckt
+   die von Streamlit selbst eingefärbten Elemente ab (primäre Buttons, Checkboxen, aktiver Tab).
+   `app.py`s `HUMMEL_CSS`-Konstante ergänzt, was das Theme allein nicht kann: Hover-Zustand
+   `#E65100` auf Buttons, orange gefüllte Auswahl-Chips in den Multiselect-Filtern, abgerundete
+   Ecken/Schatten auf den Metrik-Kacheln und Tabellen, Marken-Akzent am linken Rand der Hinweis-
+   boxen. `st.logo()` (Streamlit 1.64, verfügbar seit 1.36) zeigt `assets/hummel_logo.png` oben
+   in der Sidebar, `st.set_page_config(page_icon=...)` nutzt dieselbe Datei als Browser-Tab-Icon.
+   Neue, pure `compute_kpis()`-Funktion speist vier KPI-Kacheln oberhalb der Tabs (Projekte,
+   Wohneinheiten gesamt, davon gefördert, offen/"Neu"+"In Prüfung") – liefert `None` statt einer
+   irreführenden 0, wenn eine Summe mangels Daten nicht gebildet werden kann (CLAUDE.md: nicht
+   raten/hochrechnen), die Oberfläche zeigt dafür "–". Manuell im Browser mit Demo-Daten
+   verifiziert (Logo, Theme-Farben, KPI-Kacheln, Chip-Farbe, Button-Hover, Tab-Unterstreichung).
+   3 neue Tests für `compute_kpis()`, 223 insgesamt.
+
+   **Nachträglich ergänzt: Freitextsuche.** Sidebar-Feld "Suche" (`st.text_input`, oberhalb der
+   Dropdown-Filter, da erfahrungsgemäß der meistgenutzte Zugriff bei wachsender Projektzahl) -
+   neue, pure Funktion `apply_search()` durchsucht `projektbezeichnung`, `strasse`, `hausnummer`,
+   `ort`, `kommune` und `antragsteller` (Groß-/Kleinschreibung egal), leerer Suchtext lässt die
+   Tabelle unverändert. Läuft vor `apply_filters()` in der Filterkette
+   (`apply_filters(apply_search(df, suche), ...)`), damit Suche und Dropdown-Filter sich
+   kombinieren statt sich gegenseitig zu ersetzen. Nutzt `fillna("")` statt eines `None`-Checks,
+   weil pandas ein fehlendes Feld in einer gemischten Objekt-Spalte zu `float("nan")` macht (siehe
+   den `_projekt_label()`-Bugfix oben) - `str.contains` bräche daran sonst ab, betrifft hier vor
+   allem Projekte mit fehlender `projektbezeichnung` (CLAUDE.md: "unklare Fälle nie stillschweigend
+   verwerfen" - die müssen trotzdem über Adresse/Bauherr auffindbar bleiben). Manuell im Browser
+   mit Demo-Daten verifiziert (Suche nach Ortsteil, Straße und Antragsteller). 6 neue Tests, 229
+   insgesamt.
+
+   **Nachträglich ergänzt: Warn-Badge für unsichere Fälle + Statusverlauf.**
+   - Neue, pure Funktion `add_pruef_badge()` (`app.py`) ergänzt eine Spalte `pruefen` mit dem
+     Badge "⚠ prüfen" für Projekte mit `konfidenz < KONFIDENZ_SCHWELLE` (0.6, bewusst eine grobe
+     Konstante statt einer mit dem Vertrieb abgestimmten Konfigurationsoption) oder
+     `wohnform == "UNKLAR"` - direkte Umsetzung von CLAUDE.mds "Ein Fehlalarm ist für den
+     Vertrieb billiger als ein verpasstes Projekt": unsichere Treffer sollen im Dashboard
+     auffallen statt zwischen sicheren unterzugehen. Sichtbar an drei Stellen: eigene Spalte in
+     der editierbaren Projekttabelle, ein `st.warning()` mit Trefferzahl direkt unter der
+     Filterzeile, dezenter Warn-Hintergrund (`_row_highlight()`, per `Styler.apply()`) auf der
+     ganzen Zeile in "Alle Felder", sowie ein Präfix vor dem Projektnamen im
+     Vorkommen-Auswahlfeld. `pruefen` auch in `EXPORT_SPALTEN`, damit der Vertrieb in
+     CSV/Excel danach filtern/sortieren kann.
+   - Neue `database.list_status_log_fuer_projekt()` speist einen Aufklapp-Bereich
+     "Statusverlauf (N)" (`st.expander`) unter der bestehenden Vorkommen-Ansicht in der
+     Projekt-Detailauswahl - zeigt Zeitpunkt/alten/neuen Status/Notiz aus der schon vorhandenen,
+     bisher im Dashboard ungenutzten `status_log`-Tabelle.
+   - **Dabei gefundener, unabhängig von diesen zwei Features bestehender Bug in
+     `radar/demo_data.py`:** `demo_db_path()` löste den Pfad zur Demo-Datenbank fest gegen
+     `PROJECT_ROOT` auf (`settings.resolve_path("data/demo/demo.db")`), unabhängig von der
+     übergebenen `settings.database.path` - Tests mit einer `tmp_path`-Settings-Instanz liefen
+     dadurch unbemerkt gegen die ECHTE `data/demo/demo.db` im Projektverzeichnis statt gegen eine
+     isolierte Kopie. Sichtbar geworden über den neuen Statusverlauf: ein Demo-Projekt zeigte 47
+     status_log-Einträge statt 1, angehäuft über viele `pytest`-Läufe dieser Session. Jetzt löst
+     `demo_db_path()` relativ zu `settings.database.path`s Verzeichnis auf (`demo/`-Unterordner
+     daneben) - für die echte Konfiguration unverändert (`data/demo/demo.db`), für Tests mit
+     `tmp_path` jetzt tatsächlich isoliert. Zweite, verwandte Ursache in `demo_data.seed()`
+     behoben: das abschließende `set_projekt_status()` lief bisher bei jedem `seed()`-Aufruf
+     unbedingt, auch wenn sich der Status gar nicht änderte, und hätte bei jedem manuellen Reset
+     (`scripts/seed_demo_data.py`) weitere "Neu -> Neu"-Einträge angehäuft - jetzt nur noch bei
+     tatsächlicher Änderung. Die dadurch verunreinigte echte `data/demo/demo.db` gelöscht (wird
+     beim nächsten Aktivieren des Demo-Schalters sauber neu angelegt). Manuell im Browser mit
+     Demo-Daten verifiziert (Warn-Badge auf Berlin-Pankow und Bad Oldesloe, Zeilen-Highlight in
+     "Alle Felder", Statusverlauf-Expander zeigt nach dem Fix wieder genau 1 Eintrag). 11 neue
+     Tests (davon 2 Regressionstests für den Pfad-/status_log-Bug), 240 insgesamt.
+
+   **Nachträglich ergänzt: Diagramme, PDF-Report, Demo-Reset-Button.**
+   - **Diagramme:** neuer Tab "Diagramme" (neben "Projekte"/"Quellen-Monitoring") mit zwei
+     interaktiven Altair-Balkendiagrammen über den *gesamten* aktuell geladenen Datensatz (wie
+     die KPI-Kacheln: unabhängig von den Zeilenfiltern der Projekttabelle) - "Projekte nach
+     Status" (Reihenfolge folgt `settings.dashboard.statuses`, ein im Dashboard frei
+     eingetragener unbekannter Status hängt hinten an statt zu verschwinden) und "Geplante
+     Wohneinheiten nach Region" (Summe `we_gesamt` je Bundesland-Kürzel, absteigend sortiert).
+     Pure Datenaufbereitung (`projekte_je_status()`, `we_je_region()`) von den
+     Altair-Chart-Buildern (`chart_projekte_je_status()`, `chart_we_je_region()`) getrennt, beide
+     Ebenen einzeln testbar. Farbe: Vega-Scheme "oranges" (markenkonsistent, sequentiell
+     hell->dunkel), bewusst ohne Legende - die x-Achsenbeschriftung benennt die Kategorie schon
+     eindeutig, eine zusätzliche Legende wäre redundante Kodierung. `altair` war über Streamlit
+     bereits eine transitive Abhängigkeit (native `st.*_chart`-Elemente bauen darauf auf) - keine
+     neue Abhängigkeit nötig.
+   - **PDF-Report:** dritter Download-Button "PDF-Report herunterladen" neben CSV/Excel, über
+     `to_pdf_bytes()` mit `fpdf2` (MIT-Lizenz, reines Python, keine Systemabhängigkeit wie
+     Cairo/Pango bei WeasyPrint - passt zum schlanken `python:3.12-slim`-Image, siehe
+     requirements.txt). Kompakte Spaltenauswahl (`PDF_SPALTEN`, eigene, kleinere Auswahl als
+     `EXPORT_SPALTEN` - ein PDF ist zum Überfliegen gedacht) im A4-Querformat mit Kopf-/Fußzeile
+     (Seitenzahl). **Zwei Encoding-Fallstricke gefunden:** (1) fpdf2s Kernschriften (Helvetica,
+     keine eingebettete Unicode-Schrift) kennen nur Latin-1 - ein einzelnes Sonderzeichen in
+     einem gescrapten Projektnamen (z. B. ein Emoji) hätte den ganzen Export mit einer
+     `FPDFUnicodeEncodingException` abgebrochen; `_pdf_safe()` ersetzt unbekannte Zeichen jetzt
+     defensiv statt zu crashen. (2) Deutsche Umlaute (ä/ö/ü/ß) werden mit der Kernschrift visuell
+     korrekt gerendert (manuell im PDF-Viewer/Browser geprüft, siehe Screenshot-Verifikation),
+     aber pdfplumber (das eigene PDF-Extraktions-Werkzeug des Projekts, siehe `radar/parser.py`)
+     liefert für sie beim Zurück-Extrahieren keine verlässlichen Zeichen, weil fpdf2 hier keine
+     ToUnicode-CMap einbettet - deshalb prüfen die Tests für Umlaut-Inhalte nur auf visuelle
+     Erzeugung (PDF-Magic-Bytes, keine Exception), inhaltliche Extraktions-Tests verwenden bewusst
+     nur Latin-1-unkritische Werte (Ortsnamen ohne Umlaut, Zahlen).
+   - **Demo-Reset-Button:** "Demo-Daten zurücksetzen" direkt unter dem Demo-Schalter (nur
+     sichtbar, wenn Demo-Modus aktiv). Neue `demo_data.reset_demo()` - anders als
+     `ensure_demo_seeded()` (befüllt nur beim allerersten Mal) läuft `seed()` hier *unbedingt*,
+     auch bei bereits gefüllter Demo-DB, und setzt zusätzlich `notizen` zurück (die `seed()`
+     selbst nicht anfasst) - ein expliziter Reset ist bewusst die eine Ausnahme von der sonst
+     projektweiten Regel "manuell gepflegte Felder nie überschreiben" (die gilt für echte Läufe
+     gegen `data/radar.db`, nicht für den Demo-Sandkasten).
+   - Manuell im Browser verifiziert: beide Diagramme mit Tooltip-Interaktion, heruntergeladener
+     PDF-Report optisch geprüft (Screenshot der gerenderten Seite), Reset-Button macht eine im
+     Demo-Modus gesetzte Notiz nachweislich rückgängig. 17 neue Tests, 257 insgesamt.
+
+   **Nachträglich ergänzt: größeres Sidebar-Logo.** `st.logo(..., size="large")` rendert nur
+   32px hoch - Streamlits größte eingebaute Stufe reichte nicht. `HUMMEL_CSS` überschreibt jetzt
+   `img[data-testid="stSidebarLogo"]` auf 56px (mit `!important`, da die Höhe sonst aus einer
+   generierten Streamlit-CSS-Klasse kommt, nicht aus einem Inline-Style) und verkleinert Bild-
+   Margin sowie `stSidebarHeader`s `margin-bottom`, damit trotz des größeren Logos nicht mehr
+   Leerraum als vorher entsteht. `stSidebarLogo`/`stSidebarHeader` sind keine offiziell
+   dokumentierten testids, sondern am 21.09.2026 live im DOM verifiziert (siehe Kommentar im
+   CSS) - können sich mit einem künftigen Streamlit-Update ändern. Manuell im Browser geprüft
+   (Zoom-Screenshot der Sidebar, kein Überlappen mit "Demo-Modus" darunter). 3 neue Tests, 260
+   insgesamt.
 6. 🟡 Weitere Adapter.
    - `radar/sources/oparl.py` fertig implementiert und gegen die echte, öffentliche OParl-1.1-API
      der Gemeinde Uplengen (Niedersachsen, STERNBERG SD.NET RIM) live verifiziert:

@@ -105,7 +105,7 @@ def test_connect_creates_file_and_applies_schema(settings):
     try:
         assert settings.resolve_path(settings.database.path).exists()
         version = conn.execute("PRAGMA user_version").fetchone()[0]
-        assert version == 1
+        assert version == len(database._MIGRATIONS)
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert {"quellen", "sitzungen", "vorlagen", "dokumente", "projekte", "projekt_vorlage", "status_log"} <= tables
     finally:
@@ -128,7 +128,7 @@ def test_connect_twice_is_idempotent(settings):
     database.connect(settings).close()
     conn2 = database.connect(settings)
     try:
-        assert conn2.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert conn2.execute("PRAGMA user_version").fetchone()[0] == len(database._MIGRATIONS)
     finally:
         conn2.close()
 
@@ -449,3 +449,18 @@ def test_list_projekte_filters_by_status(seeded_conn):
 def test_list_quellen(seeded_conn):
     rows = database.list_quellen(seeded_conn)
     assert [row["id"] for row in rows] == ["test"]
+
+
+def test_list_status_log_fuer_projekt_oldest_first(seeded_conn):
+    """Speist den Statusverlauf-Aufklapp-Bereich in der Dashboard-Detailansicht (app.py)."""
+    projekt_id = _upsert_projekt(seeded_conn)  # legt bereits den ersten Log-Eintrag ("Neu") an
+    database.set_projekt_status(seeded_conn, projekt_id, "In Prüfung", notiz="Erstkontakt")
+    database.set_projekt_status(seeded_conn, projekt_id, "Archiviert", notiz="kein Interesse")
+
+    log = database.list_status_log_fuer_projekt(seeded_conn, projekt_id)
+    assert [row["neuer_status"] for row in log] == ["Neu", "In Prüfung", "Archiviert"]
+    assert log[-1]["notiz"] == "kein Interesse"
+
+
+def test_list_status_log_fuer_projekt_unknown_projekt_returns_empty(seeded_conn):
+    assert database.list_status_log_fuer_projekt(seeded_conn, 999) == []

@@ -34,6 +34,9 @@ from radar.sources.base import Dokument, Sitzung, SourceAdapter, SourceLayoutErr
 
 logger = logging.getLogger(__name__)
 
+# Obergrenze für die paginierte Sitzungsliste (Uplengen: wenige Seiten für alle Jahre).
+MAX_PAGES = 500
+
 # Sitzungsname folgt bei den bisher geprüften Herstellern dem Muster "<Gremium> (<N>. Sitzung)".
 _SESSION_SUFFIX_RE = re.compile(r"^(.*?)\s*\(\d+\.\s*Sitzung\)\s*$")
 
@@ -53,7 +56,15 @@ class OParlAdapter(SourceAdapter):
 
         sessions: list[Sitzung] = []
         url: str | None = meeting_list_url
+        besucht: set[str] = set()
         while url:
+            # Schutz gegen endloses Blättern: ein fehlerhafter Server, dessen `links.next` auf eine
+            # schon gelesene Seite zeigt, oder eine absurd lange Liste -> laut abbrechen.
+            if url in besucht:
+                raise SourceLayoutError(f"{self.source.id}: 'links.next' zeigt erneut auf {url} (Endlosschleife)")
+            if len(besucht) >= MAX_PAGES:
+                raise SourceLayoutError(f"{self.source.id}: mehr als {MAX_PAGES} Sitzungsseiten - abgebrochen")
+            besucht.add(url)
             page = self._get_json(url)
             for raw in page.get("data") or []:
                 sitzung = self._parse_meeting_stub(raw)

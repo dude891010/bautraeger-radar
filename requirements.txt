@@ -6,9 +6,10 @@ protego>=0.3                 # robots.txt-Parser mit Wildcard-Unterstützung (*,
 pdfplumber>=0.11          # MIT-Lizenz. PyMuPDF bewusst NICHT: AGPL, problematisch bei Übergabe an Firmen-IT
 anthropic>=0.40           # LLM-API (strukturierte Extraktion)
 pydantic>=2.7,<3          # Schema + Validierung der LLM-Ausgabe
-tenacity>=8.2             # Retries/Backoff für LLM-Aufrufe
 PyYAML>=6
 python-dotenv>=1.0
 streamlit>=1.35
 pandas>=2.2
 openpyxl>=3.1                # Excel-Export im Dashboard
+fpdf2>=2.7                   # PDF-Report im Dashboard. MIT-Lizenz, reines Python, keine Systemabhängigkeiten
+                              # (kein Cairo/Pango wie WeasyPrint) - passt zum schlanken python:3.12-slim-Image

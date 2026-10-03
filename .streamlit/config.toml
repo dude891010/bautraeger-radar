@@ -1,0 +1,10 @@
+# Hummel-Küchenwerk Corporate Design. Setzt Streamlits eigene Einfärbung (primäre Buttons,
+# Checkboxen/Radios, Tab-Unterstreichung, Fokus-Ränder) auf die Marken-Akzentfarbe. Ergänzendes
+# CSS (Hover-Zustände, Metrik-Kacheln, Auswahl-Chips) steht in app.py (HUMMEL_CSS), da Streamlits
+# Theme nur eine einzelne Akzentfarbe kennt, kein Hover-/Aktiv-Paar.
+[theme]
+primaryColor = "#FF6600"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FBEEE3"
+textColor = "#2B231D"
+font = "sans serif"

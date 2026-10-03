@@ -19,10 +19,12 @@ from radar.config import (
 )
 from radar.parser import LLMBudget, ResultCache
 from radar.scraper import (
+    LaufLaeuftBereits,
     SourceRunResult,
     _collect,
     _collect_and_persist,
     _shift_months,
+    lauf_sperre,
     run,
     run_full,
     run_source,
@@ -592,3 +594,58 @@ def test_run_full_continues_after_one_source_fails(monkeypatch, tmp_path, settin
         assert len(database.list_projekte(conn)) == 1
     finally:
         conn.close()
+
+
+# -- Kostenschutz im Lauf: Notbremse sichtbar, kein Parallellauf ---------------------------------------
+
+
+class _GuthabenLeerClient:
+    """Simuliert ein leeres Anthropic-Guthaben (so am 19.09.2026 live beobachtet)."""
+
+    def __init__(self):
+        import anthropic
+        import httpx2
+
+        request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+        self._fehler = anthropic.BadRequestError(
+            "Your credit balance is too low", response=httpx2.Response(400, request=request), body=None
+        )
+        self.calls = 0
+        self.messages = self
+
+    def parse(self, **kwargs):
+        self.calls += 1
+        raise self._fehler
+
+
+def test_run_source_full_reports_emergency_brake_honestly(monkeypatch, tmp_path, conn, source_full, settings_full):
+    sessions = [_sitzung("1", "Ausschuss für Stadtentwicklung und Verkehr")]
+    documents = [_dokument(f"d{i}", vorlage_id=f"v{i}") for i in range(5)]  # 5 relevante Vorlagen
+    adapter = FakeAdapter(sessions, documents_by_session={"1": documents})
+    monkeypatch.setattr("radar.scraper.get_adapter", lambda source, http: adapter)
+    monkeypatch.setattr(
+        "radar.scraper.HttpClient",
+        lambda source, settings: FakeHttpFiles(tmp_path, {f"d{i}": RELEVANT_TEXT for i in range(5)}),
+    )
+    client = _GuthabenLeerClient()
+
+    result = run_source_full(
+        source_full, settings_full, conn, client, LLMBudget(10, 10), ResultCache(tmp_path / "cache"),
+        date(2026, 9, 1), date(2026, 9, 30),
+    )
+
+    assert client.calls == 1  # nur eine einzige Anfrage, nicht eine pro Vorlage
+    assert result.llm_anfragen == 1
+    assert result.ohne_llm == 5
+    assert not result.ok  # landet im Quellen-Monitoring und im Exit-Code, nicht nur im Log
+    assert any("Notbremse" in f and "credit balance" in f for f in result.fehler)
+    statuses = {row["analyse_status"] for row in conn.execute("SELECT analyse_status FROM vorlagen")}
+    assert statuses == {"BUDGET_ERSCHOEPFT"}  # nächster Lauf (mit Guthaben) versucht alle erneut
+
+
+def test_run_full_refuses_to_start_while_another_run_is_active(monkeypatch, settings_full):
+    monkeypatch.setattr("radar.scraper.load_sources", lambda settings: pytest.fail("darf gar nicht erst starten"))
+    with lauf_sperre(settings_full):
+        with pytest.raises(LaufLaeuftBereits):
+            run_full(settings_full, client=FakeAnthropicClient([]))
+

@@ -10,7 +10,14 @@ Dokumente gemeinsam, weil Wohneinheiten oft nur in Anlagen stehen), extrahiert T
 triagiert, extrahiert und cacht das Ergebnis pro Dokument-Hash-Kombination.
 
 Netzwerk (Anthropic-Client) ist hinter `client: anthropic.Anthropic` versteckt, Tests ersetzen ihn
-durch ein Fake-Objekt mit passendem `.messages.create(...)` – kein Netzzugriff in `pytest`.
+durch ein Fake-Objekt mit passendem `.messages.parse(...)` – kein Netzzugriff in `pytest`.
+
+Kostenschutz (siehe `LLMBudget` und `_call`): **jede einzelne HTTP-Anfrage** an die API – auch
+jeder Retry und jeder Reparaturversuch – verbraucht eine Einheit Budget, bevor sie gesendet wird.
+Die SDK-eigenen Retries sind abgeschaltet (`make_client`: `max_retries=0`), damit es keine
+unsichtbaren Zusatzanfragen am Budget vorbei gibt. Eine Notbremse sperrt alle weiteren Anfragen
+des Laufs bei Konto-/Konfigurationsfehlern (z. B. Guthaben leer, Key ungültig) oder nach zu vielen
+Fehlern in Folge.
 """
 
 from __future__ import annotations
@@ -18,20 +25,25 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import time
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 
 import anthropic
 import pdfplumber
-import tenacity
 from pydantic import BaseModel, Field, ValidationError
 
 from radar.config import Settings
 
 logger = logging.getLogger(__name__)
 
-_TRANSIENT_ERRORS = (anthropic.APIConnectionError, anthropic.RateLimitError, anthropic.InternalServerError)
+# HTTP-Status, bei denen ein erneuter Versuch sinnvoll ist (Überlast, Rate-Limit, Serverfehler).
+_TRANSIENT_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
+# HTTP-Status, die das Konto/die Konfiguration betreffen und bei JEDER weiteren Anfrage genauso
+# scheitern würden: Key ungültig, keine Berechtigung, Modellname falsch.
+_KONTO_STATUS = {401, 403, 404}
+_MAX_WARTEZEIT_SEKUNDEN = 60.0
 
 
 # -- Domänenmodelle (Pydantic, per Tool-Use erzwungen und validiert) -----------------------------
@@ -204,25 +216,82 @@ def _load_prompt(settings: Settings, filename: str) -> str:
 # -- Kostenkontrolle: Budget + Cache ---------------------------------------------------------------
 
 
+class LLMGesperrt(Exception):
+    """Es wird keine weitere API-Anfrage gesendet: Budget erschöpft oder Notbremse ausgelöst.
+    Eigene Ausnahme, damit `analyze_documents()` das als `BUDGET_ERSCHOEPFT` (ein späterer Lauf
+    versucht es erneut) statt als Fehler des Dokuments verbucht."""
+
+
 @dataclass
 class LLMBudget:
-    """Kostenbremse pro Lauf und pro Quelle (CLAUDE.md: `max_calls_per_run`/`max_calls_per_source`).
-    Ein Aufruf reserviert sich Budget *vor* dem API-Call; wird nichts reserviert, wird gar nicht
-    erst angefragt."""
+    """Strikte Kostenbremse pro Lauf und pro Quelle (CLAUDE.md: `max_calls_per_run`/
+    `max_calls_per_source`). Gezählt wird **jede HTTP-Anfrage** an die API, inklusive Retries und
+    Reparaturversuchen – `_call()` reserviert vor jedem einzelnen Versuch. Wird nichts reserviert,
+    wird gar nicht erst angefragt.
+
+    Zusätzlich eine Notbremse (`sperren()`): nach einem Konto-/Konfigurationsfehler oder nach
+    `max_consecutive_errors` Fehlern in Folge liefert `reserve()` für den Rest des Laufs immer
+    `False` – ein kaputter Zustand (Guthaben leer, API gestört) kostet so höchstens eine Handvoll
+    Anfragen statt mehrerer pro Vorlage."""
 
     max_calls_per_run: int
     max_calls_per_source: int
+    max_consecutive_errors: int = 5
+    gesperrt_grund: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
     _total: int = 0
     _pro_quelle: dict[str, int] = field(default_factory=dict)
+    _fehler_in_folge: int = 0
 
     def reserve(self, quelle_id: str) -> bool:
-        if self._total >= self.max_calls_per_run:
-            return False
-        if self._pro_quelle.get(quelle_id, 0) >= self.max_calls_per_source:
+        if self.ablehnungsgrund(quelle_id) is not None:
             return False
         self._total += 1
         self._pro_quelle[quelle_id] = self._pro_quelle.get(quelle_id, 0) + 1
         return True
+
+    def ablehnungsgrund(self, quelle_id: str) -> str | None:
+        """Warum `reserve()` gerade ablehnen würde, oder `None`, solange noch Budget frei ist."""
+        if self.gesperrt_grund is not None:
+            return f"LLM-Notbremse aktiv: {self.gesperrt_grund}"
+        if self._total >= self.max_calls_per_run:
+            return f"LLM-Budget pro Lauf erschöpft ({self.max_calls_per_run} Anfragen)"
+        if self._pro_quelle.get(quelle_id, 0) >= self.max_calls_per_source:
+            return f"LLM-Budget für Quelle '{quelle_id}' erschöpft ({self.max_calls_per_source} Anfragen)"
+        return None
+
+    def anfragen(self, quelle_id: str | None = None) -> int:
+        """Bisher gesendete Anfragen, insgesamt oder für eine Quelle."""
+        return self._total if quelle_id is None else self._pro_quelle.get(quelle_id, 0)
+
+    def erfolg(self, usage: object = None) -> None:
+        self._fehler_in_folge = 0
+        self.input_tokens += _as_int(getattr(usage, "input_tokens", 0))
+        self.output_tokens += _as_int(getattr(usage, "output_tokens", 0))
+
+    def fehler(self, beschreibung: str) -> None:
+        self._fehler_in_folge += 1
+        if self._fehler_in_folge >= self.max_consecutive_errors:
+            self.sperren(f"{self._fehler_in_folge} API-Fehler in Folge, zuletzt: {beschreibung}")
+
+    def sperren(self, grund: str) -> None:
+        if self.gesperrt_grund is None:
+            self.gesperrt_grund = grund
+            logger.error("LLM-Notbremse ausgelöst, keine weiteren API-Anfragen in diesem Lauf: %s", grund)
+
+    def zusammenfassung(self) -> str:
+        text = (
+            f"{self._total}/{self.max_calls_per_run} LLM-Anfragen, "
+            f"{self.input_tokens} input_tokens, {self.output_tokens} output_tokens"
+        )
+        if self.gesperrt_grund is not None:
+            text += f" – NOTBREMSE: {self.gesperrt_grund}"
+        return text
+
+
+def _as_int(wert: object) -> int:
+    return wert if isinstance(wert, int) else 0
 
 
 class ResultCache:
@@ -284,32 +353,125 @@ def documents_cache_key(quellen: list[Path | Textinhalt]) -> str:
 # Konfiguration, wird hier aber nicht mehr an die API übergeben.
 
 
-@tenacity.retry(
-    retry=tenacity.retry_if_exception_type(_TRANSIENT_ERRORS),
-    stop=tenacity.stop_after_attempt(3),
-    wait=tenacity.wait_exponential(multiplier=1, min=1, max=10),
-    reraise=True,
-)
+#
+# **Retries ohne tenacity, bewusst als explizite Schleife in `_call()`:** vor jedem einzelnen
+# Versuch muss Budget reserviert werden, und Konto-Fehler müssen die Notbremse auslösen statt
+# wiederholt zu werden – beides war mit dem früheren `@tenacity.retry`-Dekorator nicht möglich
+# (dort zählte ein Aufruf mit bis zu 3 Versuchen, plus 2 SDK-internen Retries je Versuch, nur
+# einmal gegen das Budget: bis zu 9 echte Anfragen pro gezählter Einheit).
+
+_sleep = time.sleep  # in Tests ersetzbar (kein echtes Warten)
+
+
+def make_client(settings: Settings) -> anthropic.Anthropic:
+    """Anthropic-Client mit abgeschalteten SDK-Retries (`max_retries=0`, Standard wäre 2) und
+    festem Timeout (Standard wären 10 Minuten). Wiederholungen macht ausschließlich `_call()` –
+    nur so zählt jede echte Anfrage gegen das `LLMBudget`."""
+    return anthropic.Anthropic(
+        api_key=settings.anthropic_api_key,
+        max_retries=0,
+        timeout=settings.llm.request_timeout_seconds,
+    )
+
+
+def _ist_konto_fehler(exc: anthropic.APIStatusError) -> bool:
+    """Fehler, die jede weitere Anfrage genauso träfe: ungültiger Key, fehlende Berechtigung,
+    falscher Modellname – oder ein 400 wegen leerem Guthaben (so am 19.09.2026 beobachtet:
+    `BadRequestError: Your credit balance is too low`)."""
+    if exc.status_code in _KONTO_STATUS:
+        return True
+    return exc.status_code == 400 and "credit balance" in str(exc).lower()
+
+
+def _wartezeit(exc: Exception, versuch: int) -> float:
+    """`Retry-After` der API respektieren, sonst exponentiell (2, 4, 8 … s), immer gedeckelt."""
+    response = getattr(exc, "response", None)
+    header = response.headers.get("retry-after") if response is not None else None
+    try:
+        wartezeit = float(header) if header is not None else 2.0**versuch
+    except ValueError:
+        wartezeit = 2.0**versuch
+    return max(0.0, min(wartezeit, _MAX_WARTEZEIT_SEKUNDEN))
+
+
+def _warte_oder_abbrechen(
+    exc: Exception, budget: LLMBudget, versuch: int, max_attempts: int, quelle_id: str
+) -> None:
+    """Vor einem neuen Versuch warten - außer die Notbremse hat gerade ausgelöst oder das Budget
+    ist aufgebraucht, dann sofort abbrechen statt umsonst zu warten."""
+    grund = budget.ablehnungsgrund(quelle_id)
+    if grund is not None:
+        raise LLMGesperrt(grund) from exc
+    wartezeit = _wartezeit(exc, versuch)
+    logger.warning(
+        "LLM-Aufruf Quelle '%s' fehlgeschlagen (Versuch %d/%d), neuer Versuch in %.0f s: %s",
+        quelle_id,
+        versuch,
+        max_attempts,
+        wartezeit,
+        exc,
+    )
+    _sleep(wartezeit)
+
+
 def _call(
     client: anthropic.Anthropic,
+    budget: LLMBudget,
+    quelle_id: str,
     *,
     model: str,
     system: str,
     user_text: str,
     output_format: type[BaseModel],
     max_tokens: int,
+    max_attempts: int,
 ) -> tuple[BaseModel, object]:
-    response = client.messages.parse(
-        model=model,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user_text}],
-        output_format=output_format,
-    )
-    parsed = response.parsed_output
-    if parsed is None:
-        raise RuntimeError(f"Keine strukturierte Antwort für '{output_format.__name__}' erhalten")
-    return parsed, response.usage
+    """Ein API-Aufruf mit höchstens `max_attempts` Versuchen. Vor **jedem** Versuch wird Budget
+    reserviert (sonst `LLMGesperrt`). Wiederholt wird nur bei vorübergehenden Fehlern
+    (Verbindung, Timeout, 429/5xx); Konto-Fehler lösen sofort die Notbremse aus, alle anderen
+    Fehler werden ohne Wiederholung weitergereicht. Ein `pydantic.ValidationError` (Antwort passt
+    nicht zum Schema) geht unverändert an den Reparaturversuch in `extract()`."""
+    for versuch in range(1, max_attempts + 1):
+        if not budget.reserve(quelle_id):
+            raise LLMGesperrt(budget.ablehnungsgrund(quelle_id))
+        try:
+            response = client.messages.parse(
+                model=model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user_text}],
+                output_format=output_format,
+            )
+        except ValidationError:
+            budget.erfolg()  # API hat geantwortet, nur das Format war ungültig -> kein API-Fehler
+            raise
+        except anthropic.APIStatusError as exc:
+            if _ist_konto_fehler(exc):
+                budget.sperren(f"HTTP {exc.status_code}: {exc}")
+                raise LLMGesperrt(budget.ablehnungsgrund(quelle_id)) from exc
+            budget.fehler(f"HTTP {exc.status_code}: {exc}")
+            if exc.status_code not in _TRANSIENT_STATUS or versuch == max_attempts:
+                raise
+            _warte_oder_abbrechen(exc, budget, versuch, max_attempts, quelle_id)
+            continue
+        except anthropic.APIConnectionError as exc:  # inkl. APITimeoutError
+            budget.fehler(f"Verbindung: {exc}")
+            if versuch == max_attempts:
+                raise
+            _warte_oder_abbrechen(exc, budget, versuch, max_attempts, quelle_id)
+            continue
+        except Exception as exc:  # Unerwartetes: nie wiederholen, aber für die Notbremse mitzählen
+            budget.fehler(f"{type(exc).__name__}: {exc}")
+            raise
+
+        parsed = response.parsed_output
+        if parsed is None:
+            budget.fehler("leere strukturierte Antwort")
+            raise RuntimeError(f"Keine strukturierte Antwort für '{output_format.__name__}' erhalten")
+        budget.erfolg(response.usage)
+        return parsed, response.usage
+
+    raise AssertionError("unerreichbar: die Schleife endet immer mit return oder raise")
 
 
 def _log_usage(quelle_id: str, stufe: str, usage: object) -> None:
@@ -322,10 +484,15 @@ def _log_usage(quelle_id: str, stufe: str, usage: object) -> None:
     )
 
 
-def triage(client: anthropic.Anthropic, settings: Settings, text: str, quelle_id: str) -> TriageErgebnis:
+def triage(
+    client: anthropic.Anthropic, settings: Settings, budget: LLMBudget, text: str, quelle_id: str
+) -> TriageErgebnis:
     system = _load_prompt(settings, "triage_system.md")
     ergebnis, usage = _call(
         client,
+        budget,
+        quelle_id,
+        max_attempts=settings.llm.max_attempts_per_call,
         model=settings.llm.triage_model,
         system=system,
         user_text=f"<dokument>\n{text}\n</dokument>",
@@ -336,11 +503,13 @@ def triage(client: anthropic.Anthropic, settings: Settings, text: str, quelle_id
     return ergebnis
 
 
-def extract(client: anthropic.Anthropic, settings: Settings, text: str, quelle_id: str) -> ProjektExtraktion | None:
+def extract(
+    client: anthropic.Anthropic, settings: Settings, budget: LLMBudget, text: str, quelle_id: str
+) -> ProjektExtraktion | None:
     """Bis zu zwei Versuche: schlägt die Pydantic-Validierung fehl (wirft `client.messages.parse`
     selbst, siehe oben), wird die Fehlermeldung dem Modell zur Reparatur zurückgegeben. Scheitert
     auch das, wird `None` zurückgegeben und der Aufrufer loggt das als Fehler (CLAUDE.md:
-    höchstens 1-2 Reparaturversuche, dann als "Fehler")."""
+    höchstens 1-2 Reparaturversuche, dann als "Fehler"). Jeder Versuch kostet eigenes Budget."""
     system = _load_prompt(settings, "extraction_system.md")
     user_text = f"<dokument>\n{text}\n</dokument>"
 
@@ -355,6 +524,9 @@ def extract(client: anthropic.Anthropic, settings: Settings, text: str, quelle_i
         try:
             ergebnis, usage = _call(
                 client,
+                budget,
+                quelle_id,
+                max_attempts=settings.llm.max_attempts_per_call,
                 model=settings.llm.extraction_model,
                 system=system,
                 user_text=prompt,
@@ -414,10 +586,10 @@ def analyze_documents(
 
     excerpt = build_excerpt(alle_seiten, keywords, settings.llm.context_pages, settings.llm.max_input_chars)
 
-    if not budget.reserve(quelle_id):
-        return AnalyseErgebnis(status=AnalyseStatus.BUDGET_ERSCHOEPFT, grund="LLM-Budget erschöpft (Triage)")
     try:
-        triage_ergebnis = triage(client, settings, excerpt, quelle_id)
+        triage_ergebnis = triage(client, settings, budget, excerpt, quelle_id)
+    except LLMGesperrt as exc:
+        return AnalyseErgebnis(status=AnalyseStatus.BUDGET_ERSCHOEPFT, grund=f"Triage nicht gesendet: {exc}")
     except Exception as exc:  # API-Fehler nach Retries, unerwartete Antwort etc. -> nie den Lauf stoppen
         logger.exception("Triage für Quelle '%s' fehlgeschlagen", quelle_id)
         return AnalyseErgebnis(status=AnalyseStatus.FEHLER, grund=f"Triage fehlgeschlagen: {exc}")
@@ -426,10 +598,10 @@ def analyze_documents(
             status=AnalyseStatus.NICHT_RELEVANT, grund=f"Triage NEIN: {triage_ergebnis.begruendung or ''}".strip()
         )
 
-    if not budget.reserve(quelle_id):
-        return AnalyseErgebnis(status=AnalyseStatus.BUDGET_ERSCHOEPFT, grund="LLM-Budget erschöpft (Extraktion)")
     try:
-        extraktion = extract(client, settings, excerpt, quelle_id)
+        extraktion = extract(client, settings, budget, excerpt, quelle_id)
+    except LLMGesperrt as exc:
+        return AnalyseErgebnis(status=AnalyseStatus.BUDGET_ERSCHOEPFT, grund=f"Extraktion nicht gesendet: {exc}")
     except Exception as exc:  # API-Fehler nach Retries, unerwartete Antwort etc. -> nie den Lauf stoppen
         logger.exception("Extraktion für Quelle '%s' fehlgeschlagen", quelle_id)
         return AnalyseErgebnis(status=AnalyseStatus.FEHLER, grund=f"Extraktion fehlgeschlagen: {exc}")

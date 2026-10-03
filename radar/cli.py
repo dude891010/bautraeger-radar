@@ -22,7 +22,7 @@ import sys
 
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
-from radar.scraper import run_full
+from radar.scraper import LaufLaeuftBereits, run_full
 
 _BEISPIEL_TREFFER = [
     NeuerTreffer(
@@ -80,7 +80,11 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     if args.befehl == "scrape":
-        results = run_full()
+        try:
+            results = run_full()
+        except LaufLaeuftBereits as exc:
+            logging.getLogger(__name__).error("Lauf nicht gestartet: %s", exc)
+            return 2
         if args.notify:
             neue_treffer = [treffer for r in results for treffer in r.neue_treffer]
             send_notification(neue_treffer)  # no-op, falls leer oder SMTP nicht konfiguriert
