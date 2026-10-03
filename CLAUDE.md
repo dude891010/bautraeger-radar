@@ -278,6 +278,12 @@ wird.
   Globale Einstellungen `config/settings.yaml`, Quellen `config/sources.yaml`, Secrets nur in `.env`.
 - Kleine, testbare Funktionen; Netzwerk und LLM hinter dünnen Schnittstellen, damit Tests sie ersetzen können.
 - `logging` statt `print`, Lauf-Zusammenfassung am Ende (je Quelle: Sitzungen, Vorlagen, Treffer, Fehler, Kosten).
+- **Sicherheit (Stand 03.10.2026, docs/SICHERHEIT.md):** Dashboard nur mit Passwort (`radar/auth.py`,
+  `DASHBOARD_PASSWORD` Pflicht, `DASHBOARD_AUTH=extern` nur hinter SSO). ngrok nur über
+  `scripts/start_tunnel.ps1` (Basic Auth per Traffic Policy). Browser-Eingaben im `st.data_editor`
+  serverseitig prüfen (`find_changed_rows`). HTTP-Weiterleitungen nie automatisch folgen
+  (`HttpClient._get_geprueft`, SSRF). Dokumenttext nur über `parser._als_dokument()` in den Prompt.
+  `llm.max_calls_per_day` gilt über alle Läufe (Tabelle `llm_nutzung`, Schema v3).
 - Dashboard: Filter nach Bundesland, Ort, Tier, Wohnform, Verfahrensstand, Status; Scraper-Lauf im Hintergrund
   (Thread/Subprozess) mit Fortschrittsanzeige. Streamlit hat keine Authentifizierung → im Container nur hinter
   Reverse Proxy/SSO der IT oder mit Basic Auth. Export als CSV/Excel für den Vertrieb.

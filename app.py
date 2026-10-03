@@ -5,8 +5,9 @@ Reine Datenlogik (Filtern, Diffen von Bearbeitungen, Export) steht als pure Funk
 (`tests/test_app.py`). Alles mit `st.*` steckt in `main()`, das nur unter `streamlit run`
 ausgeführt wird (Streamlit führt das Skript dann mit `__name__ == "__main__"` aus).
 
-Streamlit hat **keine eigene Authentifizierung**: im Container (Schritt 7) nur hinter einem
-Reverse Proxy/SSO der Firmen-IT oder mit Basic Auth betreiben, siehe CLAUDE.md.
+Streamlit hat **keine eigene Authentifizierung** - deshalb ein eigener Passwortdialog
+(`radar/auth.py`, `_login_gate`), der vor allem anderen läuft. Ohne `DASHBOARD_PASSWORD` in
+`.env` startet das Dashboard nicht (Ausnahme: `DASHBOARD_AUTH=extern` hinter SSO der Firmen-IT).
 """
 
 from __future__ import annotations
@@ -25,11 +26,12 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from fpdf.fonts import FontFace
 
-from radar import database, demo_data
+from radar import auth, database, demo_data
 from radar.config import PROJECT_ROOT, Settings, load_settings, load_sources
 from radar.scraper import lauf_sperre_aktiv
 
 LOG_TAIL_CHARS = 4000
+MAX_NOTIZ_LAENGE = 2000
 
 # Spalten aus `projekte`, die in der Datenbank NULLable INTEGER sind (CLAUDE.md: "flag" statt
 # Verwerfen bei fehlender WE-Zahl, also ein Normalfall, kein Rand). pandas' normales `int64`
@@ -328,21 +330,35 @@ def apply_filters(
     return df
 
 
-def find_changed_rows(original_df: pd.DataFrame, edited_df: pd.DataFrame) -> list[dict]:
+def find_changed_rows(
+    original_df: pd.DataFrame, edited_df: pd.DataFrame, erlaubte_status: list[str] | None = None
+) -> list[dict]:
     """Vergleicht `status`/`notizen` zwischen Original und einer im `st.data_editor` bearbeiteten
-    Kopie (gleicher Index). Liefert nur tatsächlich geänderte Zeilen."""
+    Kopie (gleicher Index). Liefert nur tatsächlich geänderte Zeilen.
+
+    Die bearbeitete Tabelle kommt vom Browser und ist damit nicht vertrauenswürdig: die
+    Sperrung von Spalten im Editor wirkt nur in der Oberfläche. Deshalb stammt die Projekt-`id`
+    immer aus dem Original, nur Zeilen aus dem Original werden berücksichtigt, ein Status
+    außerhalb von `erlaubte_status` wird verworfen und Notizen werden auf `MAX_NOTIZ_LAENGE`
+    gekürzt."""
     changes = []
     for idx in edited_df.index:
+        if idx not in original_df.index:
+            continue
         orig = original_df.loc[idx]
         edit = edited_df.loc[idx]
-        status_geaendert = orig["status"] != edit["status"]
-        notizen_geaendert = orig["notizen"] != edit["notizen"]
+        neuer_status = edit["status"]
+        if erlaubte_status is not None and neuer_status not in erlaubte_status:
+            neuer_status = orig["status"]
+        notizen = "" if pd.isna(edit["notizen"]) else str(edit["notizen"])[:MAX_NOTIZ_LAENGE]
+        status_geaendert = orig["status"] != neuer_status
+        notizen_geaendert = orig["notizen"] != notizen
         if status_geaendert or notizen_geaendert:
             changes.append(
                 {
-                    "id": int(edit["id"]),
-                    "status": edit["status"],
-                    "notizen": edit["notizen"],
+                    "id": int(orig["id"]),
+                    "status": neuer_status,
+                    "notizen": notizen,
                     "status_geaendert": status_geaendert,
                     "alter_status": orig["status"],
                 }
@@ -505,6 +521,39 @@ def run_is_active(process: subprocess.Popen | None) -> bool:
 # -- Streamlit-UI -----------------------------------------------------------------------------------
 
 
+def _login_gate(st) -> None:
+    """Passwortdialog vor allen Daten und Aktionen (siehe radar/auth.py). Ruft `st.stop()`, bis
+    die Sitzung angemeldet ist - nichts unterhalb wird für Unangemeldete ausgeführt."""
+    if auth.auth_extern() or st.session_state.get("angemeldet"):
+        if not auth.auth_extern() and st.sidebar.button("Abmelden"):
+            st.session_state.clear()
+            st.rerun()
+        return
+
+    try:
+        erwartet = auth.dashboard_passwort()
+    except auth.AuthKonfigurationsFehler as exc:
+        st.error(str(exc))
+        st.stop()
+
+    rest = auth.LOGIN_SPERRE.restsperre_sekunden()
+    if rest:
+        st.error(f"Zu viele Fehlversuche. Anmeldung in {rest // 60 + 1} Minute(n) wieder möglich.")
+        st.stop()
+
+    with st.form("login"):
+        eingabe = st.text_input("Passwort", type="password", max_chars=256)
+        abgeschickt = st.form_submit_button("Anmelden", type="primary")
+    if abgeschickt:
+        if auth.passwort_korrekt(eingabe, erwartet):
+            st.session_state["angemeldet"] = True
+            st.rerun()
+        auth.LOGIN_SPERRE.fehlversuch()
+        time.sleep(1)  # bremst automatisiertes Durchprobieren zusätzlich
+        st.error("Passwort falsch.")
+    st.stop()
+
+
 def main() -> None:
     import streamlit as st
 
@@ -519,7 +568,9 @@ def main() -> None:
     st.title("Bauträger-Radar")
     st.caption("Hummel Küchenwerk · Objektgeschäft-Radar für Neubauprojekte")
 
-    settings = load_settings()
+    settings = load_settings()  # lädt auch .env - muss VOR dem Login passieren (DASHBOARD_PASSWORD)
+    _login_gate(st)  # stoppt das Skript hier, solange niemand angemeldet ist
+
     sources = load_sources(settings)
     tier_by_quelle = {s.id: settings.tier_for(s) for s in sources}
 
@@ -566,6 +617,9 @@ def main() -> None:
         # Lauf aus einer anderen Quelle (Scheduler, anderer Browser-Tab): radar.scraper.lauf_sperre
         # würde einen zweiten Lauf ohnehin abweisen (sonst doppeltes LLM-Budget) - hier nur sichtbar machen.
         fremder_lauf = not aktiv and lauf_sperre_aktiv(settings)
+        with closing(database.connect(settings)) as conn:
+            heute_verbraucht = database.llm_anfragen_am(conn, datetime.now().date().isoformat())
+        st.caption(f"LLM-Anfragen heute: {heute_verbraucht} von max. {settings.llm.max_calls_per_day}")
         if aktiv:
             st.info("Ein Lauf läuft im Hintergrund …")
             if st.button("Aktualisieren"):
@@ -677,7 +731,7 @@ def main() -> None:
                         "⚠", help="Geringe Konfidenz oder unklare Wohnform - bitte prüfen."
                     ),
                     "status": st.column_config.SelectboxColumn("Status", options=settings.dashboard.statuses),
-                    "notizen": st.column_config.TextColumn("Notizen"),
+                    "notizen": st.column_config.TextColumn("Notizen", max_chars=MAX_NOTIZ_LAENGE),
                 },
                 hide_index=True,
                 use_container_width=True,
@@ -685,7 +739,7 @@ def main() -> None:
             )
 
             if st.button("Änderungen speichern"):
-                changes = find_changed_rows(bearbeitbar, bearbeitet)
+                changes = find_changed_rows(bearbeitbar, bearbeitet, settings.dashboard.statuses)
                 if not changes:
                     st.info("Keine Änderungen.")
                 else:

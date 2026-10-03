@@ -417,10 +417,18 @@ def _run_full_gesperrt(
     own_conn = conn is None
     conn = conn or database.connect(settings)
     client = client or make_client(settings)
+    heute = date.today().isoformat()
+    tagesrest = max(0, settings.llm.max_calls_per_day - database.llm_anfragen_am(conn, heute))
+    if tagesrest == 0:
+        logger.warning(
+            "LLM-Tageslimit (%d) bereits erreicht: dieser Lauf analysiert nichts", settings.llm.max_calls_per_day
+        )
     budget = LLMBudget(
         settings.llm.max_calls_per_run,
         settings.llm.max_calls_per_source,
         max_consecutive_errors=settings.llm.max_consecutive_errors,
+        tagesrest=tagesrest,
+        bei_anfrage=lambda: database.zaehle_llm_anfrage(conn, heute),
     )
     cache = ResultCache(settings.resolve_path(settings.llm.cache_dir))
 

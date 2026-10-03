@@ -30,6 +30,7 @@ STATUSES = {"verified", "candidate", "blocked"}
 TIERS = {"A", "B", "C"}
 UNKNOWN_POLICIES = {"flag", "drop"}
 MAX_CALLS_PER_RUN_HARD_LIMIT = 1000  # llm.max_calls_per_run darf nie höher konfiguriert werden
+MAX_CALLS_PER_DAY_HARD_LIMIT = 3000  # llm.max_calls_per_day ebenso
 _ID_RE = re.compile(r"^[a-z0-9_-]+$")
 
 
@@ -92,6 +93,9 @@ class LLMConfig:
     # (radar/parser.py: LLMBudget/_call).
     max_calls_per_run: int = 300
     max_calls_per_source: int = 40
+    # Über alle Läufe eines Kalendertages (in der Datenbank gezählt): sonst bekäme jeder Klick auf
+    # "Lauf jetzt starten" wieder ein volles max_calls_per_run.
+    max_calls_per_day: int = 600
     max_attempts_per_call: int = 3       # Versuche je Aufruf bei vorübergehenden Fehlern (429/5xx/Timeout)
     max_consecutive_errors: int = 5      # Notbremse: so viele API-Fehler in Folge -> Rest des Laufs ohne LLM
     request_timeout_seconds: float = 120.0
@@ -105,6 +109,8 @@ class LLMConfig:
         # nie unbemerkt ein Vielfaches der üblichen Kosten verursachen können.
         if not 0 <= self.max_calls_per_run <= MAX_CALLS_PER_RUN_HARD_LIMIT:
             raise ValueError(f"llm.max_calls_per_run muss zwischen 0 und {MAX_CALLS_PER_RUN_HARD_LIMIT} liegen")
+        if not 0 <= self.max_calls_per_day <= MAX_CALLS_PER_DAY_HARD_LIMIT:
+            raise ValueError(f"llm.max_calls_per_day muss zwischen 0 und {MAX_CALLS_PER_DAY_HARD_LIMIT} liegen")
         if not 0 <= self.max_calls_per_source <= self.max_calls_per_run:
             raise ValueError("llm.max_calls_per_source muss zwischen 0 und llm.max_calls_per_run liegen")
         if not 1 <= self.max_attempts_per_call <= 5:

@@ -8,3 +8,18 @@ backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#FBEEE3"
 textColor = "#2B231D"
 font = "sans serif"
+
+# Sicherheit (siehe docs/SICHERHEIT.md). Das Dashboard kann über einen Tunnel öffentlich
+# erreichbar sein - deshalb keine Tracebacks/Interna an den Browser und keine Entwickler-Menüs.
+[server]
+headless = true                 # keine interaktive E-Mail-Abfrage beim Start, kein Browser-Autostart
+enableXsrfProtection = true     # Streamlit-Standard, hier ausdrücklich festgeschrieben
+enableCORS = true
+enableStaticServing = false
+
+[client]
+showErrorDetails = "type"       # nur der Fehlertyp im Browser, Details nur im Server-Log
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false

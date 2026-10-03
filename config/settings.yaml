@@ -83,6 +83,7 @@ llm:
   # Reparaturversuche. Harte Obergrenze im Code: 1000 (radar/config.py).
   max_calls_per_run: 300                      # über alle Quellen
   max_calls_per_source: 40                    # verhindert, dass eine Quelle das Budget aufbraucht
+  max_calls_per_day: 600                      # über ALLE Läufe eines Tages (harte Obergrenze im Code: 3000)
   max_attempts_per_call: 3                    # Versuche je Aufruf nur bei 429/5xx/Timeout, mit Wartezeit
   max_consecutive_errors: 5                   # Notbremse: danach keine LLM-Anfragen mehr in diesem Lauf
   request_timeout_seconds: 120                # pro Anfrage (SDK-Standard wären 10 Minuten)

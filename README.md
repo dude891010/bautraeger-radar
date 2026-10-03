@@ -99,3 +99,9 @@ Ein Lauf kann nie unkontrolliert API-Kosten verursachen (`radar/parser.py`, `LLM
 - **Nie zwei Läufe gleichzeitig:** Sperrdatei `data/lauf.lock` (Dashboard-Knopf + Scheduler
   hätten sonst je ein volles Budget gehabt).
 - Am Ende jedes Laufs steht der Verbrauch im Log (Anfragen, Tokens, ggf. Notbremse).
+
+## Sicherheit
+Das Dashboard verlangt ein Passwort (`DASHBOARD_PASSWORD` in `.env`, mindestens 12 Zeichen).
+Ohne diesen Eintrag startet es nicht. Ein öffentlicher ngrok-Tunnel nur über
+`.\scripts\start_tunnel.ps1` (erzwingt zusätzlich Basic Auth bei ngrok). Befunde, Fixes und
+Betriebsregeln: [docs/SICHERHEIT.md](docs/SICHERHEIT.md).

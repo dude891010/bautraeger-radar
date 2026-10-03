@@ -27,6 +27,7 @@ from radar.config import Settings, Source
 logger = logging.getLogger(__name__)
 
 PDF_MAGIC = b"%PDF"
+MAX_WEITERLEITUNGEN = 5
 
 # Ratenbegrenzung ist Prozess-weit pro Host, nicht nur pro Client-Instanz: mehrere Quellen mit
 # demselben Host (z. B. ein gemeinsames Amts-SessionNet mehrerer Gemeinden) dürfen sich nicht
@@ -107,7 +108,10 @@ class HttpClient:
 
     # -- Zugriffskontrolle ----------------------------------------------------------------------
     def _check_host(self, url: str) -> None:
-        host = urlparse(url).hostname
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise DownloadError(f"Schema '{parsed.scheme}' nicht erlaubt: {url}")
+        host = parsed.hostname
         if host not in self.hosts:
             raise DownloadError(
                 f"Host '{host}' ist für Quelle '{self.source.id}' nicht freigegeben (erlaubt: {sorted(self.hosts)})"
@@ -144,14 +148,28 @@ class HttpClient:
 
         `url` darf relativ zur `base_url` der Quelle sein (üblich für SessionNet-Seitennamen) oder
         absolut auf einem der `additional_hosts` liegen."""
-        full_url = urljoin(self.source.base_url, url)
-        self._check_host(full_url)
-        self._check_robots(full_url)
-        self._throttle(urlparse(full_url).hostname)
-        kwargs.setdefault("timeout", self._timeout)
-        response = self.session.get(full_url, **kwargs)
+        response = self._get_geprueft(urljoin(self.source.base_url, url), **kwargs)
         response.raise_for_status()
         return response
+
+    def _get_geprueft(self, url: str, **kwargs) -> requests.Response:
+        """GET, das Weiterleitungen selbst verfolgt und **jedes** Ziel wie die Ausgangs-URL prüft
+        (Host-Freigabe, robots.txt, Pause). `requests` folgt Weiterleitungen sonst automatisch und
+        ungeprüft - eine manipulierte oder kompromittierte Quelle könnte den Scraper so per
+        `302 Location: http://intranet/...` auf beliebige, auch interne Adressen umlenken (SSRF)."""
+        kwargs.setdefault("timeout", self._timeout)
+        for _ in range(MAX_WEITERLEITUNGEN + 1):
+            self._check_host(url)
+            self._check_robots(url)
+            self._throttle(urlparse(url).hostname)
+            response = self.session.get(url, allow_redirects=False, **kwargs)
+            if not response.is_redirect:
+                return response
+            ziel = urljoin(url, response.headers["Location"])
+            response.close()
+            logger.debug("Weiterleitung %s -> %s", url, ziel)
+            url = ziel
+        raise DownloadError(f"Mehr als {MAX_WEITERLEITUNGEN} Weiterleitungen, abgebrochen bei {url}")
 
     # -- PDF-Download mit Cache ------------------------------------------------------------------
     def download_pdf(self, url: str, external_id: str) -> Path:
@@ -172,12 +190,8 @@ class HttpClient:
             return existing[0]
 
         full_url = urljoin(self.source.base_url, url)
-        self._check_host(full_url)
-        self._check_robots(full_url)
-        self._throttle(urlparse(full_url).hostname)
-
         max_bytes = self.settings.scraper.max_pdf_size_mb * 1024 * 1024
-        with self.session.get(full_url, timeout=self._timeout, stream=True) as response:
+        with self._get_geprueft(full_url, stream=True) as response:
             response.raise_for_status()
             content_type = response.headers.get("Content-Type", "")
             if "pdf" not in content_type.lower():

@@ -25,7 +25,9 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -44,6 +46,7 @@ _TRANSIENT_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
 # scheitern würden: Key ungültig, keine Berechtigung, Modellname falsch.
 _KONTO_STATUS = {401, 403, 404}
 _MAX_WARTEZEIT_SEKUNDEN = 60.0
+MAX_PDF_SEITEN = 1000
 
 
 # -- Domänenmodelle (Pydantic, per Tool-Use erzwungen und validiert) -----------------------------
@@ -149,6 +152,10 @@ def extract_pdf_text(path: Path) -> ExtrahiertesPdf:
     raten – OCR ist noch nicht angebunden."""
     pages: list[str] = []
     with pdfplumber.open(path) as pdf:
+        if len(pdf.pages) > MAX_PDF_SEITEN:
+            # Schutz gegen manipulierte PDFs, die mit zigtausend (leeren) Seiten CPU und Speicher
+            # binden. Echte Begründungen/Verträge liegen weit darunter.
+            raise ValueError(f"{path.name}: {len(pdf.pages)} Seiten, mehr als das Limit von {MAX_PDF_SEITEN}")
         for page in pdf.pages:
             pages.append((page.extract_text() or "").strip())
 
@@ -237,6 +244,10 @@ class LLMBudget:
     max_calls_per_run: int
     max_calls_per_source: int
     max_consecutive_errors: int = 5
+    # Restkontingent des Tages (llm.max_calls_per_day minus heute schon verbraucht) und ein Rückruf,
+    # der jede reservierte Anfrage dauerhaft verbucht (radar/scraper.py -> Datenbank).
+    tagesrest: int | None = None
+    bei_anfrage: Callable[[], None] | None = None
     gesperrt_grund: str | None = None
     input_tokens: int = 0
     output_tokens: int = 0
@@ -247,6 +258,8 @@ class LLMBudget:
     def reserve(self, quelle_id: str) -> bool:
         if self.ablehnungsgrund(quelle_id) is not None:
             return False
+        if self.bei_anfrage is not None:
+            self.bei_anfrage()  # zuerst verbuchen: scheitert das, wird auch nicht gesendet
         self._total += 1
         self._pro_quelle[quelle_id] = self._pro_quelle.get(quelle_id, 0) + 1
         return True
@@ -255,6 +268,8 @@ class LLMBudget:
         """Warum `reserve()` gerade ablehnen würde, oder `None`, solange noch Budget frei ist."""
         if self.gesperrt_grund is not None:
             return f"LLM-Notbremse aktiv: {self.gesperrt_grund}"
+        if self.tagesrest is not None and self._total >= self.tagesrest:
+            return "LLM-Tageslimit erreicht (llm.max_calls_per_day)"
         if self._total >= self.max_calls_per_run:
             return f"LLM-Budget pro Lauf erschöpft ({self.max_calls_per_run} Anfragen)"
         if self._pro_quelle.get(quelle_id, 0) >= self.max_calls_per_source:
@@ -474,6 +489,19 @@ def _call(
     raise AssertionError("unerreichbar: die Schleife endet immer mit return oder raise")
 
 
+# Öffnende/schließende Steuer-Tags des Prompts (`<dokument>`, `<fehler>`), auch mit Leerzeichen
+# oder in Großschreibung. Ein Dokument, das selbst "</dokument>" enthält, könnte sonst die
+# Datengrenze verlassen und eigene "Anweisungen" außerhalb davon platzieren (Prompt-Injection).
+_STEUER_TAG_RE = re.compile(r"<\s*/?\s*(dokument|fehler)\b", re.IGNORECASE)
+
+
+def _als_dokument(text: str) -> str:
+    """Dokumenttext als reine Daten in `<dokument>`-Tags verpacken; enthaltene Steuer-Tags werden
+    entschärft (`<` -> `&lt;`), der übrige Inhalt bleibt unverändert."""
+    entschaerft = _STEUER_TAG_RE.sub(lambda m: "&lt;" + m.group(0)[1:], text)
+    return f"<dokument>\n{entschaerft}\n</dokument>"
+
+
 def _log_usage(quelle_id: str, stufe: str, usage: object) -> None:
     logger.info(
         "LLM-Aufruf Quelle '%s' Stufe %s: %s input_tokens, %s output_tokens",
@@ -495,7 +523,7 @@ def triage(
         max_attempts=settings.llm.max_attempts_per_call,
         model=settings.llm.triage_model,
         system=system,
-        user_text=f"<dokument>\n{text}\n</dokument>",
+        user_text=_als_dokument(text),
         output_format=TriageErgebnis,
         max_tokens=200,
     )
@@ -511,7 +539,7 @@ def extract(
     auch das, wird `None` zurückgegeben und der Aufrufer loggt das als Fehler (CLAUDE.md:
     höchstens 1-2 Reparaturversuche, dann als "Fehler"). Jeder Versuch kostet eigenes Budget."""
     system = _load_prompt(settings, "extraction_system.md")
-    user_text = f"<dokument>\n{text}\n</dokument>"
+    user_text = _als_dokument(text)
 
     last_error: str | None = None
     for versuch in range(1, 3):

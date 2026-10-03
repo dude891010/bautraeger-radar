@@ -15,7 +15,8 @@ services:
     image: bautraeger-radar:latest
     restart: unless-stopped
     ports:
-      - "8501:8501"
+      # Nur auf dem Host selbst erreichbar (Reverse Proxy der IT davor), nicht im ganzen Netz.
+      - "127.0.0.1:8501:8501"
     env_file:
       - .env
     volumes:

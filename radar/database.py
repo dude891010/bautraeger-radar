@@ -152,7 +152,15 @@ _SCHEMA_V2 = """
 ALTER TABLE vorlagen ADD COLUMN analyse_fehlversuche INTEGER NOT NULL DEFAULT 0;
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2]
+# V3: LLM-Anfragen je Kalendertag über alle Läufe (llm.max_calls_per_day, radar/scraper.py).
+_SCHEMA_V3 = """
+CREATE TABLE llm_nutzung (
+    datum TEXT PRIMARY KEY,
+    anfragen INTEGER NOT NULL DEFAULT 0
+);
+"""
+
+_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -514,6 +522,25 @@ def speichere_analyse_ergebnis(
     )
     conn.commit()
     return projekt_id, ist_neu
+
+
+# -- LLM-Tagesverbrauch (llm.max_calls_per_day) ------------------------------------------------------
+
+
+def llm_anfragen_am(conn: sqlite3.Connection, datum: str) -> int:
+    row = conn.execute("SELECT anfragen FROM llm_nutzung WHERE datum = ?", (datum,)).fetchone()
+    return row["anfragen"] if row is not None else 0
+
+
+def zaehle_llm_anfrage(conn: sqlite3.Connection, datum: str) -> None:
+    """Eine gesendete LLM-Anfrage sofort festhalten (nicht erst am Laufende), damit auch ein
+    abgebrochener Lauf ehrlich zählt."""
+    conn.execute(
+        "INSERT INTO llm_nutzung (datum, anfragen) VALUES (?, 1) "
+        "ON CONFLICT(datum) DO UPDATE SET anfragen = anfragen + 1",
+        (datum,),
+    )
+    conn.commit()
 
 
 # -- Statuspflege (manuell, nie von einem Lauf überschrieben) ---------------------------------------
