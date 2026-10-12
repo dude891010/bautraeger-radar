@@ -12,6 +12,9 @@ plausibel ein solches Vorhaben behandelt.
 - **JA**: Der Text beschreibt erkennbar ein konkretes Neubauvorhaben mit Miet- und/oder
   öffentlich gefördertem Wohnungsbau (auch Sonderwohnformen wie Studierendenwohnen oder
   betreutes Wohnen zählen als JA, auch wenn unklar ist, ob sie am Ende relevant sind).
+  Ausdrücklich JA sind auch Bauanträge, Bauvoranfragen, Vorbescheide, Entscheidungen über das
+  gemeindliche Einvernehmen und erteilte Baugenehmigungen für Wohngebäude mit mehreren Wohnungen –
+  diese konkreten Vorhaben sind für den Vertrieb besonders wertvoll.
 - **NEIN**: Der Text behandelt erkennbar etwas anderes (z. B. reine Eigentumswohnungen,
   Gewerbe ohne Wohnnutzung, Garagen, Straßenbau, Haushaltsfragen, Personalangelegenheiten) und es
   gibt keinen Hinweis auf ein relevantes Wohnbauvorhaben.

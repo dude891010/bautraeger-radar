@@ -63,7 +63,8 @@ Ergänzung für die frühen Verfahrensstufen der 7 Hamburger Bezirksversammlunge
 über `Dokument.text`/`Textinhalt`) – alle vier verifiziert gegen echte Live-Antworten. PDF-Text/
 Keyword-Vorfilter/LLM-Triage- und -Extraktion (`radar/parser.py`, Pydantic-validiert, Budget + Cache), die
 SQLite-Persistenz mit zweistufiger Dedup und Statuspflege (`radar/database.py`) und ein
-Streamlit-Dashboard (`app.py`: Projekte filtern/bearbeiten, CSV-/Excel-Export, Quellen-Monitoring, Lauf
+Streamlit-Dashboard (`app.py`: Tab "Kurzfristige Leads" mit Baugenehmigungen/Bauanträgen ganz vorn,
+Projekte filtern/bearbeiten, CSV-/Excel-Export, Quellen-Monitoring, Lauf
 per Knopfdruck im Hintergrund). `radar/scraper.py` verdrahtet alles zu einem vollständigen Lauf
 (`run_full()`) – `python -m radar.scraper` führt ihn direkt aus, `streamlit run app.py` startet ihn per
 Knopf. Die einzige aktivierte Produktivquelle ist weiterhin Norderstedt; alle vier neu verifizierten

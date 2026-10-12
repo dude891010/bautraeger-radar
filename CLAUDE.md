@@ -190,7 +190,7 @@ wird.
   - `wohnform`: `MIETE | GEFOERDERT | EIGENTUM | GEMISCHT | SONDERWOHNFORM | UNKLAR`. Sonderwohnformen
     (Studierendenwohnen, betreutes Wohnen, Mikroapartments) nicht verwerfen, sondern markieren; ob sie
     relevant sind, entscheidet der Vertrieb.
-  - `verfahrensstand`: `VORBERATUNG | AUFSTELLUNGSBESCHLUSS | AUSLEGUNG | SATZUNGSBESCHLUSS | BAUGENEHMIGUNG | UNKLAR`
+  - `verfahrensstand`: `VORBERATUNG | AUFSTELLUNGSBESCHLUSS | AUSLEGUNG | SATZUNGSBESCHLUSS | BAUANTRAG | BAUGENEHMIGUNG | UNKLAR`
     (ein B-Plan-Aufstellungsbeschluss liegt oft Jahre vor dem Küchenbedarf, das Dashboard muss das zeigen).
   - `konfidenz` (0–1), `evidenz` (wörtliches Zitat ≤ 200 Zeichen, auf dem die WE-Zahl beruht) und `seite`.
 - Begriffe für geförderten Wohnraum sind regional verschieden (Förderweg, Drittelmix, Belegungsbindung,
@@ -507,6 +507,28 @@ wird.
    CSS) - können sich mit einem künftigen Streamlit-Update ändern. Manuell im Browser geprüft
    (Zoom-Screenshot der Sidebar, kein Überlappen mit "Demo-Modus" darunter). 3 neue Tests, 260
    insgesamt.
+   **Nachträglich ergänzt (12.10.2026, Kundenfeedback Hummel): Kurzfristige Leads.** Der Kunde
+   bemängelte, dass reine B-Plan-Aufstellungsbeschlüsse zeitlich zu weit vor dem Küchenbedarf
+   liegen; konkrete Baugenehmigungen/Bauanträge sind ihm wichtiger. Ist-Zustand vorher: Enum
+   `BAUGENEHMIGUNG` existierte, aber ohne Definition im Prompt, kein Stand für Bauanträge, keine
+   Vorfilter-Keywords dafür (eine Bauantrags-Vorlage ohne "Wohnung"/"Wohneinheit" scheiterte
+   schon an Stufe 1), keine Hervorhebung im Dashboard. Umgesetzt:
+   - `Verfahrensstand.BAUANTRAG` (`radar/parser.py`, DB speichert TEXT - keine Migration nötig);
+     Extraktions-Prompt definiert `BAUANTRAG`/`BAUGENEHMIGUNG` gegenüber Bauleitplanung,
+     Triage-Prompt wertet Bauanträge/Einvernehmen/Genehmigungen für Wohngebäude ausdrücklich als JA.
+   - `prefilter_keywords` um Baugenehmigung, Bauantr(ag/äge), Bauvoranfrage, Vorbescheid,
+     Einvernehmen, Wohngebäude, Baubeginn ergänzt; Ausschussmuster um `bauausschuss` (Komposita).
+   - `app.py`: `add_lead_badge()`/`kurzfristige_leads()` (pure, getestet) - 🟢 Baugenehmigung,
+     🔵 Bauantrag, 🔎 Hinweis im Text (nur bei Stand UNKLAR/VORBERATUNG, wenn Kurzfassung/Evidenz/
+     Zeitraum Baugenehmigung/Bauantrag nennt - bei B-Plan-Verfahren bewusst nicht). Eigener,
+     **erster** Tab "Kurzfristige Leads" (unabhängig von Sidebar-Filtern, ohne Archivierte,
+     sortiert Genehmigung > Bauantrag > Hinweis, dann WE absteigend), farbige Zeilen, Excel-Export,
+     fünfte KPI-Kachel, `lead`-Spalte auch im Projekt-Editor und in CSV/Excel.
+   - Demo: Bad Oldesloe (Bauausschuss) ist jetzt ein Bauantrag. Bestehende `data/demo/demo.db`
+     zeigt das erst nach "Demo-Daten zurücksetzen".
+   - **Offen:** Prompt-Änderung noch nicht gegen den Goldstandard gemessen (kein API-Guthaben);
+     Neuer Goldfall `sh-bauantrag-einvernehmen` (erwartet `BAUANTRAG`) wartet auf diese Messung.
+
 6. 🟡 Weitere Adapter.
    - `radar/sources/oparl.py` fertig implementiert und gegen die echte, öffentliche OParl-1.1-API
      der Gemeinde Uplengen (Niedersachsen, STERNBERG SD.NET RIM) live verifiziert:

@@ -47,7 +47,17 @@ Küchenhersteller im B2B-Objektgeschäft (Norddeutschland: SH, HH, NI, HB, MV, s
   Wohnen/Mikroapartments (nicht verwerfen, nur markieren – die Relevanz entscheidet der Vertrieb).
   `UNKLAR`, wenn aus dem Text nicht hervorgeht, welche Wohnform vorliegt.
 - `verfahrensstand`: einer von `VORBERATUNG`, `AUFSTELLUNGSBESCHLUSS`, `AUSLEGUNG`,
-  `SATZUNGSBESCHLUSS`, `BAUGENEHMIGUNG`, `UNKLAR`.
+  `SATZUNGSBESCHLUSS`, `BAUANTRAG`, `BAUGENEHMIGUNG`, `UNKLAR`. Für den Vertrieb ist die
+  Unterscheidung zwischen Bauleitplanung und konkretem Bauvorhaben besonders wichtig:
+  - `BAUGENEHMIGUNG`: Der Text sagt ausdrücklich, dass eine Baugenehmigung erteilt wurde bzw.
+    vorliegt, oder dass mit dem Bau bereits begonnen wurde.
+  - `BAUANTRAG`: Es liegt ein konkreter Bauantrag, eine Bauvoranfrage oder ein Antrag auf
+    Vorbescheid für ein bestimmtes Gebäude vor – typisch: das Gremium entscheidet über das
+    gemeindliche Einvernehmen (§ 36 BauGB), über eine Befreiung/Ausnahme oder nimmt den Bauantrag
+    zur Kenntnis. Eine Genehmigung ist (noch) nicht erwähnt.
+  - `AUFSTELLUNGSBESCHLUSS`/`AUSLEGUNG`/`SATZUNGSBESCHLUSS`: Bebauungsplan-Verfahren
+    (Bauleitplanung), auch wenn darin von späteren Bauanträgen die Rede ist.
+  Nur wählen, was der Text belegt; im Zweifel `UNKLAR`.
 - `konfidenz`: deine Sicherheit (0–1), dass es sich um ein relevantes Miet-/gefördertes
   Wohnbauvorhaben ab der Mindestgröße handelt. Niedrig ansetzen, wenn `we_gesamt`, `we_miete` und
   `we_gefoerdert_anzahl`/`we_gefoerdert` alle `null`/`UNKLAR` sind – das Projekt wird trotzdem nicht

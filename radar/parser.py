@@ -66,6 +66,9 @@ class Verfahrensstand(StrEnum):
     AUFSTELLUNGSBESCHLUSS = "AUFSTELLUNGSBESCHLUSS"
     AUSLEGUNG = "AUSLEGUNG"
     SATZUNGSBESCHLUSS = "SATZUNGSBESCHLUSS"
+    # Konkreter Bauantrag/Bauvoranfrage (z. B. gemeindliches Einvernehmen nach § 36 BauGB im
+    # Bauausschuss) - zeitlich deutlich näher am Küchenbedarf als ein B-Plan-Verfahren.
+    BAUANTRAG = "BAUANTRAG"
     BAUGENEHMIGUNG = "BAUGENEHMIGUNG"
     UNKLAR = "UNKLAR"
 

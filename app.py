@@ -122,6 +122,17 @@ div[data-testid="stAlert"] {
     border-left: 4px solid var(--hummel-orange);
 }
 
+/* Lead-Badges (Legende im Tab "Kurzfristige Leads") */
+.lead-badge {
+    display: inline-block;
+    padding: 0.15rem 0.65rem;
+    margin-right: 0.4rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(43, 35, 29, 0.15);
+}
+
 /* Hummel-Logo oben in der Sidebar größer als Streamlits größte eingebaute Stufe (st.logo(...,
    size="large") rendert nur 32px hoch) - `stSidebarLogo`/`stSidebarHeader` sind keine offiziell
    dokumentierten testids, sondern am 21.09.2026 live im DOM verifiziert (können sich mit einem
@@ -166,7 +177,7 @@ def compute_kpis(df: pd.DataFrame) -> dict[str, int | None]:
     mangels Daten nicht gebildet werden kann (CLAUDE.md: nicht raten/hochrechnen) - die
     Oberfläche zeigt dafür "–" statt einer irreführenden Null."""
     if df.empty:
-        return {"projekte": 0, "we_gesamt": None, "we_gefoerdert": None, "offen": 0}
+        return {"projekte": 0, "we_gesamt": None, "we_gefoerdert": None, "offen": 0, "leads": 0}
 
     def _summe(spalte: str) -> int | None:
         werte = df[spalte].dropna() if spalte in df.columns else pd.Series(dtype="Int64")
@@ -178,6 +189,7 @@ def compute_kpis(df: pd.DataFrame) -> dict[str, int | None]:
         "we_gesamt": _summe("we_gesamt"),
         "we_gefoerdert": _summe("we_gefoerdert_anzahl"),
         "offen": offen,
+        "leads": len(kurzfristige_leads(df)),
     }
 
 
@@ -284,6 +296,98 @@ def _row_highlight(row: pd.Series) -> list[str]:
     unsichere Fälle (siehe `add_pruef_badge()`) bekommen einen dezenten Warn-Hintergrund."""
     stil = f"background-color: {PRUEF_HIGHLIGHT_FARBE}" if row.get("pruefen") == PRUEF_BADGE else ""
     return [stil] * len(row)
+
+
+# -- Kurzfristige Leads (Kundenfeedback Hummel, 10/2026) -------------------------------------------
+# Ein B-Plan-Aufstellungsbeschluss liegt oft Jahre vor dem Küchenbedarf; Bauanträge und erteilte
+# Baugenehmigungen sind dagegen konkret und zeitnah. Diese Projekte stehen deshalb in einem
+# eigenen, zuerst angezeigten Tab - ohne dass der Vertrieb erst filtern muss.
+LEAD_BADGE_GENEHMIGUNG = "🟢 Baugenehmigung"
+LEAD_BADGE_BAUANTRAG = "🔵 Bauantrag"
+LEAD_BADGE_HINWEIS = "🔎 Hinweis im Text"
+LEAD_FARBEN = {
+    LEAD_BADGE_GENEHMIGUNG: "#DFF3E4",
+    LEAD_BADGE_BAUANTRAG: "#E1ECFA",
+    LEAD_BADGE_HINWEIS: "#F4F0E8",
+}
+# Reihenfolge = Priorität in der Lead-Tabelle (Genehmigung ist am nächsten am Küchenbedarf).
+LEAD_PRIORITAET = {LEAD_BADGE_GENEHMIGUNG: 0, LEAD_BADGE_BAUANTRAG: 1, LEAD_BADGE_HINWEIS: 2}
+
+# Das LLM ordnet den Verfahrensstand nicht immer eindeutig zu. Nennt die Extraktion bei
+# unklarem/frühem Stand trotzdem eine Baugenehmigung oder einen Bauantrag, ist das ein Hinweis,
+# kein gesicherter Lead (deshalb eigenes Badge). Bei B-Plan-Verfahren bewusst NICHT angewendet:
+# dort ist "spätere Bauanträge ..." Normalfall und kein kurzfristiges Signal.
+LEAD_HINWEIS_STAENDE = {"UNKLAR", "VORBERATUNG"}
+LEAD_HINWEIS_BEGRIFFE = ["baugenehmigung", "bauantr", "bauvoranfrage", "vorbescheid", "einvernehmen"]
+LEAD_HINWEIS_SPALTEN = ["ausfuehrungszeitraum", "kurzfassung", "evidenz", "projektbezeichnung"]
+
+LEAD_SPALTEN = [
+    "lead",
+    "projektbezeichnung",
+    "strasse",
+    "hausnummer",
+    "ort",
+    "bundesland",
+    "we_gesamt",
+    "we_miete",
+    "we_gefoerdert_anzahl",
+    "ausfuehrungszeitraum",
+    "antragsteller",
+    "kurzfassung",
+    "pruefen",
+    "status",
+]
+
+
+def add_lead_badge(df: pd.DataFrame) -> pd.DataFrame:
+    """Ergänzt die Spalte `lead`: `LEAD_BADGE_GENEHMIGUNG`/`LEAD_BADGE_BAUANTRAG` nach dem
+    extrahierten `verfahrensstand`, `LEAD_BADGE_HINWEIS`, wenn bei unklarem/frühem Stand die
+    Textfelder auf ein konkretes Bauvorhaben hindeuten (siehe `LEAD_HINWEIS_STAENDE`), sonst "".
+    `fillna("")` aus demselben Grund wie in `apply_search()` (pandas-NaN in Objekt-Spalten)."""
+    if df.empty:
+        return df
+    df = df.copy()
+    stand = df["verfahrensstand"].fillna("UNKLAR") if "verfahrensstand" in df.columns else pd.Series(
+        "UNKLAR", index=df.index
+    )
+    text = pd.Series("", index=df.index)
+    for spalte in LEAD_HINWEIS_SPALTEN:
+        if spalte in df.columns:
+            text = text + " " + df[spalte].fillna("").astype(str).str.lower()
+    hinweis = text.apply(lambda t: any(begriff in t for begriff in LEAD_HINWEIS_BEGRIFFE))
+
+    df["lead"] = ""
+    df.loc[stand.isin(LEAD_HINWEIS_STAENDE) & hinweis, "lead"] = LEAD_BADGE_HINWEIS
+    df.loc[stand == "BAUANTRAG", "lead"] = LEAD_BADGE_BAUANTRAG
+    df.loc[stand == "BAUGENEHMIGUNG", "lead"] = LEAD_BADGE_GENEHMIGUNG
+    return df
+
+
+def kurzfristige_leads(df: pd.DataFrame) -> pd.DataFrame:
+    """Nur Projekte mit Lead-Badge, sortiert nach Priorität (Genehmigung vor Bauantrag vor
+    Hinweis), innerhalb gleicher Priorität nach WE-Zahl absteigend (größere Objekte zuerst,
+    unbekannte WE-Zahl zuletzt statt verworfen). Archivierte Projekte bleiben draußen - die hat
+    der Vertrieb bewusst abgelegt."""
+    if df.empty or "lead" not in df.columns:
+        return df.iloc[0:0]
+    leads = df[df["lead"] != ""]
+    if "status" in leads.columns:
+        leads = leads[leads["status"] != "Archiviert"]
+    leads = leads.assign(_prio=leads["lead"].map(LEAD_PRIORITAET))
+    sortierung = ["_prio"] + (["we_gesamt"] if "we_gesamt" in leads.columns else [])
+    leads = leads.sort_values(sortierung, ascending=[True] + [False] * (len(sortierung) - 1), na_position="last")
+    return leads.drop(columns="_prio")
+
+
+def lead_view(df: pd.DataFrame) -> pd.DataFrame:
+    """Spaltenauswahl für die Lead-Tabelle - kompakter als `export_view()`, Badge vorne."""
+    return df[[s for s in LEAD_SPALTEN if s in df.columns]]
+
+
+def _lead_highlight(row: pd.Series) -> list[str]:
+    """Zeilenfarbe je Lead-Badge (per `Styler.apply(..., axis=1)`), passend zum Badge-Symbol."""
+    farbe = LEAD_FARBEN.get(row.get("lead"))
+    return [f"background-color: {farbe}" if farbe else ""] * len(row)
 
 
 # Spalten, die die Freitextsuche durchsucht - alles, worüber der Vertrieb erfahrungsgemäß sucht
@@ -393,6 +497,7 @@ EXPORT_SPALTEN = [
     "kurzfassung",
     "wohnform",
     "verfahrensstand",
+    "lead",
     "konfidenz",
     "pruefen",
     "status",
@@ -656,11 +761,11 @@ def main() -> None:
         quellen_rows = database.list_quellen(conn)
 
     df = build_projekte_df(projekte_rows, tier_by_quelle)
-    df = add_pruef_badge(df)
+    df = add_lead_badge(add_pruef_badge(df))
 
+    kpis = compute_kpis(df)
     if not df.empty:
-        kpis = compute_kpis(df)
-        kpi_cols = st.columns(4, gap="medium")
+        kpi_cols = st.columns(5, gap="medium")
         kpi_cols[0].metric("Projekte", kpis["projekte"])
         kpi_cols[1].metric(
             "Wohneinheiten gesamt", kpis["we_gesamt"] if kpis["we_gesamt"] is not None else "–"
@@ -669,8 +774,69 @@ def main() -> None:
             "davon gefördert", kpis["we_gefoerdert"] if kpis["we_gefoerdert"] is not None else "–"
         )
         kpi_cols[3].metric("Offen (Neu / In Prüfung)", kpis["offen"])
+        kpi_cols[4].metric(
+            "Kurzfristige Leads",
+            kpis["leads"],
+            help="Baugenehmigungen und Bauanträge - siehe Tab 'Kurzfristige Leads'.",
+        )
 
-    tab_projekte, tab_diagramme, tab_quellen = st.tabs(["Projekte", "Diagramme", "Quellen-Monitoring"])
+    # "Kurzfristige Leads" bewusst als ERSTER Tab (Streamlit öffnet immer den ersten): der
+    # Vertrieb sieht konkrete Bauvorhaben sofort, ohne zu filtern (Kundenfeedback Hummel, 10/2026).
+    tab_leads, tab_projekte, tab_diagramme, tab_quellen = st.tabs(
+        [f"🏗️ Kurzfristige Leads ({kpis['leads']})", "Projekte", "Diagramme", "Quellen-Monitoring"]
+    )
+
+    with tab_leads:
+        if demo_modus:
+            st.info("Demo-Modus: Es werden synthetische Beispielprojekte angezeigt, keine echten Daten.")
+        st.subheader("Konkrete Baugenehmigungen & Bauanträge")
+        st.markdown(
+            "".join(
+                f'<span class="lead-badge" style="background:{LEAD_FARBEN[b]}">{b}</span>'
+                for b in (LEAD_BADGE_GENEHMIGUNG, LEAD_BADGE_BAUANTRAG, LEAD_BADGE_HINWEIS)
+            ),
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Projekte mit erteilter Baugenehmigung oder vorliegendem Bauantrag - zeitlich am "
+            "nächsten am Küchenbedarf. 'Hinweis im Text': Verfahrensstand unklar, die Unterlagen "
+            "erwähnen aber Baugenehmigung/Bauantrag - bitte prüfen. Zeigt alle Projekte "
+            "unabhängig von den Filtern links (ohne archivierte)."
+        )
+        leads = kurzfristige_leads(df)
+        if leads.empty:
+            st.info(
+                "Aktuell keine Baugenehmigungen oder Bauanträge erkannt. Bebauungsplan-Verfahren "
+                "stehen weiterhin im Tab 'Projekte'."
+            )
+        else:
+            st.dataframe(
+                lead_view(leads).style.apply(_lead_highlight, axis=1),
+                column_config={
+                    "lead": st.column_config.TextColumn("Stand", width="medium"),
+                    "projektbezeichnung": "Projekt",
+                    "strasse": "Straße",
+                    "hausnummer": "Nr.",
+                    "ort": "Ort",
+                    "bundesland": "BL",
+                    "we_gesamt": "WE gesamt",
+                    "we_miete": "Miet-WE",
+                    "we_gefoerdert_anzahl": "geförderte WE",
+                    "ausfuehrungszeitraum": "Baubeginn/Zeitraum",
+                    "antragsteller": "Bauherr/Antragsteller",
+                    "kurzfassung": "Kurzfassung",
+                    "pruefen": st.column_config.TextColumn("⚠"),
+                    "status": "Status",
+                },
+                hide_index=True,
+                use_container_width=True,
+            )
+            st.download_button(
+                "Leads als Excel herunterladen",
+                data=to_excel_bytes(export_view(leads)),
+                file_name="kurzfristige_leads.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
 
     with tab_diagramme:
         if df.empty:
@@ -722,11 +888,16 @@ def main() -> None:
                     "unklarer Wohnform - bitte prüfen."
                 )
 
-            bearbeitbar = gefiltert[["id", "pruefen", "projektbezeichnung", "ort", "we_gesamt", "status", "notizen"]]
+            bearbeitbar = gefiltert[
+                ["id", "lead", "pruefen", "projektbezeichnung", "ort", "we_gesamt", "status", "notizen"]
+            ]
             bearbeitet = st.data_editor(
                 bearbeitbar,
-                disabled=["id", "pruefen", "projektbezeichnung", "ort", "we_gesamt"],
+                disabled=["id", "lead", "pruefen", "projektbezeichnung", "ort", "we_gesamt"],
                 column_config={
+                    "lead": st.column_config.TextColumn(
+                        "Lead", help="Baugenehmigung/Bauantrag - siehe Tab 'Kurzfristige Leads'."
+                    ),
                     "pruefen": st.column_config.TextColumn(
                         "⚠", help="Geringe Konfidenz oder unklare Wohnform - bitte prüfen."
                     ),

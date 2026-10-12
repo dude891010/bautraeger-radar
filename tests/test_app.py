@@ -13,11 +13,17 @@ from app import (
     HUMMEL_CSS,
     HUMMEL_ORANGE,
     HUMMEL_ORANGE_DARK,
+    LEAD_BADGE_BAUANTRAG,
+    LEAD_BADGE_GENEHMIGUNG,
+    LEAD_BADGE_HINWEIS,
+    LEAD_FARBEN,
     PRUEF_BADGE,
     PRUEF_HIGHLIGHT_FARBE,
+    _lead_highlight,
     _pdf_safe,
     _row_highlight,
     _scrape_command,
+    add_lead_badge,
     add_pruef_badge,
     apply_filters,
     apply_search,
@@ -27,6 +33,8 @@ from app import (
     compute_kpis,
     export_view,
     find_changed_rows,
+    kurzfristige_leads,
+    lead_view,
     projekte_je_status,
     to_csv_bytes,
     to_excel_bytes,
@@ -314,7 +322,7 @@ def test_to_pdf_bytes_does_not_crash_on_unencodable_characters():
 
 def test_compute_kpis_empty_df_returns_zero_projects_and_none_sums():
     kpis = compute_kpis(pd.DataFrame())
-    assert kpis == {"projekte": 0, "we_gesamt": None, "we_gefoerdert": None, "offen": 0}
+    assert kpis == {"projekte": 0, "we_gesamt": None, "we_gefoerdert": None, "offen": 0, "leads": 0}
 
 
 def test_compute_kpis_sums_we_and_counts_offen_status():
@@ -327,7 +335,7 @@ def test_compute_kpis_sums_we_and_counts_offen_status():
         tier_by_quelle={},
     )
     kpis = compute_kpis(df)
-    assert kpis == {"projekte": 3, "we_gesamt": 60, "we_gefoerdert": 20, "offen": 2}
+    assert kpis == {"projekte": 3, "we_gesamt": 60, "we_gefoerdert": 20, "offen": 2, "leads": 0}
 
 
 def test_compute_kpis_none_when_column_entirely_unknown():
@@ -511,3 +519,75 @@ def test_hummel_css_reduces_sidebar_header_spacing_around_logo():
     header_regel = HUMMEL_CSS.split('div[data-testid="stSidebarHeader"]')[1].split("}")[0]
     margin_bottom_px = int(header_regel.split("margin-bottom:")[1].split("px")[0].strip())
     assert margin_bottom_px < 16
+
+
+# -- Kurzfristige Leads (Baugenehmigung/Bauantrag) ------------------------------------------------
+
+
+def _lead_df(*rows):
+    return add_lead_badge(build_projekte_df(list(rows), tier_by_quelle={"norderstedt": "A"}))
+
+
+def test_add_lead_badge_by_verfahrensstand():
+    df = _lead_df(
+        _row(id=1, verfahrensstand="BAUGENEHMIGUNG"),
+        _row(id=2, verfahrensstand="BAUANTRAG"),
+        _row(id=3, verfahrensstand="AUFSTELLUNGSBESCHLUSS"),
+    )
+    assert list(df["lead"]) == [LEAD_BADGE_GENEHMIGUNG, LEAD_BADGE_BAUANTRAG, ""]
+
+
+def test_add_lead_badge_text_hint_only_for_unclear_or_early_stage():
+    """Ein Hinweis im Text zählt nur bei unklarem/frühem Stand - in einem B-Plan-Verfahren ist
+    "spätere Bauanträge" Normalfall und kein kurzfristiges Signal."""
+    df = _lead_df(
+        _row(id=1, verfahrensstand="UNKLAR", kurzfassung="Bauantrag für 3 Mehrfamilienhäuser liegt vor."),
+        _row(id=2, verfahrensstand="VORBERATUNG", ausfuehrungszeitraum="nach Erteilung der Baugenehmigung"),
+        _row(id=3, verfahrensstand="AUFSTELLUNGSBESCHLUSS", kurzfassung="Spätere Bauanträge sind möglich."),
+        _row(id=4, verfahrensstand="UNKLAR", kurzfassung=None),
+    )
+    assert list(df["lead"]) == [LEAD_BADGE_HINWEIS, LEAD_BADGE_HINWEIS, "", ""]
+
+
+def test_add_lead_badge_empty_frame():
+    assert add_lead_badge(pd.DataFrame()).empty
+
+
+def test_kurzfristige_leads_sorted_by_priority_then_size_and_without_archived():
+    df = _lead_df(
+        _row(id=1, verfahrensstand="UNKLAR", kurzfassung="Bauvoranfrage", we_gesamt=200),
+        _row(id=2, verfahrensstand="BAUANTRAG", we_gesamt=40),
+        _row(id=3, verfahrensstand="BAUGENEHMIGUNG", we_gesamt=None),
+        _row(id=4, verfahrensstand="BAUGENEHMIGUNG", we_gesamt=12),
+        _row(id=5, verfahrensstand="BAUGENEHMIGUNG", we_gesamt=99, status="Archiviert"),
+        _row(id=6, verfahrensstand="SATZUNGSBESCHLUSS", we_gesamt=500),
+    )
+    leads = kurzfristige_leads(df)
+    assert list(leads["id"]) == [4, 3, 2, 1]
+    assert "_prio" not in leads.columns
+
+
+def test_kurzfristige_leads_empty_without_lead_column():
+    assert kurzfristige_leads(pd.DataFrame()).empty
+
+
+def test_lead_view_puts_badge_first():
+    df = _lead_df(_row(id=1, verfahrensstand="BAUGENEHMIGUNG"))
+    assert list(lead_view(df).columns)[0] == "lead"
+
+
+def test_lead_highlight_colors_by_badge():
+    zeile = pd.Series({"lead": LEAD_BADGE_BAUANTRAG, "ort": "X"})
+    assert zeile.pipe(_lead_highlight) == [f"background-color: {LEAD_FARBEN[LEAD_BADGE_BAUANTRAG]}"] * 2
+    assert _lead_highlight(pd.Series({"lead": "", "ort": "X"})) == ["", ""]
+
+
+def test_compute_kpis_counts_leads():
+    df = _lead_df(_row(id=1, verfahrensstand="BAUGENEHMIGUNG"), _row(id=2, verfahrensstand="AUSLEGUNG"))
+    assert compute_kpis(df)["leads"] == 1
+    assert compute_kpis(pd.DataFrame())["leads"] == 0
+
+
+def test_export_view_contains_lead_column():
+    df = _lead_df(_row(id=1, verfahrensstand="BAUANTRAG"))
+    assert export_view(df).loc[0, "lead"] == LEAD_BADGE_BAUANTRAG

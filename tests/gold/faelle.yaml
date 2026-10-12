@@ -190,3 +190,20 @@ faelle:
       verfahrensstand: AUFSTELLUNGSBESCHLUSS
       we_gesamt: 50
       unklar: false
+
+  - id: sh-bauantrag-einvernehmen
+    bundesland: SH
+    beschreibung: "Konkreter Bauantrag (gemeindliches Einvernehmen), noch keine Genehmigung"
+    seiten:
+      - >
+        Bauausschuss Ahrensburg, Vorlage 2026/118. Bauantrag der Stormarn Wohnen eG zur Errichtung
+        von zwei Mehrfamilienhäusern mit insgesamt 24 Mietwohnungen, davon 8 öffentlich gefördert
+        (1. Förderweg), Lohe 14, 22926 Ahrensburg. Der Ausschuss beschließt, das gemeindliche
+        Einvernehmen nach § 36 BauGB zu erteilen. Die Bauaufsicht entscheidet anschließend über die
+        Baugenehmigung.
+    erwartet:
+      relevant: true
+      verfahrensstand: BAUANTRAG
+      we_gesamt: 24
+      we_miete: 24
+      unklar: false

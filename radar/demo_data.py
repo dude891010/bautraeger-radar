@@ -332,12 +332,12 @@ _PROJEKTE: list[dict] = [
         ausfuehrungszeitraum=None,
         antragsteller=None,
         kurzfassung=(
-            "Kurzer Hinweis auf ein Wohnbauvorhaben in der Beschlussvorlage; genaue Aufteilung "
-            "Miete/Eigentum und Förderanteil aus dem Text nicht sicher zu entnehmen - zur "
-            "Prüfung markiert."
+            "Bauantrag für ein Mehrfamilienhaus, der Ausschuss entscheidet über das gemeindliche "
+            "Einvernehmen; genaue Aufteilung Miete/Eigentum und Förderanteil aus dem Text nicht "
+            "sicher zu entnehmen - zur Prüfung markiert."
         ),
         wohnform=Wohnform.UNKLAR,
-        verfahrensstand=Verfahrensstand.VORBERATUNG,
+        verfahrensstand=Verfahrensstand.BAUANTRAG,
         konfidenz=0.35,
         evidenz="Es sollen ca. 12 Wohneinheiten entstehen; weitere Angaben liegen nicht vor.",
         seite=1,

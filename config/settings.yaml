@@ -47,6 +47,7 @@ filters:
     - "planung"
     - "wohnungsbau"
     - "\\bbau(en|ausschuss|angelegenheiten)?\\b"
+    - "bauausschuss"                 # auch Komposita wie "Hochbauausschuss", "Planungs-/Bauausschuss"
 
   prefilter_keywords:                # Stufe 1 (ohne LLM): nur Vorlagen mit Treffer gehen ans LLM
     - "Wohneinheit"
@@ -71,6 +72,16 @@ filters:
     - "Studierendenwohnen"
     - "betreutes Wohnen"
     - "Mikroapartment"
+    # Konkrete Bauvorhaben (Kundenwunsch Hummel, 10/2026: Baugenehmigungen/Bauanträge sind
+    # kurzfristige Leads, B-Plan-Aufstellungsbeschlüsse liegen oft Jahre vor dem Küchenbedarf).
+    # Teilstring-Vergleich ohne Groß-/Kleinschreibung: "Bauantr" trifft auch "Bauanträge".
+    - "Baugenehmigung"
+    - "Bauantr"
+    - "Bauvoranfrage"
+    - "Vorbescheid"
+    - "Einvernehmen"                 # gemeindliches Einvernehmen nach § 36 BauGB
+    - "Wohngebäude"
+    - "Baubeginn"
 
 llm:
   provider: "anthropic"
