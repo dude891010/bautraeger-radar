@@ -51,8 +51,8 @@ schreibt frei erfundene, mit „(Demo)“ markierte Beispielfunde in die Demo-Da
 sichtbar mit „Demo-Daten anzeigen“. `--test` ohne Key weicht automatisch darauf aus. Demo-Daten landen
 nie in `data/radar.db` und werden nie per E-Mail verschickt. Einzige echte Ausnahme: das mit ⭐
 markierte, an zwei Quellen geprüfte Instone-Projekt „Nordlicht“ (Norderstedt, 198 WE, Baubeginn).
-Reine Eigentumsprojekte erscheinen in der Web-Recherche ab 12 WE (`eigentum_min_we` in
-`config/web_recherche.yaml`).
+Reine Eigentumsprojekte zählen ab 12 WE – in der Web-Recherche und in den Ratsunterlagen
+(`filters.eigentum_min_we` in `config/settings.yaml`, eine Grenze für beide).
 
 ## Struktur
 

@@ -9,7 +9,8 @@
 # Jeder Fall: `seiten` (Liste von Seitentexten, wie extract_pdf_text sie liefern würde) und
 # `erwartet`:
 #   relevant: true  -> Pipeline soll bis zur Extraktion durchlaufen (RELEVANT, auch wenn unklar)
-#   relevant: false -> Pipeline soll vorher abbrechen (Stufe 1 oder Triage NEIN)
+#   relevant: false -> Pipeline soll vorher abbrechen (Stufe 1, Triage NEIN oder Projektfilter
+#                      nach der Extraktion, z. B. kleines reines Eigentumsprojekt)
 #   weitere Felder nur, wenn relevant: true (Vergleich gegen ProjektExtraktion)
 
 faelle:
@@ -119,7 +120,7 @@ faelle:
 
   - id: sh-eigentumswohnungen
     bundesland: SH
-    beschreibung: "Negativfall: reine Eigentumswohnungen, ausgeschlossen"
+    beschreibung: "Negativfall: kleines reines Eigentumsprojekt (8 WE < filters.eigentum_min_we)"
     seiten:
       - >
         Ausschuss für Stadtentwicklung und Verkehr, Vorlage B 26/0512. Ein privater Bauträger
@@ -128,6 +129,22 @@ faelle:
         Bauantrag wurde genehmigt.
     erwartet:
       relevant: false
+
+  - id: sh-etw-quartier
+    bundesland: SH
+    beschreibung: "Großes reines Eigentumsprojekt (ab filters.eigentum_min_we relevant, Kundenwunsch 10/2026)"
+    seiten:
+      - >
+        Bauausschuss, Vorlage B 26/0731. Antrag auf Erteilung des gemeindlichen Einvernehmens nach
+        § 36 BauGB. Die Vorhabenträgerin Elbstrand Projektentwicklung GmbH plant am Lindenring 4-10
+        ein Wohnquartier mit 64 Eigentumswohnungen in vier Mehrfamilienhäusern. Eine Vermietung oder
+        öffentliche Förderung ist nicht vorgesehen. Die Baugenehmigung wurde am 14.09.2026 erteilt.
+    erwartet:
+      relevant: true
+      wohnform: EIGENTUM
+      verfahrensstand: BAUGENEHMIGUNG
+      we_gesamt: 64
+      unklar: false
 
   - id: hh-gewerbe
     bundesland: HH

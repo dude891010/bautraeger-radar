@@ -575,6 +575,35 @@ def extract(
     return None
 
 
+# -- Fachliche Projektfilter (nach der Extraktion, ohne LLM) ----------------------------------------
+
+
+def ist_kleines_eigentumsprojekt(extraktion: ProjektExtraktion, eigentum_min_we: int) -> bool:
+    """Reines Eigentumsprojekt mit ausdrücklich weniger als `eigentum_min_we` WE (Kundenwunsch Hummel,
+    10/2026: ETW nicht pauschal ausschließen, Großprojekte sind B2B-relevant). Genau `eigentum_min_we`
+    zählt mit; ohne WE-Zahl wird nichts verworfen (CLAUDE.md: unklare Fälle nie stillschweigend
+    verwerfen) - das Projekt bleibt und wird im Dashboard als "prüfen" markiert."""
+    return (
+        extraktion.wohnform is Wohnform.EIGENTUM
+        and extraktion.we_gesamt is not None
+        and extraktion.we_gesamt < eigentum_min_we
+    )
+
+
+def _wende_projektfilter_an(ergebnis: AnalyseErgebnis, settings: Settings) -> AnalyseErgebnis:
+    extraktion = ergebnis.extraktion
+    if extraktion is not None and ist_kleines_eigentumsprojekt(extraktion, settings.filters.eigentum_min_we):
+        return AnalyseErgebnis(
+            status=AnalyseStatus.NICHT_RELEVANT,
+            grund=(
+                f"reines Eigentumsprojekt mit {extraktion.we_gesamt} WE "
+                f"(unter filters.eigentum_min_we = {settings.filters.eigentum_min_we})"
+            ),
+            aus_cache=ergebnis.aus_cache,
+        )
+    return ergebnis
+
+
 # -- Haupteinstieg ------------------------------------------------------------------------------
 
 
@@ -599,7 +628,9 @@ def analyze_documents(
     cache_key = documents_cache_key(quellen)
     cached = cache.get(cache_key)
     if cached is not None:
-        return AnalyseErgebnis(status=AnalyseStatus.RELEVANT, extraktion=cached, aus_cache=True)
+        return _wende_projektfilter_an(
+            AnalyseErgebnis(status=AnalyseStatus.RELEVANT, extraktion=cached, aus_cache=True), settings
+        )
 
     try:
         extrahiert = [_lade_text(q) for q in quellen]
@@ -639,5 +670,5 @@ def analyze_documents(
     if extraktion is None:
         return AnalyseErgebnis(status=AnalyseStatus.FEHLER, grund="Extraktion nach Reparaturversuchen ungültig")
 
-    cache.set(cache_key, extraktion)
-    return AnalyseErgebnis(status=AnalyseStatus.RELEVANT, extraktion=extraktion)
+    cache.set(cache_key, extraktion)  # ungefiltert cachen: eine geänderte Grenze braucht keinen neuen LLM-Aufruf
+    return _wende_projektfilter_an(AnalyseErgebnis(status=AnalyseStatus.RELEVANT, extraktion=extraktion), settings)

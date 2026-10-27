@@ -34,7 +34,11 @@ scraper:
 filters:
   min_units: 6                       # Schwelle für Miet-/geförderte Wohneinheiten (pro Region/Quelle überschreibbar)
   count_basis: "rental_or_subsidized"  # Mischprojekte zählen, wenn Miet-/geförderte WE >= min_units
-  exclude_pure_ownership: true       # reine ETW-Projekte ausschließen
+  # Reine Eigentumsprojekte (ETW) werden nicht pauschal ausgeschlossen (Kundenwunsch Hummel, 10/2026:
+  # Großprojekte/Quartiere sind auch als ETW relevante B2B-Küchenleads). Verworfen wird ein reines
+  # ETW-Projekt nur, wenn ausdrücklich weniger als eigentum_min_we Wohneinheiten genannt sind - genau
+  # 12 zählt mit, ohne WE-Zahl bleibt es drin ("prüfen"). Gilt für Ratsunterlagen UND Web-Recherche.
+  eigentum_min_we: 12
   unknown_units_policy: "flag"       # flag = behalten + "prüfen"; drop = verwerfen
   unknown_tenure_policy: "flag"      # Wohnform (Miete/Eigentum) nicht erkennbar
 

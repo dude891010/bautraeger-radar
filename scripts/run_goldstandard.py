@@ -28,6 +28,7 @@ from radar.parser import (  # noqa: E402
     TriageEntscheidung,
     build_excerpt,
     extract,
+    ist_kleines_eigentumsprojekt,
     make_client,
     matched_keywords,
     triage,
@@ -67,12 +68,18 @@ def run_case(client: anthropic.Anthropic, settings, budget: LLMBudget, case: dic
         grund = f"Triage NEIN ({triage_ergebnis.begruendung})"
         return ok, grund + ("" if ok else " – erwartet aber relevant")
 
-    if not soll_relevant:
-        return False, f"Triage {triage_ergebnis.entscheidung.value} – erwartet NICHT relevant"
-
     extraktion = extract(client, settings, budget, excerpt, quelle_id="goldstandard")
     if extraktion is None:
         return False, "Extraktion nach Reparaturversuchen ungültig"
+
+    # Wie in radar.parser.analyze_documents: fachlicher Filter nach der Extraktion (kleine reine
+    # Eigentumsprojekte). Ein Negativfall darf also die Triage passieren und erst hier ausscheiden.
+    if ist_kleines_eigentumsprojekt(extraktion, settings.filters.eigentum_min_we):
+        ok = not soll_relevant
+        grund = f"Projektfilter: reines Eigentumsprojekt mit {extraktion.we_gesamt} WE"
+        return ok, grund + ("" if ok else " – erwartet aber relevant")
+    if not soll_relevant:
+        return False, f"Triage {triage_ergebnis.entscheidung.value}, Extraktion relevant – erwartet NICHT relevant"
 
     fehler = [
         m

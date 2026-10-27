@@ -633,3 +633,15 @@ def test_wiederholte_demo_zeigt_alle_funde_im_terminal(settings, monkeypatch, tm
     ausgabe = capsys.readouterr().out
     assert "Beispielweg" in ausgabe and "Nordlicht" in ausgabe
     assert "NEU |" not in ausgabe
+
+
+def test_web_recherche_nutzt_dieselbe_etw_grenze_wie_ratsunterlagen(settings):
+    strenger = replace(settings, filters=replace(settings.filters, eigentum_min_we=50))
+    assert load_web_config(strenger).eigentum_min_we == 50
+
+
+def test_etw_grenze_in_web_yaml_wird_abgelehnt(settings, tmp_path):
+    pfad = tmp_path / "web.yaml"
+    pfad.write_text("eigentum_min_we: 12\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="settings.yaml"):
+        load_web_config(settings, pfad)

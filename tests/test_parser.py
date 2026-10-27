@@ -356,3 +356,58 @@ def test_analyze_documents_error_on_repeated_invalid_extraction(tmp_path, settin
     )
     result = _analyze([path], client, settings, tmp_path)
     assert result.status is AnalyseStatus.FEHLER
+
+
+# -- Eigentumsprojekte: Mindestgröße filters.eigentum_min_we (Kundenwunsch Hummel, 10/2026) -------------
+
+
+@pytest.mark.parametrize(
+    "wohnform, we, ausgeschlossen",
+    [
+        ("EIGENTUM", 11, True),
+        ("EIGENTUM", 12, False),  # genau die Grenze zählt mit
+        ("EIGENTUM", 198, False),
+        ("EIGENTUM", None, False),  # ohne Zahl behalten ("prüfen")
+        ("MIETE", 5, False),  # gilt nur für reine Eigentumsprojekte
+        ("GEMISCHT", 5, False),
+    ],
+)
+def test_ist_kleines_eigentumsprojekt(wohnform, we, ausgeschlossen):
+    from radar.parser import ProjektExtraktion, ist_kleines_eigentumsprojekt
+
+    extraktion = ProjektExtraktion(wohnform=wohnform, we_gesamt=we)
+    assert ist_kleines_eigentumsprojekt(extraktion, 12) is ausgeschlossen
+
+
+def _etw_text(we):
+    return Textinhalt(text=f"Beschlussvorlage: Es entstehen {we} Wohneinheiten als Eigentumswohnungen. " * 5)
+
+
+def test_analyze_documents_verwirft_kleines_etw_projekt(tmp_path, settings):
+    client = FakeAnthropicClient([{"entscheidung": "JA"}, {"we_gesamt": 8, "wohnform": "EIGENTUM", "konfidenz": 0.9}])
+    result = _analyze([_etw_text(8)], client, settings, tmp_path)
+    assert result.status is AnalyseStatus.NICHT_RELEVANT
+    assert result.extraktion is None
+    assert "Eigentumsprojekt" in result.grund
+
+
+def test_analyze_documents_behaelt_etw_grossprojekt(tmp_path, settings):
+    client = FakeAnthropicClient([{"entscheidung": "JA"}, {"we_gesamt": 198, "wohnform": "EIGENTUM", "konfidenz": 0.9}])
+    result = _analyze([_etw_text(198)], client, settings, tmp_path)
+    assert result.status is AnalyseStatus.RELEVANT
+    assert result.extraktion.we_gesamt == 198
+
+
+def test_etw_grenze_gilt_auch_fuer_cache_treffer_ohne_neuen_llm_aufruf(tmp_path, settings):
+    """Der Cache speichert die ungefilterte Extraktion - eine geänderte Grenze wirkt sofort, ohne
+    dass das Dokument erneut (kostenpflichtig) analysiert werden muss."""
+    from dataclasses import replace
+
+    text = _etw_text(10)
+    client = FakeAnthropicClient([{"entscheidung": "JA"}, {"we_gesamt": 10, "wohnform": "EIGENTUM", "konfidenz": 0.9}])
+    erst = _analyze([text], client, settings, tmp_path)
+    assert erst.status is AnalyseStatus.NICHT_RELEVANT
+
+    lockerer = replace(settings, filters=replace(settings.filters, eigentum_min_we=10))
+    zweit = _analyze([text], FakeAnthropicClient([]), lockerer, tmp_path)  # keine Antworten -> kein Aufruf
+    assert zweit.status is AnalyseStatus.RELEVANT and zweit.aus_cache

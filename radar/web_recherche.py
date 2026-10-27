@@ -113,7 +113,8 @@ class WebRechercheConfig:
     # Steht einer dieser Begriffe direkt um ein Phase-4-Stichwort ("Baubeginn ist für 2027 geplant"),
     # ist der Baubeginn nur angekündigt - diese Stelle zählt dann nicht als Phase 4.
     zukunft_stichworte: list[str] = field(default_factory=list)
-    # Wohnform-Erkennung und Mindestgröße für reine Eigentumsprojekte (siehe config/web_recherche.yaml).
+    # Wohnform-Erkennung (config/web_recherche.yaml); Mindestgröße für reine Eigentumsprojekte setzt
+    # load_web_config() aus settings.yaml (filters.eigentum_min_we).
     eigentum_stichworte: list[str] = field(default_factory=list)
     miet_stichworte: list[str] = field(default_factory=list)
     eigentum_min_we: int = 12
@@ -160,11 +161,17 @@ class WebRechercheConfig:
 
 
 def load_web_config(settings: Settings, path: str | Path | None = None) -> WebRechercheConfig:
-    """config/web_recherche.yaml laden. Unbekannte Schlüssel sind wie in radar/config.py ein Fehler."""
+    """config/web_recherche.yaml laden. Unbekannte Schlüssel sind wie in radar/config.py ein Fehler.
+    `eigentum_min_we` kommt aus settings.yaml (filters.eigentum_min_we), gemeinsam mit den Ratsunterlagen."""
     pfad = Path(path) if path else settings.resolve_path(DEFAULT_WEB_CONFIG)
     raw = _read_yaml(pfad)
+    if "eigentum_min_we" in raw:
+        raise ValueError(
+            "web_recherche.yaml: eigentum_min_we steht jetzt in config/settings.yaml unter filters "
+            "(eine Grenze für Ratsunterlagen und Web-Recherche)"
+        )
     roh_orte = raw.pop("orte", []) or []
-    config = _build(WebRechercheConfig, raw)
+    config = _build(WebRechercheConfig, {**raw, "eigentum_min_we": settings.filters.eigentum_min_we})
     config.orte = [_build(Ort, eintrag) for eintrag in roh_orte]
     return config
 

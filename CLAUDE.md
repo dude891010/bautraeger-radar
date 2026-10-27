@@ -179,7 +179,10 @@ wird.
 - **Bezugsgröße:** Miet- plus öffentlich geförderte Wohneinheiten ≥ Schwelle (Default 6). Mischprojekte
   (Miete + Eigentum) zählen, wenn allein der Miet-/geförderte Anteil die Schwelle erreicht. Gerade in Hamburg
   („Drittelmix") sind Mischprojekte die Regel.
-- **Ausschluss:** reine Eigentumswohnungen (ETW), Gewerbe ohne Wohnen, Garagen, reine Einfamilienhäuser.
+- **Ausschluss:** Gewerbe ohne Wohnen, Garagen, reine Einfamilienhäuser, **kleine** reine
+  Eigentumsprojekte. Reine ETW-Projekte zählen ab `filters.eigentum_min_we` (12, genau 12 zählt mit) -
+  Großprojekte/Quartiere sind auch als ETW relevante B2B-Küchenleads (Kundenwunsch Hummel, 27.10.2026).
+  Ohne WE-Zahl bleibt ein ETW-Projekt drin ("prüfen"). Gilt für Ratsunterlagen und Web-Recherche.
 - **Unklare Fälle nie stillschweigend verwerfen.** Fehlt die Anzahl oder die Wohnform, wird das Projekt mit Flag
   „prüfen" behalten (`unknown_*_policy: flag`). Ein Fehlalarm ist für den Vertrieb billiger als ein verpasstes Projekt.
 - Felder pro Vorhaben: Projektbezeichnung, Adresse (Straße, Hausnummer, Flurstück, Ort), WE gesamt, davon Miet-WE,
@@ -718,9 +721,16 @@ wird.
      `eigentum_stichworte`/`miet_stichworte`), verworfen wird ein reines ETW-Projekt nur, wenn der
      Text ausdrücklich weniger als `eigentum_min_we` (12) WE nennt; genau 12 und Fälle ohne Zahl
      bleiben drin. Spalte `web_funde.wohnform` (Schema v5), Dashboard-Filter "Wohnform".
-     **Abweichung:** für die Ratsunterlagen steht weiterhin `filters.exclude_pure_ownership: true`
-     in settings.yaml - das Feld wird im Code allerdings nirgends ausgewertet (nur Konfiguration);
-     ob dieselbe Regel dort gelten soll, ist offen.
+     **Seit 27.10.2026 auch für die Ratsunterlagen:** `filters.eigentum_min_we` in settings.yaml
+     ersetzt `exclude_pure_ownership` (wurde nie im Code ausgewertet) und ist die EINE Grenze für
+     beide Pipelines (web_recherche.yaml darf sie nicht mehr setzen). `parser.analyze_documents()`
+     wendet `ist_kleines_eigentumsprojekt()` nach der Extraktion an -> `NICHT_RELEVANT` mit Grund;
+     der LLM-Cache speichert ungefiltert, eine geänderte Grenze kostet keinen neuen Aufruf.
+     Triage-Prompt angepasst ("reine Eigentumswohnungen" war ein NEIN-Beispiel und hätte große
+     ETW-Projekte vor dem Filter aussortiert), `scripts/run_goldstandard.py` wendet denselben Filter
+     an, neuer Goldfall `sh-etw-quartier` (64 ETW, relevant). **Prompt-Änderung noch nicht gegen
+     den Goldstandard gemessen** (kein API-Guthaben). Nicht umgesetzt: `filters.min_units` (6 WE
+     Miete/gefördert) wird im Code ebenfalls nicht ausgewertet, nur im Prompt beschrieben.
    - **Verifiziertes Demo-Highlight:** Instone "Nordlicht", Norderstedt, Kösliner Weg 7-9, 198
      Eigentumswohnungen, Grundstein gelegt (Phase 4), Fertigstellung 2029 - geprüft am 27.10.2026
      an konii.de (05.06.2026) und entwicklungsstadt.de (09.06.2026), beide Links erreichbar. Einzige
@@ -728,7 +738,7 @@ wird.
      Projekt", im Terminal "⭐ ECHTES PROJEKT". Auszug aus beiden Quellen zusammengestellt, nicht
      wörtlich. Phasen-Stichwort "Grundstein gelegt" ergänzt (Meldungen formulieren oft so).
      `--test`/`--demo` zeigen im Terminal jetzt alle Funde des Laufs (neue mit "NEU"), sonst
-     blieb eine wiederholte Live-Demo fast leer. 397 Tests insgesamt.
+     blieb eine wiederholte Live-Demo fast leer. 408 Tests insgesamt (nach ETW-Regel für Ratsunterlagen).
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

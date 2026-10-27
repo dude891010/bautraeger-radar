@@ -65,7 +65,9 @@ class ScraperConfig:
 class FiltersConfig:
     min_units: int = 6
     count_basis: str = "rental_or_subsidized"
-    exclude_pure_ownership: bool = True
+    # Reine Eigentumsprojekte erst ab so vielen WE (genau dieser Wert zählt mit). Gilt für
+    # radar/parser.py (Ratsunterlagen) und radar/web_recherche.py; ersetzt `exclude_pure_ownership`.
+    eigentum_min_we: int = 12
     unknown_units_policy: str = "flag"
     unknown_tenure_policy: str = "flag"
     default_committee_patterns: list[str] = field(default_factory=list)
@@ -74,6 +76,8 @@ class FiltersConfig:
     def __post_init__(self):
         if self.min_units < 1:
             raise ValueError("filters.min_units muss >= 1 sein")
+        if self.eigentum_min_we < 1:
+            raise ValueError("filters.eigentum_min_we muss >= 1 sein")
         for name in ("unknown_units_policy", "unknown_tenure_policy"):
             if getattr(self, name) not in UNKNOWN_POLICIES:
                 raise ValueError(f"filters.{name} muss einer von {sorted(UNKNOWN_POLICIES)} sein")

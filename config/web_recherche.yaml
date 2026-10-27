@@ -71,10 +71,9 @@ wohn_stichworte:
 
 # Wohnform eines Treffers (Teilstring, Groß-/Kleinschreibung egal):
 #   nur Eigentum-Begriffe -> EIGENTUM, nur Miet-/Förder-Begriffe -> MIETE, beides -> GEMISCHT, keins -> UNKLAR.
-# Reine Eigentumsprojekte sind hier bewusst NICHT pauschal ausgeschlossen (Kundenwunsch Hummel, 10/2026):
-# Großprojekte/Quartiersentwicklungen sind auch als ETW relevante B2B-Küchenleads. Verworfen wird ein
-# reines ETW-Projekt nur, wenn der Text ausdrücklich weniger als `eigentum_min_we` Wohnungen nennt.
-# Ohne WE-Zahl bleibt es drin (unklare Fälle nie stillschweigend verwerfen).
+# Reine Eigentumsprojekte sind bewusst NICHT pauschal ausgeschlossen (Kundenwunsch Hummel, 10/2026).
+# Die Mindestgröße steht EINMAL für beide Pipelines in config/settings.yaml (filters.eigentum_min_we),
+# damit Ratsunterlagen und Web-Recherche nie verschiedene Grenzen haben.
 eigentum_stichworte:
   - "Eigentumswohnung"
   - "ETW"
@@ -85,7 +84,6 @@ miet_stichworte:
   - "Drittelmix"
   - "Belegungsbindung"
   - "Wohnberechtigungsschein"
-eigentum_min_we: 12
 
 # Immobilienportale verkaufen fertige Eigentumswohnungen - kein Objektgeschäft für Hummel.
 ausgeschlossene_domains:
