@@ -287,8 +287,12 @@ def test_lauf_speichert_funde_und_ist_idempotent(conn, config):
     assert erstes.anfragen == 2  # je Phase eine Anfrage
     assert (erstes.funde, erstes.neue_funde, erstes.verworfen) == (1, 1, 1)
 
+    assert [f.ort for f in erstes.neu_fuer_mail] == ["Quickborn"]
+    assert erstes.neu_fuer_mail[0].phase == "Phase 3 – Baugenehmigung"
+
     zweites = fuehre_recherche_aus(conn, cfg, anbieter, heute=date(2026, 10, 27))
     assert (zweites.funde, zweites.neue_funde) == (1, 0)
+    assert zweites.neu_fuer_mail == []  # bekannte Funde werden nicht erneut gemeldet
     assert len(database.list_web_funde(conn)) == 1
     assert database.such_anfragen_am(conn, "2026-10-27") == 4
 
@@ -421,3 +425,19 @@ def test_cli_ohne_api_key_meldet_fehler_ohne_anfrage(settings, monkeypatch, requ
     monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
     assert main(["web-recherche"]) == 2
     assert not requests_mock.called
+
+
+
+def test_cli_notify_meldet_neue_web_funde(monkeypatch):
+    from radar.notifier import NeuerWebFund
+    from radar.web_recherche import WebRechercheErgebnis
+
+    fund = NeuerWebFund(ort="Quickborn", phase="Phase 3 – Baugenehmigung", titel="T", we_anzahl=1,
+                        entfernung_km=6.3, url="https://example.org/a")
+    monkeypatch.setattr("radar.cli.run_web_recherche", lambda: WebRechercheErgebnis(neu_fuer_mail=[fund]))
+    aufrufe = []
+    monkeypatch.setattr("radar.cli.send_notification", lambda t, **kw: aufrufe.append((t, kw)))
+    assert main(["web-recherche"]) == 0
+    assert aufrufe == []  # ohne --notify keine Mail
+    assert main(["web-recherche", "--notify"]) == 0
+    assert aufrufe == [([], {"web_funde": [fund]})]

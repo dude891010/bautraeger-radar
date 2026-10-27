@@ -4,7 +4,7 @@ CLAUDE.md: "Netzwerk ... hinter dünnen Schnittstellen, damit Tests sie ersetzen
 
 import email
 
-from radar.notifier import NeuerTreffer, SMTPConfig, build_message, load_smtp_config, send_notification
+from radar.notifier import NeuerTreffer, NeuerWebFund, SMTPConfig, build_message, load_smtp_config, send_notification
 
 
 class FakeSMTP:
@@ -272,3 +272,50 @@ def test_send_notification_sends_to_each_recipient_individually():
 
     sendmail_call = next(c for c in created[0].calls if c[0] == "sendmail")
     assert sendmail_call[2] == ["vertrieb@example.org", "it@example.org"]
+
+
+
+# -- Web-Funde (radar/web_recherche.py) -------------------------------------------------------------
+
+
+def _web_fund(**overrides):
+    werte = dict(
+        ort="Quickborn",
+        phase="Phase 3 – Baugenehmigung",
+        titel="Baugenehmigung für Wohnquartier",
+        we_anzahl=38,
+        entfernung_km=6.3,
+        url="https://example.org/quickborn",
+    )
+    werte.update(overrides)
+    return NeuerWebFund(**werte)
+
+
+def test_build_message_enthaelt_web_funde_als_eigenen_abschnitt():
+    msg = build_message(_config(), [_treffer()], [_web_fund(titel="<b>Quickborn</b>")])
+    teile = _decoded_parts(msg)
+    assert "Web-Recherche" in teile["text/html"]
+    assert "&lt;b&gt;Quickborn&lt;/b&gt;" in teile["text/html"]
+    assert "Phase 3 – Baugenehmigung | Quickborn (6 km)" in teile["text/plain"]
+    assert "Wohnpark Ochsenzoll" in teile["text/plain"]
+    assert msg["Subject"] == "Bauträger-Radar: 1 neues Vorhaben, 1 neue(r) Web-Fund(e)"
+
+
+def test_build_message_nur_web_funde():
+    msg = build_message(_config(), [], [_web_fund(we_anzahl=None)])
+    teile = _decoded_parts(msg)
+    assert msg["Subject"] == "Bauträger-Radar: 1 neue(r) Web-Fund(e)"
+    assert "Neu erkannte Miet-" not in teile["text/html"]  # keine leere Projekttabelle
+    assert "(? WE)" in teile["text/plain"]
+
+
+def test_send_notification_sendet_auch_nur_mit_web_funden():
+    created: list[FakeSMTP] = []
+
+    def factory(host, port):
+        smtp = FakeSMTP(host, port)
+        created.append(smtp)
+        return smtp
+
+    assert send_notification([], config=_config(), web_funde=[_web_fund()], smtp_client_factory=factory) is True
+    assert any(c[0] == "sendmail" for c in created[0].calls)

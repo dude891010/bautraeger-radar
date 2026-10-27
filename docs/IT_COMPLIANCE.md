@@ -86,7 +86,8 @@ senden" – siehe CLAUDE.md, Abschnitt "Referenzquelle ..." bzw. Roadmap Schritt
   Konfigurationsentscheidung liegt bei der IT, nicht im Code.
 - **Übertragene Daten:** ausschließlich eine kurze Zusammenfassung pro neuem Treffer – Kommune,
   Vorhaben-Titel (die vom LLM extrahierte `projektbezeichnung`), WE-Zahl und ein Link zur
-  öffentlichen Quelle (Sitzung/Ratsinformationssystem). **Kein Dokumenttext, keine Anlagen,
+  öffentlichen Quelle (Sitzung/Ratsinformationssystem). Seit der Web-Recherche zusätzlich je
+  neuem Web-Fund: Phase, Ort, Entfernung, Artikeltitel, ggf. WE-Zahl und der Link zum Artikel. **Kein Dokumenttext, keine Anlagen,
   keine personenbezogenen Daten** verlassen an dieser Stelle das System – die Mail enthält
   strukturell nicht mehr als eine Tabellenzeile pro Treffer (siehe `NeuerTreffer` in
   `radar/notifier.py`).

@@ -60,6 +60,20 @@ class NeuerTreffer:
     url: str | None
 
 
+@dataclass(frozen=True)
+class NeuerWebFund:
+    """Ein neuer Fund der Web-Recherche (radar/web_recherche.py, Phase 3/4) - eigener Abschnitt in
+    der Mail, weil ein Presseartikel kein ausgewertetes Ratsdokument ist (keine LLM-Prüfung, WE-Zahl
+    nur, wenn sie wörtlich im Text steht)."""
+
+    ort: str
+    phase: str  # lesbare Bezeichnung, z. B. "Phase 4 – Baubeginn"
+    titel: str
+    we_anzahl: int | None
+    entfernung_km: float
+    url: str
+
+
 def load_smtp_config(env: dict[str, str] | None = None) -> SMTPConfig | None:
     """Liest `SMTP_SERVER`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`NOTIFICATION_RECIPIENT` aus
     der Umgebung (`env`-Parameter nur für Tests, sonst `os.environ`). `NOTIFICATION_RECIPIENT`
@@ -94,7 +108,53 @@ def _link_cell(url: str | None) -> str:
     return f'<a href="{escape(url)}">Quelle öffnen</a>'
 
 
-def _build_html(treffer: list[NeuerTreffer]) -> str:
+_TD = "padding:6px 10px;border-bottom:1px solid #ddd;"
+
+
+def _betreff(treffer: list[NeuerTreffer], web_funde: list[NeuerWebFund]) -> str:
+    teile = []
+    if treffer:
+        teile.append(f"{len(treffer)} neues Vorhaben" if len(treffer) == 1 else f"{len(treffer)} neue Vorhaben")
+    if web_funde:
+        teile.append(f"{len(web_funde)} neue(r) Web-Fund(e)")
+    return "Bauträger-Radar: " + ", ".join(teile)
+
+
+def _web_html(web_funde: list[NeuerWebFund]) -> str:
+    if not web_funde:
+        return ""
+    zeilen = "\n".join(
+        "<tr>"
+        f"<td style='{_TD}'>{escape(f.phase)}</td>"
+        f"<td style='{_TD}'>{escape(f.ort)} ({f.entfernung_km:.0f} km)</td>"
+        f"<td style='{_TD}'>{escape(f.titel)}</td>"
+        f"<td style='{_TD}text-align:right;'>{f.we_anzahl if f.we_anzahl is not None else '?'}</td>"
+        f"<td style='{_TD}'>{_link_cell(f.url)}</td>"
+        "</tr>"
+        for f in web_funde
+    )
+    return f"""
+  <h3 style="margin-bottom:4px;">Web-Recherche: Baugenehmigungen &amp; Baubeginne</h3>
+  <p style="color:#555;margin-top:0;">Presse-/Webfunde im Umkreis, per Stichwort eingeordnet (ohne KI-Prüfung) -
+  WE-Zahl nur, wenn sie im Text steht. Bitte Quelle prüfen.</p>
+  <table style="border-collapse:collapse;width:100%;max-width:800px;">
+    <thead>
+      <tr style="background:#f2f2f2;text-align:left;">
+        <th style="padding:6px 10px;">Phase</th>
+        <th style="padding:6px 10px;">Ort</th>
+        <th style="padding:6px 10px;">Titel</th>
+        <th style="padding:6px 10px;text-align:right;">WE</th>
+        <th style="padding:6px 10px;">Quelle</th>
+      </tr>
+    </thead>
+    <tbody>
+      {zeilen}
+    </tbody>
+  </table>"""
+
+
+def _build_html(treffer: list[NeuerTreffer], web_funde: list[NeuerWebFund] | None = None) -> str:
+    web_funde = web_funde or []
     zeilen = "\n".join(
         "<tr>"
         f"<td style='padding:6px 10px;border-bottom:1px solid #ddd;'>{escape(t.kommune)}</td>"
@@ -107,6 +167,14 @@ def _build_html(treffer: list[NeuerTreffer]) -> str:
     )
     anzahl = len(treffer)
     ueberschrift = f"{anzahl} neues Vorhaben" if anzahl == 1 else f"{anzahl} neue Vorhaben"
+    if not treffer:
+        return f"""\
+<html>
+<body style="font-family: Arial, Helvetica, sans-serif; color:#1a1a1a;">
+  <h2 style="margin-bottom:4px;">{escape(_betreff(treffer, web_funde))}</h2>{_web_html(web_funde)}
+</body>
+</html>
+"""
     return f"""\
 <html>
 <body style="font-family: Arial, Helvetica, sans-serif; color:#1a1a1a;">
@@ -124,28 +192,47 @@ def _build_html(treffer: list[NeuerTreffer]) -> str:
     <tbody>
       {zeilen}
     </tbody>
-  </table>
+  </table>{_web_html(web_funde)}
 </body>
 </html>
 """
 
 
-def _build_text(treffer: list[NeuerTreffer]) -> str:
-    zeilen = (f"- {t.kommune}: {t.titel} ({t.we_gesamt if t.we_gesamt is not None else '?'} WE)"
-              f"{' - ' + t.url if t.url else ''}" for t in treffer)
-    return f"Bauträger-Radar: {len(treffer)} neue Vorhaben\n\n" + "\n".join(zeilen)
+def _build_text(treffer: list[NeuerTreffer], web_funde: list[NeuerWebFund] | None = None) -> str:
+    web_funde = web_funde or []
+    teile = [_betreff(treffer, web_funde)]
+    if treffer:
+        teile.append(
+            "\n".join(
+                f"- {t.kommune}: {t.titel} ({t.we_gesamt if t.we_gesamt is not None else '?'} WE)"
+                f"{' - ' + t.url if t.url else ''}"
+                for t in treffer
+            )
+        )
+    if web_funde:
+        teile.append(
+            "Web-Recherche (Baugenehmigungen & Baubeginne, ohne KI-Prüfung):\n"
+            + "\n".join(
+                f"- {f.phase} | {f.ort} ({f.entfernung_km:.0f} km): {f.titel} "
+                f"({f.we_anzahl if f.we_anzahl is not None else '?'} WE) - {f.url}"
+                for f in web_funde
+            )
+        )
+    return "\n\n".join(teile)
 
 
-def build_message(config: SMTPConfig, treffer: list[NeuerTreffer]) -> MIMEMultipart:
-    """HTML-E-Mail (mit Text-Alternative fürs Spam-Filtering/Clients ohne HTML) für `treffer`."""
+def build_message(
+    config: SMTPConfig, treffer: list[NeuerTreffer], web_funde: list[NeuerWebFund] | None = None
+) -> MIMEMultipart:
+    """HTML-E-Mail (mit Text-Alternative fürs Spam-Filtering/Clients ohne HTML) für `treffer` und,
+    in einem eigenen Abschnitt, neue Web-Funde."""
+    web_funde = web_funde or []
     msg = MIMEMultipart("alternative")
-    anzahl = len(treffer)
-    vorhaben = "neues Vorhaben" if anzahl == 1 else "neue Vorhaben"
-    msg["Subject"] = f"Bauträger-Radar: {anzahl} {vorhaben}"
+    msg["Subject"] = _betreff(treffer, web_funde)
     msg["From"] = config.user
     msg["To"] = ", ".join(config.recipients)  # RFC 5322: mehrere Adressen im To-Header kommagetrennt
-    msg.attach(MIMEText(_build_text(treffer), "plain", "utf-8"))
-    msg.attach(MIMEText(_build_html(treffer), "html", "utf-8"))
+    msg.attach(MIMEText(_build_text(treffer, web_funde), "plain", "utf-8"))
+    msg.attach(MIMEText(_build_html(treffer, web_funde), "html", "utf-8"))
     return msg
 
 
@@ -157,6 +244,7 @@ def send_notification(
     treffer: list[NeuerTreffer],
     config: SMTPConfig | None = None,
     *,
+    web_funde: list[NeuerWebFund] | None = None,
     smtp_client_factory: Callable[[str, int], smtplib.SMTP] = _default_smtp_client,
 ) -> bool:
     """Sendet eine Zusammenfassungs-Mail für `treffer`. Liefert `False` ohne zu senden, wenn SMTP
@@ -165,16 +253,20 @@ def send_notification(
     weitergereicht - ein Versandfehler darf einen sonst erfolgreichen Scraper-Lauf nicht
     abbrechen (derselbe Isolations-Grundsatz wie bei einzelnen Quellen).
 
+    `web_funde` (neue Funde der Web-Recherche) erscheinen als eigener Abschnitt; eine Mail geht
+    auch dann raus, wenn nur Web-Funde neu sind.
+
     `smtp_client_factory` ist für Tests da (Fake-SMTP-Server statt echtem Versand)."""
+    web_funde = web_funde or []
     config = config or load_smtp_config()
     if config is None:
         logger.info("SMTP nicht konfiguriert, keine Benachrichtigung gesendet")
         return False
-    if not treffer:
+    if not treffer and not web_funde:
         logger.info("Keine neuen Treffer, keine Benachrichtigung gesendet")
         return False
 
-    msg = build_message(config, treffer)
+    msg = build_message(config, treffer, web_funde)
     try:
         with smtp_client_factory(config.host, config.port) as client:
             client.starttls()
@@ -185,6 +277,9 @@ def send_notification(
         return False
 
     logger.info(
-        "Benachrichtigung mit %d Treffer(n) an %s gesendet", len(treffer), ", ".join(config.recipients)
+        "Benachrichtigung mit %d Treffer(n) und %d Web-Fund(en) an %s gesendet",
+        len(treffer),
+        len(web_funde),
+        ", ".join(config.recipients),
     )
     return True

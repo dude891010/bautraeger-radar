@@ -76,7 +76,7 @@ def test_run_forever_waits_then_runs_exactly_max_runs_times(monkeypatch, setting
         return []
 
     monkeypatch.setattr("radar.scheduler.run_full", fake_run_full)
-    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: False)
 
     run_forever(settings, max_runs=2, sleep=clock.sleep, now=clock.now)
 
@@ -97,7 +97,7 @@ def test_run_forever_isolates_failed_run(monkeypatch, settings):
         return []
 
     monkeypatch.setattr("radar.scheduler.run_full", boom)
-    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: False)
 
     run_forever(settings, max_runs=2, sleep=clock.sleep, now=clock.now)  # darf nicht propagieren
 
@@ -116,7 +116,7 @@ def test_run_forever_notifies_with_flattened_neue_treffer_across_sources(monkeyp
     ]
     monkeypatch.setattr("radar.scheduler.run_full", lambda s: results)
     gesendet_mit = []
-    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: gesendet_mit.append(treffer) or True)
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: gesendet_mit.append(treffer) or True)
 
     run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
 
@@ -133,6 +133,7 @@ def _keine_echte_web_recherche(monkeypatch):
 
 class _WebOk:
     ok = True
+    neu_fuer_mail: list = []
 
     def zusammenfassung(self):
         return ""
@@ -144,7 +145,7 @@ def test_web_recherche_laeuft_nach_dem_lauf_auch_wenn_dieser_scheitert(
     clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
     monkeypatch.setattr("radar.scheduler.run_full", lambda s: (_ for _ in ()).throw(RuntimeError("kaputt")))
-    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: False)
 
     run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
 
@@ -156,7 +157,7 @@ def test_web_recherche_ohne_key_oder_abgeschaltet_wird_uebersprungen(
 ):
     clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
     monkeypatch.setattr("radar.scheduler.run_full", lambda s: [])
-    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: False)
 
     monkeypatch.setenv("TAVILY_API_KEY", "")
     run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
@@ -171,7 +172,46 @@ def test_fehler_der_web_recherche_beendet_den_scheduler_nicht(monkeypatch, setti
     clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
     monkeypatch.setattr("radar.scheduler.run_full", lambda s: [])
-    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: False)
     monkeypatch.setattr("radar.scheduler.run_web_recherche", lambda s: (_ for _ in ()).throw(RuntimeError("weg")))
 
     run_forever(settings, max_runs=2, sleep=clock.sleep, now=clock.now)  # darf nicht propagieren
+
+
+def test_eine_gemeinsame_mail_mit_treffern_und_web_funden(monkeypatch, settings):
+    from radar.notifier import NeuerWebFund
+
+    clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
+    treffer = NeuerTreffer(kommune="A", titel="Projekt A", we_gesamt=10, url=None)
+    fund = NeuerWebFund(ort="Quickborn", phase="Phase 3 – Baugenehmigung", titel="T", we_anzahl=38,
+                        entfernung_km=6.3, url="https://example.org/a")
+    web_ergebnis = _WebOk()
+    web_ergebnis.neu_fuer_mail = [fund]
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    monkeypatch.setattr("radar.scheduler.run_full", lambda s: [SourceRunResult(source_id="a", neue_treffer=[treffer])])
+    monkeypatch.setattr("radar.scheduler.run_web_recherche", lambda s: web_ergebnis)
+    aufrufe = []
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda t, **kw: aufrufe.append((t, kw)) or True)
+
+    run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
+
+    assert aufrufe == [([treffer], {"web_funde": [fund]})]
+
+
+def test_web_funde_werden_auch_gemeldet_wenn_der_lauf_scheitert(monkeypatch, settings):
+    from radar.notifier import NeuerWebFund
+
+    clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
+    fund = NeuerWebFund(ort="Stade", phase="Phase 4 – Baubeginn", titel="T", we_anzahl=None,
+                        entfernung_km=36.0, url="https://example.org/b")
+    web_ergebnis = _WebOk()
+    web_ergebnis.neu_fuer_mail = [fund]
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    monkeypatch.setattr("radar.scheduler.run_full", lambda s: (_ for _ in ()).throw(RuntimeError("kaputt")))
+    monkeypatch.setattr("radar.scheduler.run_web_recherche", lambda s: web_ergebnis)
+    aufrufe = []
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda t, **kw: aufrufe.append((t, kw)) or True)
+
+    run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
+
+    assert aufrufe == [([], {"web_funde": [fund]})]

@@ -47,6 +47,7 @@ import requests
 
 from radar import database
 from radar.config import BUNDESLAENDER, Settings, _build, _read_yaml, load_settings
+from radar.notifier import NeuerWebFund
 
 logger = logging.getLogger(__name__)
 
@@ -391,6 +392,17 @@ def bewerte_ergebnis(ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRe
     )
 
 
+def als_mail_eintrag(fund: WebFund) -> NeuerWebFund:
+    return NeuerWebFund(
+        ort=fund.ort,
+        phase=PHASE_LABEL[fund.phase],
+        titel=fund.titel,
+        we_anzahl=fund.we_anzahl,
+        entfernung_km=fund.entfernung_km,
+        url=fund.url,
+    )
+
+
 # -- Lauf -----------------------------------------------------------------------------------------
 
 
@@ -403,6 +415,7 @@ class WebRechercheErgebnis:
     verworfen: int = 0
     fehler: list[str] = field(default_factory=list)
     abbruch_grund: str | None = None
+    neu_fuer_mail: list[NeuerWebFund] = field(default_factory=list)  # für radar/notifier.py
 
     @property
     def ok(self) -> bool:
@@ -471,7 +484,9 @@ def fuehre_recherche_aus(
                 continue
             _, ist_neu = database.upsert_web_fund(conn, fund)
             ergebnis.funde += 1
-            ergebnis.neue_funde += int(ist_neu)
+            if ist_neu:
+                ergebnis.neue_funde += 1
+                ergebnis.neu_fuer_mail.append(als_mail_eintrag(fund))
 
     logger.info("Web-Recherche: %s", ergebnis.zusammenfassung())
     return ergebnis

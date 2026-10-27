@@ -15,7 +15,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from radar.config import Settings, load_settings
-from radar.notifier import send_notification
+from radar.notifier import NeuerTreffer, NeuerWebFund, send_notification
 from radar.scraper import LaufLaeuftBereits, run_full
 from radar.web_recherche import run_web_recherche
 
@@ -59,34 +59,39 @@ def run_forever(
             sleep(min(cfg.check_interval_seconds, rest))
 
         logger.info("Geplanter Lauf startet")
+        neue_treffer: list[NeuerTreffer] = []
         try:
             results = run_full(settings)
             neue_treffer = [treffer for r in results for treffer in r.neue_treffer]
-            send_notification(neue_treffer)  # no-op, falls leer oder SMTP nicht konfiguriert
         except LaufLaeuftBereits as exc:  # z. B. gerade per Dashboard-Knopf gestartet -> kein Doppellauf
             logger.warning("Geplanter Lauf übersprungen: %s", exc)
         except Exception:
             logger.exception("Geplanter Lauf fehlgeschlagen")
-        _geplante_web_recherche(settings)
+        neue_web_funde = _geplante_web_recherche(settings)
+        # Eine Sammel-Mail für beides; no-op, falls nichts neu ist oder SMTP nicht konfiguriert ist.
+        send_notification(neue_treffer, web_funde=neue_web_funde)
         runs += 1
 
 
-def _geplante_web_recherche(settings: Settings) -> None:
+def _geplante_web_recherche(settings: Settings) -> list[NeuerWebFund]:
     """Eigener Schritt nach dem Hauptlauf, unabhängig von dessen Erfolg (die Such-API hat mit
     Ratsinformationssystemen und Anthropic-Guthaben nichts zu tun). Ohne `TAVILY_API_KEY` still
-    übersprungen - die Web-Recherche ist optional, ein fehlender Key ist kein Betriebsfehler."""
+    übersprungen - die Web-Recherche ist optional, ein fehlender Key ist kein Betriebsfehler.
+    Liefert die neuen Funde für die E-Mail (leer bei Fehler/Überspringen)."""
     if not settings.scheduler.web_recherche:
-        return
+        return []
     if not os.environ.get("TAVILY_API_KEY", "").strip():
         logger.info("Web-Recherche übersprungen: TAVILY_API_KEY nicht gesetzt")
-        return
+        return []
     logger.info("Geplante Web-Recherche startet")
     try:
         ergebnis = run_web_recherche(settings)
-        if not ergebnis.ok:
-            logger.warning("Web-Recherche mit Problemen beendet: %s", ergebnis.zusammenfassung())
     except Exception:
         logger.exception("Geplante Web-Recherche fehlgeschlagen")
+        return []
+    if not ergebnis.ok:
+        logger.warning("Web-Recherche mit Problemen beendet: %s", ergebnis.zusammenfassung())
+    return ergebnis.neu_fuer_mail
 
 
 if __name__ == "__main__":

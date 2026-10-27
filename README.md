@@ -42,7 +42,8 @@ Optional: Web-Recherche nach Phase 3 (Baugenehmigung) und Phase 4 (Baubeginn) im
 Dashboard-Tab "Web-Recherche" starten oder `python -m radar web-recherche`. Orte, Suchbegriffe,
 Umkreis und Kostenbremse stehen in `config/web_recherche.yaml`. Der `scheduler`-Dienst führt sie
 wöchentlich direkt nach dem Lauf aus (abschaltbar: `scheduler.web_recherche` in
-`config/settings.yaml`, ohne Key still übersprungen).
+`config/settings.yaml`, ohne Key still übersprungen); neue Web-Funde stehen als eigener Abschnitt
+in derselben E-Mail (manuell: `python -m radar web-recherche --notify`).
 
 ## Struktur
 

@@ -691,8 +691,13 @@ wird.
      Tests.
    - **Im Wochenlauf:** `radar/scheduler.py` führt die Web-Recherche direkt nach `run_full()` aus,
      unabhängig von dessen Erfolg und fehlerisoliert; abschaltbar über `scheduler.web_recherche`,
-     ohne `TAVILY_API_KEY` still übersprungen. Neue Web-Funde gehen (noch) nicht in die
-     E-Mail-Benachrichtigung. 3 weitere Tests, 361 insgesamt.
+     ohne `TAVILY_API_KEY` still übersprungen. 3 weitere Tests.
+   - **E-Mail:** neue Web-Funde (nur Neuanlagen, `WebRechercheErgebnis.neu_fuer_mail`) stehen als
+     eigener Abschnitt in derselben Sammel-Mail wie die Ratsunterlagen-Treffer
+     (`notifier.NeuerWebFund`, `send_notification(..., web_funde=...)`). Der Scheduler sendet
+     jetzt einmal nach Lauf + Web-Recherche (auch wenn der Lauf scheitert, aber Web-Funde neu
+     sind). Manuell: `python -m radar web-recherche --notify` (Standard aus, der Dashboard-Knopf
+     mailt nie). 6 weitere Tests, 367 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
