@@ -11,6 +11,7 @@ Befehle:
                 (radar/notifier.py)
   web-recherche - Phase 3/4 (Baugenehmigung, Baubeginn) im Umkreis um Norderstedt per Such-API
                 suchen (radar/web_recherche.py, braucht TAVILY_API_KEY in .env). --notify wie bei scrape.
+                --demo (oder --test ohne Key): Beispieldaten statt echter Suche, 0 Credits.
 
 Das Dashboard (`streamlit run app.py`) hat einen eigenen Einstiegspunkt: Streamlit-Apps starten
 nicht über eine normale Python-CLI, siehe docker-compose.yml.
@@ -20,12 +21,15 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
 from radar.scraper import LaufLaeuftBereits, run_full
 from radar.web_recherche import run_web_recherche
+
+WEB_TEST_ORTE = 3  # `web-recherche --test`: so viele nächstgelegene Orte, je 2 Anfragen
 
 _BEISPIEL_TREFFER = [
     NeuerTreffer(
@@ -84,6 +88,22 @@ def main(argv: list[str] | None = None) -> int:
     web_parser.add_argument(
         "--notify", action="store_true", help="Neue Web-Funde per E-Mail melden (wie bei scrape, Standard: aus)"
     )
+    web_parser.add_argument(
+        "--test",
+        action="store_true",
+        help=f"Testsuche: nur die {WEB_TEST_ORTE} nächstgelegenen Orte ({WEB_TEST_ORTE * 2} Anfragen statt aller)",
+    )
+    web_parser.add_argument(
+        "--db", metavar="PFAD", help="Andere Datenbank verwenden, z. B. data/test_radar.db (Standard: settings.yaml)"
+    )
+    web_parser.add_argument(
+        "--demo",
+        action="store_true",
+        help=(
+            "Beispieldaten statt echter Suche (kein Key, keine Credits) - für Live-Demos. Ohne --db in "
+            "data/demo/demo.db (Dashboard: 'Demo-Daten anzeigen'), nie in die echte Datenbank."
+        ),
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -103,12 +123,32 @@ def main(argv: list[str] | None = None) -> int:
         return _test_email()
 
     if args.befehl == "web-recherche":
+        demo = args.demo
+        if args.test and not demo and not os.environ.get("TAVILY_API_KEY", "").strip():
+            # Nur im Testmodus: statt abzubrechen auf Beispieldaten ausweichen. Ein normaler Lauf
+            # (und der Scheduler) bekommt nie stillschweigend Demo-Daten untergeschoben.
+            logging.getLogger(__name__).warning(
+                "TAVILY_API_KEY fehlt - Testmodus weicht auf Demo-Daten aus (keine echte Suche)"
+            )
+            demo = True
         try:
-            ergebnis = run_web_recherche()
-        except RuntimeError as exc:  # z. B. TAVILY_API_KEY fehlt
+            ergebnis = run_web_recherche(
+                max_orte=WEB_TEST_ORTE if args.test else None, db_pfad=args.db, demo=demo
+            )
+        except (RuntimeError, ValueError) as exc:  # z. B. TAVILY_API_KEY fehlt, Demo auf echte DB
             logging.getLogger(__name__).error("Web-Recherche nicht gestartet: %s", exc)
             return 2
-        if args.notify:
+        if args.test or demo:
+            if demo:
+                print("\n*** DEMO-MODUS: frei erfundene Beispieldaten, keine echte Suche, 0 Credits ***")
+            print(f"\n{ergebnis.zusammenfassung()}")
+            for fund in ergebnis.neu_fuer_mail:
+                we = fund.we_anzahl if fund.we_anzahl is not None else "?"
+                print(f"- {fund.phase} | {fund.ort} ({fund.entfernung_km:.0f} km): {fund.titel} ({we} WE)")
+                print(f"  {fund.url}")
+        if args.notify and demo:
+            logging.getLogger(__name__).warning("--notify ignoriert: Demo-Daten werden nie per E-Mail verschickt")
+        elif args.notify:
             send_notification([], web_funde=ergebnis.neu_fuer_mail)  # no-op, falls leer/nicht konfiguriert
         return 0 if ergebnis.ok else 1
 

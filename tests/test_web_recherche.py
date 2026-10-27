@@ -434,10 +434,113 @@ def test_cli_notify_meldet_neue_web_funde(monkeypatch):
 
     fund = NeuerWebFund(ort="Quickborn", phase="Phase 3 – Baugenehmigung", titel="T", we_anzahl=1,
                         entfernung_km=6.3, url="https://example.org/a")
-    monkeypatch.setattr("radar.cli.run_web_recherche", lambda: WebRechercheErgebnis(neu_fuer_mail=[fund]))
+    monkeypatch.setattr("radar.cli.run_web_recherche", lambda **kw: WebRechercheErgebnis(neu_fuer_mail=[fund]))
     aufrufe = []
     monkeypatch.setattr("radar.cli.send_notification", lambda t, **kw: aufrufe.append((t, kw)))
     assert main(["web-recherche"]) == 0
     assert aufrufe == []  # ohne --notify keine Mail
     assert main(["web-recherche", "--notify"]) == 0
     assert aufrufe == [([], {"web_funde": [fund]})]
+
+
+
+def test_cli_testsuche_mit_eigener_db(settings, monkeypatch, requests_mock, tmp_path, capsys):
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    monkeypatch.setattr("radar.web_recherche._sleep", lambda s: None)
+    requests_mock.post(
+        TavilyClient.URL,
+        json={"results": [{"title": "Quickborn: Baugenehmigung für 38 Wohnungen erteilt",
+                           "url": "https://example.org/q", "content": ""}]},
+    )
+    test_db = tmp_path / "test_radar.db"
+
+    assert main(["web-recherche", "--test", "--db", str(test_db)]) == 0
+
+    assert requests_mock.call_count == 6  # 3 nächste Orte x 2 Phasen
+    with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as c:
+        assert [f["ort"] for f in database.list_web_funde(c)] == ["Quickborn"]
+    with closing(database.connect(settings)) as c:
+        assert database.list_web_funde(c) == []  # Standard-DB unberührt
+    assert "Quickborn" in capsys.readouterr().out
+
+
+# -- Demo-Modus (ohne Key, ohne Credits) --------------------------------------------------------------
+
+
+def test_demo_funde_durchlaufen_die_echte_bewertung(config):
+    from radar.web_recherche import demo_funde
+
+    funde = {f.url: f for f in demo_funde(config)}
+    assert all(url.startswith("https://example.org/demo/") for url in funde)
+    assert all("(Demo)" in f.titel for f in funde.values())
+    beispielweg = funde["https://example.org/demo/norderstedt-beispielweg"]
+    assert (beispielweg.phase, beispielweg.we_anzahl) == (Phase.BAUGENEHMIGUNG, 96)
+    assert funde["https://example.org/demo/norderstedt-musterpark"].phase is Phase.BAUBEGINN
+    # bewusst verworfene Beispiele: Gewerbe, Immobilienportal, B-Plan ohne Phase 3/4
+    for verworfen in ("norderstedt-logistik", "ellerau-bplan"):
+        assert "https://example.org/demo/" + verworfen not in funde
+    assert not any("immobilienscout24" in url for url in funde)
+
+
+def test_cli_test_ohne_key_weicht_auf_demo_aus(settings, monkeypatch, requests_mock, tmp_path, capsys):
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    test_db = tmp_path / "test_radar.db"
+
+    assert main(["web-recherche", "--test", "--db", str(test_db)]) == 0
+
+    assert not requests_mock.called  # keine echte Anfrage, kein Credit
+    ausgabe = capsys.readouterr().out
+    assert "DEMO-MODUS" in ausgabe and "Beispielweg" in ausgabe
+    with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as c:
+        orte = {f["ort"] for f in database.list_web_funde(c)}
+        assert orte == {"Norderstedt", "Quickborn", "Ellerau"}  # die 3 nächsten Orte
+        assert database.such_anfragen_am(c, date.today().isoformat()) == 0  # nicht gegen das Limit gezählt
+
+
+def test_normaler_lauf_ohne_key_bekommt_nie_demo_daten(settings, monkeypatch, requests_mock):
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    assert main(["web-recherche"]) == 2
+    with closing(database.connect(settings)) as c:
+        assert database.list_web_funde(c) == []
+
+
+def test_demo_ohne_db_schreibt_in_demo_datenbank_nicht_in_echte(settings, monkeypatch):
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    assert main(["web-recherche", "--demo"]) == 0
+    with closing(database.connect(settings)) as c:
+        assert database.list_web_funde(c) == []
+    with closing(database.connect(demo_data.demo_settings(settings))) as c:
+        assert len(database.list_web_funde(c)) >= 5
+
+
+def test_demo_verweigert_die_echte_datenbank(settings, monkeypatch):
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    assert main(["web-recherche", "--demo", "--db", settings.database.path]) == 2
+
+
+def test_demo_verschickt_nie_eine_mail(settings, monkeypatch, tmp_path):
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    aufrufe = []
+    monkeypatch.setattr("radar.cli.send_notification", lambda *a, **kw: aufrufe.append(a))
+    assert main(["web-recherche", "--demo", "--notify", "--db", str(tmp_path / "t.db")]) == 0
+    assert aufrufe == []
+
+
+@pytest.mark.parametrize(
+    "text, erwartet",
+    [
+        ("Die Baugenehmigung liegt vor. Baubeginn ist für das Frühjahr geplant.", Phase.BAUGENEHMIGUNG),
+        ("Baugenehmigung erteilt, der Baubeginn soll 2027 erfolgen.", Phase.BAUGENEHMIGUNG),
+        ("Der geplante Baubeginn verschiebt sich, die Baugenehmigung fehlt noch.", Phase.BAUGENEHMIGUNG),
+        ("Baustart ab 2027 vorgesehen.", None),
+        ("Mit dem Spatenstich haben die Arbeiten begonnen.", Phase.BAUBEGINN),
+        ("Richtfest in Ellerau: Das Wohnprojekt mit Mietwohnungen für Senioren und Familien liegt im Zeitplan, "
+         "Bezug ist für Herbst 2027 vorgesehen.", Phase.BAUBEGINN),
+        ("Baubeginn war im Mai, der Bezug ist für 2028 geplant und wird vorbereitet.", Phase.BAUBEGINN),
+    ],
+)
+def test_angekuendigter_baubeginn_ist_nicht_phase_4(config, text, erwartet):
+    assert klassifiziere_phase(text, config) is erwartet

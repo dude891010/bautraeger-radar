@@ -36,7 +36,7 @@ import re
 import sqlite3
 import time
 from contextlib import closing
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -46,7 +46,7 @@ from urllib.parse import urlparse, urlunparse
 import requests
 
 from radar import database
-from radar.config import BUNDESLAENDER, Settings, _build, _read_yaml, load_settings
+from radar.config import BUNDESLAENDER, DatabaseConfig, Settings, _build, _read_yaml, load_settings
 from radar.notifier import NeuerWebFund
 
 logger = logging.getLogger(__name__)
@@ -110,6 +110,9 @@ class WebRechercheConfig:
     suchanfragen: dict[str, list[str]] = field(default_factory=dict)
     phasen_stichworte: dict[str, list[str]] = field(default_factory=dict)
     wohn_stichworte: list[str] = field(default_factory=list)
+    # Steht einer dieser Begriffe direkt um ein Phase-4-Stichwort ("Baubeginn ist für 2027 geplant"),
+    # ist der Baubeginn nur angekündigt - diese Stelle zählt dann nicht als Phase 4.
+    zukunft_stichworte: list[str] = field(default_factory=list)
     ausgeschlossene_domains: list[str] = field(default_factory=list)
     max_ergebnisse_pro_suche: int = 8
     zeitraum: str = "year"
@@ -227,6 +230,108 @@ class SucheGesperrt(Exception):
     """Jede weitere Anfrage würde genauso scheitern (Key ungültig, Kontingent aufgebraucht)."""
 
 
+# -- Demo-Anbieter: Live-Präsentation ohne API-Key und ohne Credits ----------------------------------
+# Frei erfundene Suchergebnisse (fiktive Bauträger, URLs auf example.org, Titel mit "(Demo)"). Sie
+# laufen durch dieselbe Bewertung wie echte Treffer (`bewerte_ergebnis()`) - inklusive Ergebnissen,
+# die bewusst verworfen werden (Gewerbe ohne Wohnen, Immobilienportal, B-Plan ohne Phase 3/4), damit
+# die Demo auch die Filterlogik zeigt. Bewusst KEINE echten Firmen- oder Projektnamen: eine Demo
+# soll nichts als Fund präsentieren, was so nicht belegt ist.
+_DEMO = "https://example.org/demo/"
+DEMO_SUCHERGEBNISSE: dict[tuple[str, Phase], list[Suchergebnis]] = {
+    ("Norderstedt", Phase.BAUGENEHMIGUNG): [
+        Suchergebnis(
+            titel="Norderstedt: Baugenehmigung für 96 Mietwohnungen am Beispielweg (Demo)",
+            url=_DEMO + "norderstedt-beispielweg",
+            inhalt="Die Stadt Norderstedt hat die Baugenehmigung erteilt: Die fiktive Musterbau Wohnen GmbH "
+            "errichtet 96 Mietwohnungen in vier Mehrfamilienhäusern, davon 30 öffentlich gefördert. "
+            "Baubeginn ist für das Frühjahr geplant.",
+            veroeffentlicht="2026-10-14",
+        ),
+        Suchergebnis(
+            titel="Norderstedt: Baugenehmigung für neue Logistikhalle (Demo)",
+            url=_DEMO + "norderstedt-logistik",
+            inhalt="Im Gewerbegebiet Nord hat Norderstedt die Baugenehmigung für eine Logistikhalle erteilt.",
+        ),
+    ],
+    ("Norderstedt", Phase.BAUBEGINN): [
+        Suchergebnis(
+            titel="Spatenstich im Quartier Am Musterpark in Norderstedt (Demo)",
+            url=_DEMO + "norderstedt-musterpark",
+            inhalt="Mit dem Spatenstich haben in Norderstedt die Arbeiten am Quartier Am Musterpark begonnen. "
+            "Es entstehen 140 Wohnungen, ein Drittel davon gefördert, Fertigstellung 2028.",
+            veroeffentlicht="2026-09-30",
+        ),
+        Suchergebnis(
+            titel="Norderstedt: Neubau-Eigentumswohnung, Baubeginn erfolgt (Demo)",
+            url="https://www.immobilienscout24.de/expose/demo-0000",
+            inhalt="3-Zimmer-Wohnung in Norderstedt kaufen, Baubeginn erfolgt.",
+        ),
+    ],
+    ("Quickborn", Phase.BAUGENEHMIGUNG): [
+        Suchergebnis(
+            titel="Grünes Licht für Wohnquartier am Bahnhof Quickborn (Demo)",
+            url=_DEMO + "quickborn-bahnhof",
+            inhalt="Für das Wohnquartier am Bahnhof Quickborn liegt die Baugenehmigung vor. Geplant sind "
+            "38 Wohnungen in drei Mehrfamilienhäusern.",
+            veroeffentlicht="2026-10-02",
+        ),
+    ],
+    ("Ellerau", Phase.BAUBEGINN): [
+        Suchergebnis(
+            titel="Richtfest im Ellerauer Wohnprojekt (Demo)",
+            url=_DEMO + "ellerau-richtfest",
+            inhalt="Richtfest in Ellerau: Das Wohnprojekt mit Mietwohnungen für Senioren und Familien liegt "
+            "im Zeitplan, Bezug ist für Herbst 2027 vorgesehen.",
+            veroeffentlicht="2026-08-27",
+        ),
+        Suchergebnis(
+            titel="Ellerau plant neues Wohngebiet (Demo)",
+            url=_DEMO + "ellerau-bplan",
+            inhalt="Ellerau stellt einen Bebauungsplan für rund 60 Wohnungen auf, Bürgerbeteiligung im Winter.",
+        ),
+    ],
+    ("Henstedt-Ulzburg", Phase.BAUBEGINN): [
+        Suchergebnis(
+            titel="Baustart für 64 Mietwohnungen in Henstedt-Ulzburg (Demo)",
+            url=_DEMO + "henstedt-ulzburg-baustart",
+            inhalt="In Henstedt-Ulzburg ist Baustart: 64 Mietwohnungen, davon 20 öffentlich gefördert.",
+            veroeffentlicht="2026-09-18",
+        ),
+    ],
+    ("Hamburg-Eimsbüttel", Phase.BAUGENEHMIGUNG): [
+        Suchergebnis(
+            titel="Eimsbüttel: Baugenehmigung für Drittelmix-Projekt (Demo)",
+            url=_DEMO + "eimsbuettel-drittelmix",
+            inhalt="Das Bezirksamt Eimsbüttel hat die Baugenehmigung für 210 Wohnungen im Drittelmix erteilt.",
+            veroeffentlicht="2026-10-20",
+        ),
+    ],
+    ("Buxtehude", Phase.BAUGENEHMIGUNG): [
+        Suchergebnis(
+            titel="Grünes Licht für 120 Wohnungen in Buxtehude (Demo)",
+            url=_DEMO + "buxtehude-este",
+            inhalt="Der Landkreis hat die Baugenehmigung für 120 Wohnungen im neuen Quartier an der Este in "
+            "Buxtehude erteilt, ein Drittel davon gefördert.",
+            veroeffentlicht="2026-07-15",
+        ),
+    ],
+}
+
+
+class DemoAnbieter:
+    """Ersetzt die Such-API für Live-Demos: liefert `DEMO_SUCHERGEBNISSE` passend zu Ort und Phase
+    der Anfrage. `kostenpflichtig = False` - `fuehre_recherche_aus()` zählt diese Anfragen nicht
+    gegen das Tageslimit und wartet nicht zwischen ihnen."""
+
+    kostenpflichtig = False
+
+    def __init__(self, config: WebRechercheConfig):
+        self._auftraege = {a.anfrage: (a.ort.name, a.phase) for a in baue_suchauftraege(config)}
+
+    def suche(self, anfrage: str) -> list[Suchergebnis]:
+        return list(DEMO_SUCHERGEBNISSE.get(self._auftraege.get(anfrage), []))
+
+
 class TavilyClient:
     """Dünne Hülle um die Tavily-Search-API (POST /search). Bewusst ohne das `tavily-python`-Paket:
     ein einzelner JSON-POST über das ohnehin vorhandene `requests` braucht keine neue Abhängigkeit.
@@ -304,10 +409,33 @@ def _enthaelt(text: str, begriffe: list[str]) -> bool:
     return any(b.lower() in lowered for b in begriffe)
 
 
+# Fenster um ein Phase-4-Stichwort, in dem nach Zukunftsbegriffen gesucht wird (Zeichen davor/danach).
+# Klein genug, dass ein angekündigter Bezug am Satzende ("..., Bezug ist für 2027 vorgesehen") ein
+# stattgefundenes Richtfest am Satzanfang nicht entwertet.
+_ZUKUNFT_VORHER = 25
+_ZUKUNFT_NACHHER = 45
+_SATZTEIL_GRENZE = re.compile(r"[.,;:!?\n]")
+
+
+def _baubeginn_erfolgt(text: str, config: WebRechercheConfig) -> bool:
+    """Mindestens eine Erwähnung eines Phase-4-Stichworts, die nicht nur angekündigt ist."""
+    lowered = text.lower()
+    zukunft = [z.lower() for z in config.zukunft_stichworte]
+    for stichwort in config.phasen_stichworte.get(Phase.BAUBEGINN.value, []):
+        for treffer in re.finditer(re.escape(stichwort.lower()), lowered):
+            # Nur derselbe Satzteil: "Baubeginn war im Mai, der Bezug ist geplant" bleibt Phase 4.
+            davor = _SATZTEIL_GRENZE.split(lowered[max(0, treffer.start() - _ZUKUNFT_VORHER) : treffer.start()])[-1]
+            danach = _SATZTEIL_GRENZE.split(lowered[treffer.end() : treffer.end() + _ZUKUNFT_NACHHER])[0]
+            if not any(z in davor + treffer.group(0) + danach for z in zukunft):
+                return True
+    return False
+
+
 def klassifiziere_phase(text: str, config: WebRechercheConfig) -> Phase | None:
-    """Phase 4 vor Phase 3: nennt ein Artikel Genehmigung UND Baubeginn, ist das Vorhaben schon
-    weiter. `None`, wenn keine der beiden Phasen erkennbar ist (dann kein Fund)."""
-    if _enthaelt(text, config.phasen_stichworte.get(Phase.BAUBEGINN.value, [])):
+    """Phase 4 vor Phase 3: nennt ein Artikel Genehmigung UND (erfolgten) Baubeginn, ist das
+    Vorhaben schon weiter. Ein nur angekündigter Baubeginn ("soll im Frühjahr starten") zählt nicht
+    als Phase 4 (`zukunft_stichworte`). `None`, wenn keine der beiden Phasen erkennbar ist."""
+    if _baubeginn_erfolgt(text, config):
         return Phase.BAUBEGINN
     if _enthaelt(text, config.phasen_stichworte.get(Phase.BAUGENEHMIGUNG.value, [])):
         return Phase.BAUGENEHMIGUNG
@@ -403,6 +531,18 @@ def als_mail_eintrag(fund: WebFund) -> NeuerWebFund:
     )
 
 
+def demo_funde(config: WebRechercheConfig) -> list[WebFund]:
+    """Die Funde, die ein Demo-Lauf über alle Orte ergäbe (ohne Datenbank, ohne Budget) - für die
+    Demo-Datenbank des Dashboards (radar/demo_data.py)."""
+    funde = []
+    for auftrag in baue_suchauftraege(config):
+        for ergebnis in DEMO_SUCHERGEBNISSE.get((auftrag.ort.name, auftrag.phase), []):
+            fund = bewerte_ergebnis(ergebnis, auftrag, config)
+            if fund is not None:
+                funde.append(fund)
+    return funde
+
+
 # -- Lauf -----------------------------------------------------------------------------------------
 
 
@@ -415,6 +555,7 @@ class WebRechercheErgebnis:
     verworfen: int = 0
     fehler: list[str] = field(default_factory=list)
     abbruch_grund: str | None = None
+    demo: bool = False  # Ergebnisse vom DemoAnbieter, keine echte Suche
     neu_fuer_mail: list[NeuerWebFund] = field(default_factory=list)  # für radar/notifier.py
 
     @property
@@ -428,6 +569,8 @@ class WebRechercheErgebnis:
         )
         if self.abbruch_grund:
             text += f" - ABBRUCH: {self.abbruch_grund}"
+        if self.demo:
+            text = f"DEMO (Beispieldaten, keine echte Suche, 0 Credits): {text}"
         return text
 
 
@@ -444,20 +587,21 @@ def fuehre_recherche_aus(
     """Alle Suchaufträge abarbeiten, Funde speichern. Ein Fehler bei einer Anfrage stoppt nie den
     ganzen Lauf (wie bei den Quellen), nur Konto-Fehler und die Fehler-Notbremse tun das."""
     heute_iso = (heute or datetime.now().date()).isoformat()
-    ergebnis = WebRechercheErgebnis()
+    kostenpflichtig = getattr(anbieter, "kostenpflichtig", True)
+    ergebnis = WebRechercheErgebnis(demo=not kostenpflichtig)
     fehler_in_folge = 0
 
     for i, auftrag in enumerate(baue_suchauftraege(config)):
         if ergebnis.anfragen >= config.max_anfragen_pro_lauf:
             ergebnis.abbruch_grund = f"Budget pro Lauf erschöpft ({config.max_anfragen_pro_lauf} Anfragen)"
             break
-        if database.such_anfragen_am(conn, heute_iso) >= config.max_anfragen_pro_tag:
-            ergebnis.abbruch_grund = f"Tageslimit erreicht ({config.max_anfragen_pro_tag} Anfragen)"
-            break
-        if i > 0 and config.request_delay_seconds:
-            _sleep(config.request_delay_seconds)
-
-        database.zaehle_such_anfrage(conn, heute_iso)  # vor dem Senden verbuchen
+        if kostenpflichtig:
+            if database.such_anfragen_am(conn, heute_iso) >= config.max_anfragen_pro_tag:
+                ergebnis.abbruch_grund = f"Tageslimit erreicht ({config.max_anfragen_pro_tag} Anfragen)"
+                break
+            if i > 0 and config.request_delay_seconds:
+                _sleep(config.request_delay_seconds)
+            database.zaehle_such_anfrage(conn, heute_iso)  # vor dem Senden verbuchen
         ergebnis.anfragen += 1
         try:
             treffer = anbieter.suche(auftrag.anfrage)
@@ -493,17 +637,42 @@ def fuehre_recherche_aus(
 
 
 def run_web_recherche(
-    settings: Settings | None = None, anbieter: SuchAnbieter | None = None
+    settings: Settings | None = None,
+    anbieter: SuchAnbieter | None = None,
+    *,
+    max_orte: int | None = None,
+    db_pfad: str | None = None,
+    demo: bool = False,
 ) -> WebRechercheErgebnis:
-    """Einstieg für CLI und Dashboard (`python -m radar web-recherche`)."""
+    """Einstieg für CLI und Dashboard (`python -m radar web-recherche`). `max_orte` beschränkt die
+    Suche auf die nächstgelegenen Orte (Testsuche mit wenigen Credits), `db_pfad` schreibt in eine
+    andere Datenbank als `settings.database.path` (z. B. eine Testdatenbank).
+
+    `demo=True` nutzt den `DemoAnbieter` statt der Such-API (kein Key, keine Credits). Ohne
+    `db_pfad` landen die Beispieldaten in der Demo-Datenbank des Dashboards (data/demo/demo.db,
+    sichtbar mit "Demo-Daten anzeigen"); in die echte Datenbank schreibt ein Demo-Lauf nie."""
     settings = settings or load_settings()
+    produktiv_db = settings.resolve_path(settings.database.path).resolve()
+    if demo and db_pfad is None:
+        from radar.demo_data import demo_db_path  # hier importiert: demo_data importiert dieses Modul
+
+        db_pfad = str(demo_db_path(settings))
+    if db_pfad is not None:
+        settings = replace(settings, database=DatabaseConfig(path=db_pfad))
+    if demo and settings.resolve_path(settings.database.path).resolve() == produktiv_db:
+        raise ValueError(f"Demo-Daten werden nie in die echte Datenbank geschrieben ({produktiv_db})")
     config = load_web_config(settings)
-    anbieter = anbieter or TavilyClient(tavily_api_key(), config)
+    if max_orte is not None:
+        naechste = {ort.name for ort, _ in orte_im_radius(config)[:max_orte]}
+        config = replace(config, orte=[o for o in config.orte if o.name in naechste])
+    if anbieter is None:
+        anbieter = DemoAnbieter(config) if demo else TavilyClient(tavily_api_key(), config)
     logger.info(
         "Web-Recherche: %d Orte im Umkreis von %.0f km um %s",
         len(orte_im_radius(config)),
         config.radius_km,
         config.zentrum_name,
     )
+    logger.info("Ziel-Datenbank: %s", settings.resolve_path(settings.database.path))
     with closing(database.connect(settings)) as conn:
         return fuehre_recherche_aus(conn, config, anbieter)

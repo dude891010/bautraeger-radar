@@ -45,6 +45,12 @@ wöchentlich direkt nach dem Lauf aus (abschaltbar: `scheduler.web_recherche` in
 `config/settings.yaml`, ohne Key still übersprungen); neue Web-Funde stehen als eigener Abschnitt
 in derselben E-Mail (manuell: `python -m radar web-recherche --notify`).
 
+Testsuche mit wenigen Credits: `python -m radar web-recherche --test --db data/test_radar.db` (nur die 3
+nächstgelegenen Orte). **Live-Demo ohne Key und ohne Credits:** `python -m radar web-recherche --demo`
+schreibt frei erfundene, mit „(Demo)“ markierte Beispielfunde in die Demo-Datenbank – im Dashboard
+sichtbar mit „Demo-Daten anzeigen“. `--test` ohne Key weicht automatisch darauf aus. Demo-Daten landen
+nie in `data/radar.db` und werden nie per E-Mail verschickt.
+
 ## Struktur
 
 | Pfad | Zweck |

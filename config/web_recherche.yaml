@@ -39,6 +39,22 @@ phasen_stichworte:
     - "Bauarbeiten begonnen"
     - "Bauarbeiten haben begonnen"
 
+# Steht einer dieser Begriffe direkt um ein Phase-4-Stichwort ("Baubeginn ist für das Frühjahr
+# geplant", "der Spatenstich soll im März erfolgen"), ist der Baubeginn nur angekündigt - diese Stelle
+# zählt dann nicht als Phase 4 (ein Artikel mit erteilter Genehmigung bleibt Phase 3).
+zukunft_stichworte:
+  - "geplant"
+  - "soll "
+  - "sollen"
+  - "voraussichtlich"
+  - "vorgesehen"
+  - "erwartet"
+  - "wird "
+  - "werden "
+  - "ab 20"            # "Baubeginn ab 2027"
+  - "im kommenden"
+  - "nächste"
+
 # Ohne mindestens einen dieser Begriffe ist ein Treffer kein Wohnbauprojekt (z. B. Gewerbehalle).
 wohn_stichworte:
   - "Wohnung"

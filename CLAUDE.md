@@ -697,7 +697,21 @@ wird.
      (`notifier.NeuerWebFund`, `send_notification(..., web_funde=...)`). Der Scheduler sendet
      jetzt einmal nach Lauf + Web-Recherche (auch wenn der Lauf scheitert, aber Web-Funde neu
      sind). Manuell: `python -m radar web-recherche --notify` (Standard aus, der Dashboard-Knopf
-     mailt nie). 6 weitere Tests, 367 insgesamt.
+     mailt nie). 6 weitere Tests.
+   - **Testsuche/Demo (CLI):** `web-recherche --test` (nur die 3 nächsten Orte, 6 Anfragen),
+     `--db PFAD` (andere Datenbank), `--demo` (`DemoAnbieter` statt Tavily, 0 Credits, nicht gegen
+     das Tageslimit gezählt). `--test` ohne `TAVILY_API_KEY` weicht auf Demo aus - ein normaler
+     Lauf/der Scheduler nie. Demo schreibt ohne `--db` in `data/demo/demo.db`, verweigert die
+     echte DB, verschickt nie Mails. `DEMO_SUCHERGEBNISSE` sind frei erfunden (fiktive Bauträger,
+     example.org, "(Demo)" im Titel) und laufen durch die echte Bewertung, inkl. 3 bewusst
+     verworfener Treffer; das Dashboard-Demo (`demo_data.seed_web_funde`) nutzt dieselbe Quelle.
+     Bewusst **keine echten Firmen/Projekte** als erfundene Funde (geprüft am 27.10.2026:
+     "Richtweg Norderstedt"/Instone, 316 WE, ist real, aber erst im B-Plan-Verfahren, nicht
+     Phase 3; "Seequartier Lankow"/HTG Gadebusch nicht belegbar, Schwerin liegt ~90 km entfernt).
+   - **Einordnung verbessert:** ein nur angekündigter Baubeginn ("Baubeginn ist für das Frühjahr
+     geplant") zählt nicht mehr als Phase 4 (`zukunft_stichworte`, geprüft im selben Satzteil um
+     das Stichwort). Aufgefallen am Demo-Text - echte Presseartikel formulieren genauso.
+     381 Tests insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
