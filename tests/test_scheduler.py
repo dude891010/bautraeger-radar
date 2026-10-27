@@ -121,3 +121,57 @@ def test_run_forever_notifies_with_flattened_neue_treffer_across_sources(monkeyp
     run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
 
     assert gesendet_mit == [[treffer_a, treffer_b]]
+
+
+@pytest.fixture(autouse=True)
+def _keine_echte_web_recherche(monkeypatch):
+    """Kein Test hier darf die echte Such-API oder data/radar.db erreichen."""
+    aufrufe = []
+    monkeypatch.setattr("radar.scheduler.run_web_recherche", lambda s: aufrufe.append(s) or _WebOk())
+    return aufrufe
+
+
+class _WebOk:
+    ok = True
+
+    def zusammenfassung(self):
+        return ""
+
+
+def test_web_recherche_laeuft_nach_dem_lauf_auch_wenn_dieser_scheitert(
+    monkeypatch, settings, _keine_echte_web_recherche
+):
+    clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    monkeypatch.setattr("radar.scheduler.run_full", lambda s: (_ for _ in ()).throw(RuntimeError("kaputt")))
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+
+    run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
+
+    assert _keine_echte_web_recherche == [settings]
+
+
+def test_web_recherche_ohne_key_oder_abgeschaltet_wird_uebersprungen(
+    monkeypatch, settings, _keine_echte_web_recherche
+):
+    clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
+    monkeypatch.setattr("radar.scheduler.run_full", lambda s: [])
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+    run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    settings.scheduler.web_recherche = False
+    run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
+
+    assert _keine_echte_web_recherche == []
+
+
+def test_fehler_der_web_recherche_beendet_den_scheduler_nicht(monkeypatch, settings):
+    clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    monkeypatch.setattr("radar.scheduler.run_full", lambda s: [])
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer: False)
+    monkeypatch.setattr("radar.scheduler.run_web_recherche", lambda s: (_ for _ in ()).throw(RuntimeError("weg")))
+
+    run_forever(settings, max_runs=2, sleep=clock.sleep, now=clock.now)  # darf nicht propagieren

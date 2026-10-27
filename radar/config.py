@@ -141,6 +141,9 @@ class SchedulerConfig:
     hour: int = 3
     minute: int = 0
     check_interval_seconds: int = 60
+    # Im Anschluss an den Lauf die Web-Recherche (radar/web_recherche.py) ausführen. Ohne
+    # TAVILY_API_KEY wird sie ohne Fehler übersprungen.
+    web_recherche: bool = True
 
     def __post_init__(self):
         if not 0 <= self.weekday <= 6:

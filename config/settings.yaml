@@ -119,3 +119,4 @@ scheduler:
   hour: 3
   minute: 0
   check_interval_seconds: 60
+  web_recherche: true   # danach Web-Recherche Phase 3/4 (radar/web_recherche.py), ohne TAVILY_API_KEY übersprungen

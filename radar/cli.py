@@ -9,6 +9,8 @@ Befehle:
                 scheduler) und benachrichtigt danach immer (kein --notify nötig/vorhanden)
   test-email  - SMTP-Konfiguration mit Beispieldaten testen, unabhängig von einem echten Lauf
                 (radar/notifier.py)
+  web-recherche - Phase 3/4 (Baugenehmigung, Baubeginn) im Umkreis um Norderstedt per Such-API
+                suchen (radar/web_recherche.py, braucht TAVILY_API_KEY in .env)
 
 Das Dashboard (`streamlit run app.py`) hat einen eigenen Einstiegspunkt: Streamlit-Apps starten
 nicht über eine normale Python-CLI, siehe docker-compose.yml.
@@ -23,6 +25,7 @@ import sys
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
 from radar.scraper import LaufLaeuftBereits, run_full
+from radar.web_recherche import run_web_recherche
 
 _BEISPIEL_TREFFER = [
     NeuerTreffer(
@@ -75,6 +78,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     subparsers.add_parser("scheduler", help="Dauerprozess: Lauf nach Zeitplan (config/settings.yaml)")
     subparsers.add_parser("test-email", help="SMTP-Konfiguration mit Beispieldaten testen (radar/notifier.py)")
+    subparsers.add_parser(
+        "web-recherche", help="Baugenehmigungen/Baubeginne im Umkreis per Such-API suchen (radar/web_recherche.py)"
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -92,6 +98,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.befehl == "test-email":
         return _test_email()
+
+    if args.befehl == "web-recherche":
+        try:
+            ergebnis = run_web_recherche()
+        except RuntimeError as exc:  # z. B. TAVILY_API_KEY fehlt
+            logging.getLogger(__name__).error("Web-Recherche nicht gestartet: %s", exc)
+            return 2
+        return 0 if ergebnis.ok else 1
 
     run_forever()  # args.befehl == "scheduler" (argparse lässt keinen anderen Wert zu)
     return 0

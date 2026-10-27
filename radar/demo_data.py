@@ -31,6 +31,7 @@ from radar import database
 from radar.config import DatabaseConfig, Settings
 from radar.parser import Adresse, ProjektExtraktion, Verfahrensstand, Wohnform
 from radar.sources.base import Sitzung
+from radar.web_recherche import Phase, WebFund
 
 # Tier kommt im echten Betrieb aus config/sources.yaml (radar.config.Settings.tier_for). Die
 # Demo-Quellen unten sind keine echten Ratsinformationssysteme und stehen dort bewusst nicht -
@@ -346,6 +347,78 @@ _PROJEKTE: list[dict] = [
 ]
 
 
+# Synthetische Web-Recherche-Funde (radar/web_recherche.py) für den Tab "Web-Recherche". URLs zeigen
+# bewusst auf example.org - frei erfunden, kein echter Artikel.
+_WEB_FUNDE: list[WebFund] = [
+    WebFund(
+        url="https://example.org/demo/henstedt-ulzburg-spatenstich",
+        titel="Spatenstich für 64 Mietwohnungen in Henstedt-Ulzburg (Demo)",
+        auszug="In Henstedt-Ulzburg haben die Bauarbeiten begonnen: Beim Spatenstich am Beckersberg "
+        "stellte der Bauträger 64 Mietwohnungen vor, davon 20 öffentlich gefördert.",
+        domain="example.org",
+        ort="Henstedt-Ulzburg",
+        bundesland="SH",
+        entfernung_km=9.3,
+        phase=Phase.BAUBEGINN,
+        we_anzahl=64,
+        evidenz="…stellte der Bauträger 64 Mietwohnungen vor, davon 20 öffentlich gefördert.",
+        suchanfrage="Henstedt-Ulzburg Baubeginn Spatenstich Wohnungen",
+        veroeffentlicht="2026-09-18",
+    ),
+    WebFund(
+        url="https://example.org/demo/quickborn-baugenehmigung",
+        titel="Baugenehmigung für Wohnquartier am Bahnhof Quickborn erteilt (Demo)",
+        auszug="Die Stadt Quickborn hat die Baugenehmigung für das neue Wohnquartier erteilt. "
+        "Geplant sind 38 Wohnungen in drei Mehrfamilienhäusern, Baustart im Frühjahr.",
+        domain="example.org",
+        ort="Quickborn",
+        bundesland="SH",
+        entfernung_km=6.3,
+        phase=Phase.BAUGENEHMIGUNG,
+        we_anzahl=38,
+        evidenz="Geplant sind 38 Wohnungen in drei Mehrfamilienhäusern, Baustart im Frühjahr.",
+        suchanfrage="Quickborn Baugenehmigung Neubau Wohnungen",
+        veroeffentlicht="2026-10-02",
+    ),
+    WebFund(
+        url="https://example.org/demo/ahrensburg-richtfest",
+        titel="Richtfest im Ahrensburger Wohnprojekt (Demo)",
+        auszug="Richtfest in Ahrensburg: Das Wohnprojekt mit Mietwohnungen für Senioren und Familien "
+        "liegt im Zeitplan, Bezug ist für Herbst 2027 vorgesehen.",
+        domain="example.org",
+        ort="Ahrensburg",
+        bundesland="SH",
+        entfernung_km=16.8,
+        phase=Phase.BAUBEGINN,
+        we_anzahl=None,
+        evidenz=None,
+        suchanfrage="Ahrensburg Baubeginn Spatenstich Wohnungen",
+        veroeffentlicht="2026-08-27",
+    ),
+    WebFund(
+        url="https://example.org/demo/buxtehude-genehmigung",
+        titel="Grünes Licht für 120 Wohnungen in Buxtehude (Demo)",
+        auszug="Der Landkreis hat die Baugenehmigung für 120 Wohnungen im neuen Quartier an der Este "
+        "erteilt, ein Drittel davon gefördert.",
+        domain="example.org",
+        ort="Buxtehude",
+        bundesland="NI",
+        entfernung_km=31.9,
+        phase=Phase.BAUGENEHMIGUNG,
+        we_anzahl=120,
+        evidenz="…die Baugenehmigung für 120 Wohnungen im neuen Quartier an der Este erteilt…",
+        suchanfrage="Buxtehude Baugenehmigung Neubau Wohnungen",
+        veroeffentlicht="2026-07-15",
+    ),
+]
+
+
+def seed_web_funde(conn: sqlite3.Connection) -> None:
+    """Demo-Web-Funde schreiben (idempotent über die URL, wie `database.upsert_web_fund()`)."""
+    for fund in _WEB_FUNDE:
+        database.upsert_web_fund(conn, fund)
+
+
 def demo_db_path(settings: Settings) -> Path:
     """Liegt in einem `demo/`-Unterordner neben der echten Datenbank (`settings.database.path`),
     NICHT fest gegen `PROJECT_ROOT` verankert: Tests übergeben eine `Settings`-Instanz mit
@@ -446,6 +519,10 @@ def ensure_demo_seeded(settings: Settings) -> Settings:
         anzahl = conn.execute("SELECT COUNT(*) FROM projekte").fetchone()[0]
         if anzahl == 0:
             seed(conn)
+        # Eigene Prüfung: ältere Demo-Datenbanken (vor der Web-Recherche angelegt) haben Projekte,
+        # aber noch keine Web-Funde - ein erneutes seed() würde dort bearbeitete Status zurücksetzen.
+        if conn.execute("SELECT COUNT(*) FROM web_funde").fetchone()[0] == 0:
+            seed_web_funde(conn)
     finally:
         conn.close()
     return demo
@@ -467,6 +544,9 @@ def reset_demo(settings: Settings) -> Settings:
         for projekt in database.list_projekte(conn):
             if projekt["notizen"]:
                 database.set_projekt_notizen(conn, projekt["id"], "")
+        seed_web_funde(conn)
+        conn.execute("UPDATE web_funde SET status = 'Neu', notizen = ''")
+        conn.commit()
     finally:
         conn.close()
     return demo

@@ -99,6 +99,27 @@ senden" – siehe CLAUDE.md, Abschnitt "Referenzquelle ..." bzw. Roadmap Schritt
   ohne Fehlermeldung deaktiviert; ein Versandfehler (falscher Login, Server nicht erreichbar)
   wird abgefangen und bricht einen sonst erfolgreichen Lauf nicht ab.
 
+## Dritter externer Datenfluss: Web-Recherche (Tavily)
+
+`radar/web_recherche.py` sucht optional per Such-API nach Presseberichten über erteilte
+Baugenehmigungen und Baubeginne im Umkreis von 50 km um Norderstedt (Dashboard-Tab
+"Web-Recherche", `python -m radar web-recherche`).
+
+- **Anbieter:** Tavily (Such-API, `api.tavily.com`). Nur aktiv, wenn `TAVILY_API_KEY` in `.env`
+  gesetzt ist; der Key liegt wie alle anderen ausschließlich in `.env`/`env_file`.
+- **Übertragene Daten:** nur die Suchanfrage selbst, z. B. „Quickborn Baugenehmigung Neubau
+  Wohnungen“ – ein Ortsname plus feste Suchbegriffe aus `config/web_recherche.yaml`. **Keine
+  Dokumente, keine Projektdaten, keine personenbezogenen Daten** gehen an den Anbieter.
+- **Zurück kommen:** öffentliche Webseiten-Titel, URLs und kurze Textauszüge. Lokal in der
+  Tabelle `web_funde` gespeichert (Auszug auf 600 Zeichen gekürzt), nicht an die Claude-API
+  weitergegeben – die Einordnung erfolgt per Stichwort im Code.
+- **Kosten:** jede Anfrage verbraucht ein Credit beim Anbieter. Begrenzt über
+  `max_anfragen_pro_lauf`/`max_anfragen_pro_tag` (harte Obergrenze 500 im Code, Tageszähler in
+  der Tabelle `such_nutzung`); ungültiger Key oder aufgebrauchtes Kontingent stoppt den Lauf sofort.
+- **Offen für die Rechtsabteilung:** Nutzungsbedingungen/Sitz des Anbieters (USA) prüfen, wie
+  bei Anthropic. Da nur Ortsnamen und Fachbegriffe übertragen werden, ist das Risiko deutlich
+  geringer als beim LLM-Datenfluss.
+
 ## Aufbewahrung & Löschung (lokale Daten)
 
 Lokal gespeichert werden: SQLite-Datenbank (extrahierte Projektdaten, Quellen-Zustand),

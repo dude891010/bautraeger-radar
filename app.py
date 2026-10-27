@@ -12,6 +12,7 @@ Streamlit hat **keine eigene Authentifizierung** - deshalb ein eigener Passwortd
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
@@ -29,6 +30,7 @@ from fpdf.fonts import FontFace
 from radar import auth, database, demo_data
 from radar.config import PROJECT_ROOT, Settings, load_settings, load_sources
 from radar.scraper import lauf_sperre_aktiv
+from radar.web_recherche import PHASE_LABEL, Phase, load_web_config, orte_im_radius
 
 LOG_TAIL_CHARS = 4000
 MAX_NOTIZ_LAENGE = 2000
@@ -592,6 +594,72 @@ def to_pdf_bytes(df: pd.DataFrame, *, titel: str = "Bauträger-Radar - Projektre
     return bytes(pdf.output())
 
 
+# -- Web-Recherche (radar/web_recherche.py): eigener Tab mit eigenem Filter ------------------------
+# Presse-/Web-Funde stehen bewusst getrennt von den Projekten aus Ratsunterlagen: sie sind weder
+# per LLM ausgewertet noch an eine Vorlage gebunden, und mehrere Artikel können dasselbe Vorhaben
+# beschreiben. Der Vertrieb soll das auf einen Blick unterscheiden können.
+WEB_PHASE_BADGE = {
+    Phase.BAUGENEHMIGUNG.value: f"🟢 {PHASE_LABEL[Phase.BAUGENEHMIGUNG]}",
+    Phase.BAUBEGINN.value: f"🏗️ {PHASE_LABEL[Phase.BAUBEGINN]}",
+}
+WEB_EXPORT_SPALTEN = [
+    "phase_label",
+    "ort",
+    "bundesland",
+    "entfernung_km",
+    "titel",
+    "we_anzahl",
+    "evidenz",
+    "auszug",
+    "url",
+    "domain",
+    "veroeffentlicht",
+    "status",
+    "notizen",
+    "aktualisiert_am",
+]
+
+
+def build_web_funde_df(rows: list) -> pd.DataFrame:
+    """`database.list_web_funde()` als DataFrame, ergänzt um eine lesbare `phase_label`-Spalte."""
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame([dict(r) for r in rows])
+    df["phase_label"] = df["phase"].map(WEB_PHASE_BADGE).fillna(df["phase"])
+    df["we_anzahl"] = df["we_anzahl"].astype("Int64")
+    return df
+
+
+def apply_web_filter(
+    df: pd.DataFrame,
+    *,
+    phasen: list[str] | None = None,
+    max_km: float | None = None,
+    orte: list[str] | None = None,
+    status: list[str] | None = None,
+    nur_mit_we: bool = False,
+) -> pd.DataFrame:
+    """Filter des Web-Recherche-Tabs. Wie `apply_filters()`: leer/`None` = kein Filter.
+    `phasen` sind die Rohwerte (`BAUGENEHMIGUNG`/`BAUBEGINN`), `max_km` der Umkreis um das Zentrum."""
+    if df.empty:
+        return df
+    if phasen:
+        df = df[df["phase"].isin(phasen)]
+    if max_km is not None:
+        df = df[df["entfernung_km"] <= max_km]
+    if orte:
+        df = df[df["ort"].isin(orte)]
+    if status:
+        df = df[df["status"].isin(status)]
+    if nur_mit_we:
+        df = df[df["we_anzahl"].notna()]
+    return df
+
+
+def web_export_view(df: pd.DataFrame) -> pd.DataFrame:
+    return df[[s for s in WEB_EXPORT_SPALTEN if s in df.columns]]
+
+
 # -- Lauf im Hintergrund (Subprozess statt Thread: isoliert den Anthropic-/DB-Zugriff sauber) ------
 
 
@@ -605,13 +673,20 @@ def _scrape_command(*, notify: bool) -> list[str]:
     return befehl
 
 
-def start_run(settings: Settings, *, notify: bool = False) -> tuple[subprocess.Popen, Path]:
+def _web_recherche_command() -> list[str]:
+    return [sys.executable, "-m", "radar", "web-recherche"]
+
+
+def start_run(
+    settings: Settings, *, notify: bool = False, befehl: list[str] | None = None, log_praefix: str = "lauf"
+) -> tuple[subprocess.Popen, Path]:
+    """Startet `befehl` (Standard: der vollständige Lauf) als Subprozess mit eigener Logdatei."""
     log_dir = settings.resolve_path("data/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / f"lauf_{datetime.now():%Y%m%d_%H%M%S}.log"
+    log_path = log_dir / f"{log_praefix}_{datetime.now():%Y%m%d_%H%M%S}.log"
     with open(log_path, "w", encoding="utf-8") as log_file:
         process = subprocess.Popen(
-            _scrape_command(notify=notify),
+            befehl or _scrape_command(notify=notify),
             stdout=log_file,
             stderr=subprocess.STDOUT,
             cwd=str(PROJECT_ROOT),
@@ -657,6 +732,132 @@ def _login_gate(st) -> None:
         time.sleep(1)  # bremst automatisiertes Durchprobieren zusätzlich
         st.error("Passwort falsch.")
     st.stop()
+
+
+def _web_recherche_tab(
+    st, settings: Settings, active_settings: Settings, web_df: pd.DataFrame, *, demo_modus: bool
+) -> bool:
+    """Inhalt des Tabs "Web-Recherche". Liefert, ob gerade eine Recherche im Hintergrund läuft
+    (dann aktualisiert sich die Seite automatisch, wie beim Hauptlauf)."""
+    try:
+        web_config = load_web_config(settings)
+    except (OSError, ValueError) as exc:
+        st.error(f"config/web_recherche.yaml fehlerhaft: {exc}")
+        return False
+
+    st.subheader(f"Phase 3 & 4 im Umkreis von {web_config.radius_km:.0f} km um {web_config.zentrum_name}")
+    st.caption(
+        "Baugenehmigungen und Baubeginne aus Lokalpresse und Pressemitteilungen, gefunden per "
+        f"Such-API über {len(orte_im_radius(web_config))} Orte (config/web_recherche.yaml). "
+        "Eingeordnet per Stichwort, ohne KI - WE-Zahlen nur, wenn sie wörtlich im Text stehen. "
+        "Mehrere Artikel können dasselbe Vorhaben beschreiben."
+    )
+    if demo_modus:
+        st.info("Demo-Modus: Es werden synthetische Beispielfunde angezeigt, keine echten Daten.")
+
+    web_aktiv = run_is_active(st.session_state.get("web_process"))
+    col_start, col_log = st.columns([1, 3])
+    with col_start:
+        if not os.environ.get("TAVILY_API_KEY", "").strip():
+            st.warning("TAVILY_API_KEY fehlt in .env - Recherche nicht möglich.")
+        elif web_aktiv:
+            st.info("Web-Recherche läuft …")
+        elif st.button("Web-Recherche jetzt starten", help="Läuft immer gegen die echte Datenbank."):
+            process, log_path = start_run(settings, befehl=_web_recherche_command(), log_praefix="web")
+            st.session_state["web_process"] = process
+            st.session_state["web_log_path"] = log_path
+            st.rerun()
+    with col_log:
+        log_path = st.session_state.get("web_log_path")
+        if log_path is not None and Path(log_path).exists():
+            inhalt = Path(log_path).read_text(encoding="utf-8", errors="replace")
+            with st.expander("Log der Web-Recherche", expanded=web_aktiv):
+                st.code(inhalt[-LOG_TAIL_CHARS:] or "(noch keine Ausgabe)")
+
+    if web_df.empty:
+        st.info("Noch keine Web-Funde. Starte oben eine Web-Recherche.")
+        return web_aktiv
+
+    f1, f2, f3, f4 = st.columns([2, 2, 2, 1], gap="medium")
+    with f1:
+        f_phasen = st.multiselect(
+            "Phase",
+            [p.value for p in Phase],
+            default=[p.value for p in Phase],
+            format_func=lambda p: WEB_PHASE_BADGE.get(p, p),
+            key="web_phase",
+        )
+    with f2:
+        radius = int(web_config.radius_km)
+        f_km = st.slider("Umkreis (km)", min_value=5, max_value=radius, value=radius, step=5, key="web_km")
+    with f3:
+        f_orte = st.multiselect("Ort", sorted(web_df["ort"].dropna().unique()), key="web_ort")
+        f_status = st.multiselect("Status", sorted(web_df["status"].dropna().unique()), key="web_status")
+    with f4:
+        f_nur_we = st.checkbox("nur mit WE-Zahl", key="web_nur_we")
+
+    gefiltert = apply_web_filter(
+        web_df, phasen=f_phasen, max_km=f_km, orte=f_orte, status=f_status, nur_mit_we=f_nur_we
+    )
+    st.caption(f"{len(gefiltert)} von {len(web_df)} Funden")
+
+    bearbeitbar = gefiltert[
+        ["id", "phase_label", "ort", "entfernung_km", "titel", "we_anzahl", "url", "status", "notizen"]
+    ]
+    bearbeitet = st.data_editor(
+        bearbeitbar,
+        disabled=["id", "phase_label", "ort", "entfernung_km", "titel", "we_anzahl", "url"],
+        column_config={
+            "phase_label": st.column_config.TextColumn("Phase", width="medium"),
+            "ort": "Ort",
+            "entfernung_km": st.column_config.NumberColumn("km", format="%.0f"),
+            "titel": st.column_config.TextColumn("Titel", width="large"),
+            "we_anzahl": st.column_config.NumberColumn("WE (laut Text)"),
+            "url": st.column_config.LinkColumn("Quelle", display_text="öffnen"),
+            "status": st.column_config.SelectboxColumn("Status", options=settings.dashboard.statuses),
+            "notizen": st.column_config.TextColumn("Notizen", max_chars=MAX_NOTIZ_LAENGE),
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="web_editor",
+    )
+    col_speichern, col_export = st.columns([1, 3])
+    with col_speichern:
+        if st.button("Änderungen speichern", key="web_speichern"):
+            changes = find_changed_rows(bearbeitbar, bearbeitet, settings.dashboard.statuses)
+            if not changes:
+                st.info("Keine Änderungen.")
+            else:
+                with closing(database.connect(active_settings)) as conn:
+                    for change in changes:
+                        if change["status_geaendert"]:
+                            database.set_web_fund_status(conn, change["id"], change["status"])
+                        database.set_web_fund_notizen(conn, change["id"], change["notizen"])
+                st.success(f"{len(changes)} Fund(e) aktualisiert.")
+                st.rerun()
+    with col_export:
+        st.download_button(
+            "Web-Funde als Excel herunterladen",
+            data=to_excel_bytes(web_export_view(gefiltert)),
+            file_name="web_recherche.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    with st.expander("Details: Textauszug und Beleg der WE-Zahl"):
+        st.dataframe(
+            gefiltert[["titel", "evidenz", "auszug", "domain", "veroeffentlicht", "suchanfrage"]],
+            column_config={
+                "titel": "Titel",
+                "evidenz": "Beleg (Zitat)",
+                "auszug": "Auszug",
+                "domain": "Website",
+                "veroeffentlicht": "veröffentlicht",
+                "suchanfrage": "Suchanfrage",
+            },
+            hide_index=True,
+            use_container_width=True,
+        )
+    return web_aktiv
 
 
 def main() -> None:
@@ -759,6 +960,7 @@ def main() -> None:
     with closing(database.connect(active_settings)) as conn:
         projekte_rows = database.list_projekte(conn)
         quellen_rows = database.list_quellen(conn)
+        web_df = build_web_funde_df(database.list_web_funde(conn))
 
     df = build_projekte_df(projekte_rows, tier_by_quelle)
     df = add_lead_badge(add_pruef_badge(df))
@@ -782,8 +984,14 @@ def main() -> None:
 
     # "Kurzfristige Leads" bewusst als ERSTER Tab (Streamlit öffnet immer den ersten): der
     # Vertrieb sieht konkrete Bauvorhaben sofort, ohne zu filtern (Kundenfeedback Hummel, 10/2026).
-    tab_leads, tab_projekte, tab_diagramme, tab_quellen = st.tabs(
-        [f"🏗️ Kurzfristige Leads ({kpis['leads']})", "Projekte", "Diagramme", "Quellen-Monitoring"]
+    tab_leads, tab_web, tab_projekte, tab_diagramme, tab_quellen = st.tabs(
+        [
+            f"🏗️ Kurzfristige Leads ({kpis['leads']})",
+            f"🌐 Web-Recherche ({len(web_df)})",
+            "Projekte",
+            "Diagramme",
+            "Quellen-Monitoring",
+        ]
     )
 
     with tab_leads:
@@ -837,6 +1045,9 @@ def main() -> None:
                 file_name="kurzfristige_leads.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+
+    with tab_web:
+        web_aktiv = _web_recherche_tab(st, settings, active_settings, web_df, demo_modus=demo_modus)
 
     with tab_diagramme:
         if df.empty:
@@ -1012,7 +1223,7 @@ def main() -> None:
             quellen_df = pd.DataFrame([dict(r) for r in quellen_rows])
             st.dataframe(quellen_df, hide_index=True, use_container_width=True)
 
-    if aktiv:
+    if aktiv or web_aktiv:
         time.sleep(2)
         st.rerun()
 

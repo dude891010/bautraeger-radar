@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from radar.parser import AnalyseErgebnis, ProjektExtraktion
     from radar.scraper import SourceRunResult
     from radar.sources.base import Dokument, Sitzung
+    from radar.web_recherche import WebFund
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,39 @@ CREATE TABLE llm_nutzung (
 );
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3]
+# V4: Web-Recherche (radar/web_recherche.py). Bewusst eine eigene Tabelle statt `projekte`: ein
+# Presseartikel ist kein ausgewertetes Ratsdokument (keine Vorlage, keine Sitzung, keine
+# LLM-Extraktion), der Vertrieb soll beides auseinanderhalten können. Dedup über die URL.
+# `such_nutzung` zählt Suchanfragen je Kalendertag (wie `llm_nutzung` für die Claude-API).
+_SCHEMA_V4 = """
+CREATE TABLE web_funde (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL UNIQUE,
+    titel TEXT NOT NULL,
+    auszug TEXT,
+    domain TEXT,
+    ort TEXT NOT NULL,
+    bundesland TEXT NOT NULL,
+    entfernung_km REAL NOT NULL,
+    phase TEXT NOT NULL,
+    we_anzahl INTEGER,
+    evidenz TEXT,
+    suchanfrage TEXT,
+    veroeffentlicht TEXT,
+    status TEXT NOT NULL DEFAULT 'Neu',
+    notizen TEXT NOT NULL DEFAULT '',
+    erstellt_am TEXT NOT NULL,
+    aktualisiert_am TEXT NOT NULL
+);
+CREATE INDEX idx_web_funde_phase ON web_funde(phase);
+
+CREATE TABLE such_nutzung (
+    datum TEXT PRIMARY KEY,
+    anfragen INTEGER NOT NULL DEFAULT 0
+);
+"""
+
+_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -613,3 +646,97 @@ def list_status_log_fuer_projekt(conn: sqlite3.Connection, projekt_id: int) -> l
     return conn.execute(
         "SELECT * FROM status_log WHERE projekt_id = ? ORDER BY zeitpunkt", (projekt_id,)
     ).fetchall()
+
+
+# -- Web-Recherche (radar/web_recherche.py) -----------------------------------------------------------
+
+# Rang der Phasen (siehe web_recherche.PHASE_RANG) - hier als SQL-Ausdruck, damit ein späterer Lauf
+# eine Phase nur hochstuft (Genehmigung -> Baubeginn), nie zurück.
+_PHASE_RANG_SQL = "CASE {} WHEN 'BAUBEGINN' THEN 4 WHEN 'BAUGENEHMIGUNG' THEN 3 ELSE 0 END"
+
+
+def upsert_web_fund(conn: sqlite3.Connection, fund: WebFund, *, when: datetime | None = None) -> tuple[int, bool]:
+    """Liefert `(id, ist_neu)`. Bekannte URL: Titel/Auszug/Zeitpunkt werden aktualisiert, die Phase
+    nur hochgestuft, eine WE-Zahl nur ergänzt (nie durch "nicht gefunden" gelöscht). `status` und
+    `notizen` werden nie angefasst - die pflegt ausschließlich das Dashboard."""
+    now_iso = (when or datetime.now(UTC)).isoformat()
+    felder = {
+        "url": fund.url,
+        "titel": fund.titel,
+        "auszug": fund.auszug,
+        "domain": fund.domain,
+        "ort": fund.ort,
+        "bundesland": fund.bundesland,
+        "entfernung_km": fund.entfernung_km,
+        "phase": fund.phase.value,
+        "we_anzahl": fund.we_anzahl,
+        "evidenz": fund.evidenz,
+        "suchanfrage": fund.suchanfrage,
+        "veroeffentlicht": fund.veroeffentlicht,
+        "jetzt": now_iso,
+    }
+    existing = conn.execute("SELECT id FROM web_funde WHERE url = ?", (fund.url,)).fetchone()
+    if existing is not None:
+        conn.execute(
+            f"""
+            UPDATE web_funde SET
+                titel = :titel, auszug = :auszug,
+                phase = CASE WHEN {_PHASE_RANG_SQL.format(":phase")} > {_PHASE_RANG_SQL.format("phase")}
+                             THEN :phase ELSE phase END,
+                we_anzahl = COALESCE(:we_anzahl, we_anzahl),
+                evidenz = CASE WHEN :we_anzahl IS NOT NULL THEN :evidenz ELSE evidenz END,
+                veroeffentlicht = COALESCE(:veroeffentlicht, veroeffentlicht),
+                aktualisiert_am = :jetzt
+            WHERE url = :url
+            """,
+            felder,
+        )
+        conn.commit()
+        return existing["id"], False
+
+    cur = conn.execute(
+        """
+        INSERT INTO web_funde (
+            url, titel, auszug, domain, ort, bundesland, entfernung_km, phase, we_anzahl, evidenz,
+            suchanfrage, veroeffentlicht, status, notizen, erstellt_am, aktualisiert_am
+        ) VALUES (
+            :url, :titel, :auszug, :domain, :ort, :bundesland, :entfernung_km, :phase, :we_anzahl, :evidenz,
+            :suchanfrage, :veroeffentlicht, 'Neu', '', :jetzt, :jetzt
+        )
+        """,
+        felder,
+    )
+    conn.commit()
+    return cur.lastrowid, True
+
+
+def list_web_funde(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM web_funde ORDER BY entfernung_km, aktualisiert_am DESC").fetchall()
+
+
+def set_web_fund_status(conn: sqlite3.Connection, fund_id: int, status: str) -> None:
+    conn.execute(
+        "UPDATE web_funde SET status = ?, aktualisiert_am = ? WHERE id = ?",
+        (status, datetime.now(UTC).isoformat(), fund_id),
+    )
+    conn.commit()
+
+
+def set_web_fund_notizen(conn: sqlite3.Connection, fund_id: int, notizen: str) -> None:
+    conn.execute("UPDATE web_funde SET notizen = ? WHERE id = ?", (notizen, fund_id))
+    conn.commit()
+
+
+def such_anfragen_am(conn: sqlite3.Connection, datum: str) -> int:
+    row = conn.execute("SELECT anfragen FROM such_nutzung WHERE datum = ?", (datum,)).fetchone()
+    return row["anfragen"] if row is not None else 0
+
+
+def zaehle_such_anfrage(conn: sqlite3.Connection, datum: str) -> None:
+    """Wie `zaehle_llm_anfrage()`: sofort festhalten, damit auch ein abgebrochener Lauf ehrlich zählt."""
+    conn.execute(
+        "INSERT INTO such_nutzung (datum, anfragen) VALUES (?, 1) "
+        "ON CONFLICT(datum) DO UPDATE SET anfragen = anfragen + 1",
+        (datum,),
+    )
+    conn.commit()

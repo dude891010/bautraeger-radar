@@ -37,14 +37,22 @@ kommagetrennte Adressen) in `.env` eintragen, sonst bleibt sie deaktiviert. Unab
 mit `python -m radar scrape --notify` bzw. der Dashboard-Checkbox "E-Mail-Benachrichtigung
 senden" (Default: aus, damit normale Testläufe nicht den Vertrieb anmailen).
 
+Optional: Web-Recherche nach Phase 3 (Baugenehmigung) und Phase 4 (Baubeginn) im Umkreis von
+50 km um Norderstedt (`radar/web_recherche.py`) – `TAVILY_API_KEY` in `.env` eintragen, dann im
+Dashboard-Tab "Web-Recherche" starten oder `python -m radar web-recherche`. Orte, Suchbegriffe,
+Umkreis und Kostenbremse stehen in `config/web_recherche.yaml`. Der `scheduler`-Dienst führt sie
+wöchentlich direkt nach dem Lauf aus (abschaltbar: `scheduler.web_recherche` in
+`config/settings.yaml`, ohne Key still übersprungen).
+
 ## Struktur
 
 | Pfad | Zweck |
 |---|---|
 | `config/settings.yaml` | Globale Einstellungen: Regionen/Tiers, Filter, Scraper, LLM |
 | `config/sources.yaml` | Quellenregister: eine Zeile pro Ratsinformationssystem |
+| `config/web_recherche.yaml` | Web-Recherche: Umkreis, Orte mit Koordinaten, Suchbegriffe, Kostenbremse |
 | `radar/sources/` | Adapter je Systemtyp (SessionNet, ALLRIS, OParl, Transparenzportal Hamburg, bv-hh.de) |
-| `radar/` | `config`, `committees`, `scraper`, `parser`, `database`, `notifier` (E-Mail-Benachrichtigung) |
+| `radar/` | `config`, `committees`, `scraper`, `parser`, `database`, `notifier` (E-Mail-Benachrichtigung), `web_recherche` (Phase 3/4 per Such-API) |
 | `app.py` | Streamlit-Dashboard (`streamlit run app.py`) |
 | `tests/` | Tests, `tests/fixtures/` für gespeicherte HTML-Antworten, `tests/gold/` für den LLM-Goldstandard |
 | `config/prompts/` | Triage-/Extraktions-Prompts (versioniert, nicht im Python-Code) |

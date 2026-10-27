@@ -1,0 +1,130 @@
+# Web-Recherche nach konkreten Bauvorhaben (radar/web_recherche.py).
+# Ergänzt die Ratsunterlagen um Phase 3 (Baugenehmigung) und Phase 4 (Baubeginn), die in
+# Ausschussvorlagen oft gar nicht mehr auftauchen, aber in Lokalpresse/Pressemitteilungen stehen.
+# API-Key nur in .env (TAVILY_API_KEY), nie hier.
+
+anbieter: "tavily"
+
+# Mittelpunkt und Umkreis. Welche Orte durchsucht werden, ergibt sich aus den Koordinaten unten:
+# alles mit Luftlinie <= radius_km wird abgefragt, der Rest automatisch übersprungen.
+zentrum_name: "Norderstedt"
+zentrum_lat: 53.7064
+zentrum_lon: 9.9922
+radius_km: 50
+
+# Suchanfragen je Phase. {ort} wird durch den Ortsnamen (bzw. `suchname`) ersetzt.
+# Jede Vorlage = eine API-Anfrage pro Ort -> Anzahl Orte x Anzahl Vorlagen = Anfragen pro Lauf.
+suchanfragen:
+  BAUGENEHMIGUNG:
+    - "{ort} Baugenehmigung Neubau Wohnungen"
+  BAUBEGINN:
+    - "{ort} Baubeginn Spatenstich Wohnungen"
+
+# Einordnung eines Treffers (Teilstring, Groß-/Kleinschreibung egal). Phase 4 schlägt Phase 3,
+# wenn beides im Text steht (das Vorhaben ist dann schon weiter).
+phasen_stichworte:
+  BAUGENEHMIGUNG:
+    - "Baugenehmigung"
+    - "Baufreigabe"
+    - "Bauantrag genehmigt"
+    - "Bauantrag ist genehmigt"
+    - "Genehmigung erteilt"
+    - "Genehmigung liegt vor"
+  BAUBEGINN:
+    - "Baubeginn"
+    - "Baustart"
+    - "Spatenstich"
+    - "Grundsteinlegung"
+    - "Richtfest"
+    - "Bauarbeiten begonnen"
+    - "Bauarbeiten haben begonnen"
+
+# Ohne mindestens einen dieser Begriffe ist ein Treffer kein Wohnbauprojekt (z. B. Gewerbehalle).
+wohn_stichworte:
+  - "Wohnung"
+  - "Wohneinheit"
+  - "Mehrfamilienhaus"
+  - "Mehrfamilienhäuser"
+  - "Wohnungsbau"
+  - "Wohnquartier"
+  - "Wohnanlage"
+  - "Wohnprojekt"
+  - "Sozialwohnung"
+  - "geförderte"
+
+# Immobilienportale verkaufen fertige Eigentumswohnungen - kein Objektgeschäft für Hummel.
+ausgeschlossene_domains:
+  - "immobilienscout24.de"
+  - "immowelt.de"
+  - "immonet.de"
+  - "kleinanzeigen.de"
+  - "wohnungsboerse.net"
+
+max_ergebnisse_pro_suche: 8
+zeitraum: "year"            # day | week | month | year (wie weit zurück die Suche reicht)
+suchtiefe: "basic"          # basic = 1 Credit je Anfrage, advanced = 2 Credits
+
+# Kostenbremse (jede API-Anfrage zählt). Harte Obergrenze im Code: 500.
+max_anfragen_pro_lauf: 120
+max_anfragen_pro_tag: 240
+max_fehler_in_folge: 3      # Notbremse: danach keine weiteren Anfragen in diesem Lauf
+request_delay_seconds: 1.0
+timeout_seconds: 30
+
+# Orte mit ungefährer Ortsmitte (WGS84). Entfernung wird daraus berechnet (Luftlinie).
+# `stichwort`: Wort, das im Treffer vorkommen muss, damit er diesem Ort zugeordnet wird
+# (Standard: name). `suchname`: abweichender Begriff für die Suchanfrage (Standard: name).
+# Neue Orte einfach ergänzen - liegen sie außerhalb von radius_km, werden sie ignoriert.
+orte:
+  # Schleswig-Holstein, Kreis Segeberg
+  - { name: "Norderstedt",       bundesland: "SH", lat: 53.7064, lon: 9.9922 }
+  - { name: "Henstedt-Ulzburg",  bundesland: "SH", lat: 53.7895, lon: 9.9764 }
+  - { name: "Kaltenkirchen",     bundesland: "SH", lat: 53.8333, lon: 9.9667 }
+  - { name: "Bad Bramstedt",     bundesland: "SH", lat: 53.9186, lon: 9.8844 }
+  - { name: "Bad Segeberg",      bundesland: "SH", lat: 53.9356, lon: 10.3089 }
+  - { name: "Wahlstedt",         bundesland: "SH", lat: 53.9500, lon: 10.2167 }
+  - { name: "Neumünster",        bundesland: "SH", lat: 54.0739, lon: 9.9847 }
+  # Kreis Pinneberg
+  - { name: "Quickborn",         bundesland: "SH", lat: 53.7295, lon: 9.9046 }
+  - { name: "Ellerau",           bundesland: "SH", lat: 53.7500, lon: 9.9167 }
+  - { name: "Pinneberg",         bundesland: "SH", lat: 53.6603, lon: 9.7956 }
+  - { name: "Elmshorn",          bundesland: "SH", lat: 53.7539, lon: 9.6531 }
+  - { name: "Uetersen",          bundesland: "SH", lat: 53.6875, lon: 9.6692 }
+  - { name: "Tornesch",          bundesland: "SH", lat: 53.7000, lon: 9.7167 }
+  - { name: "Barmstedt",         bundesland: "SH", lat: 53.7944, lon: 9.7681 }
+  - { name: "Halstenbek",        bundesland: "SH", lat: 53.6333, lon: 9.8500 }
+  - { name: "Rellingen",         bundesland: "SH", lat: 53.6500, lon: 9.8167 }
+  - { name: "Schenefeld",        bundesland: "SH", lat: 53.6031, lon: 9.8233 }
+  - { name: "Wedel",             bundesland: "SH", lat: 53.5833, lon: 9.7000 }
+  # Kreis Steinburg
+  - { name: "Itzehoe",           bundesland: "SH", lat: 53.9250, lon: 9.5164 }
+  # Kreis Stormarn
+  - { name: "Ahrensburg",        bundesland: "SH", lat: 53.6747, lon: 10.2411 }
+  - { name: "Bargteheide",       bundesland: "SH", lat: 53.7281, lon: 10.2650 }
+  - { name: "Bad Oldesloe",      bundesland: "SH", lat: 53.8117, lon: 10.3742 }
+  - { name: "Reinfeld",          bundesland: "SH", lat: 53.8333, lon: 10.4833, suchname: "Reinfeld Holstein" }
+  - { name: "Großhansdorf",      bundesland: "SH", lat: 53.6667, lon: 10.2833 }
+  - { name: "Trittau",           bundesland: "SH", lat: 53.6167, lon: 10.4000 }
+  - { name: "Reinbek",           bundesland: "SH", lat: 53.5167, lon: 10.2500 }
+  - { name: "Glinde",            bundesland: "SH", lat: 53.5406, lon: 10.2111 }
+  - { name: "Barsbüttel",        bundesland: "SH", lat: 53.5667, lon: 10.1667 }
+  # Kreis Herzogtum Lauenburg
+  - { name: "Geesthacht",        bundesland: "SH", lat: 53.4375, lon: 10.3767 }
+  - { name: "Schwarzenbek",      bundesland: "SH", lat: 53.5000, lon: 10.4833 }
+  # Hamburg (je Bezirk eine eigene Suche, damit die Ergebnisliste nicht nur aus der Innenstadt besteht)
+  - { name: "Hamburg-Mitte",     bundesland: "HH", lat: 53.5503, lon: 9.9930,  stichwort: "Hamburg" }
+  - { name: "Hamburg-Altona",    bundesland: "HH", lat: 53.5500, lon: 9.9333,  stichwort: "Altona" }
+  - { name: "Hamburg-Eimsbüttel", bundesland: "HH", lat: 53.5744, lon: 9.9572, stichwort: "Eimsbüttel" }
+  - { name: "Hamburg-Nord",      bundesland: "HH", lat: 53.5875, lon: 10.0167, stichwort: "Hamburg" }
+  - { name: "Hamburg-Wandsbek",  bundesland: "HH", lat: 53.5722, lon: 10.0703, stichwort: "Wandsbek" }
+  - { name: "Hamburg-Bergedorf", bundesland: "HH", lat: 53.4883, lon: 10.2125, stichwort: "Bergedorf" }
+  - { name: "Hamburg-Harburg",   bundesland: "HH", lat: 53.4608, lon: 9.9836,  stichwort: "Harburg" }
+  # Niedersachsen (südlich der Elbe)
+  - { name: "Buxtehude",         bundesland: "NI", lat: 53.4769, lon: 9.7011 }
+  - { name: "Stade",             bundesland: "NI", lat: 53.6008, lon: 9.4764 }
+  - { name: "Jork",              bundesland: "NI", lat: 53.5333, lon: 9.6833 }
+  - { name: "Neu Wulmstorf",     bundesland: "NI", lat: 53.4667, lon: 9.8000 }
+  - { name: "Seevetal",          bundesland: "NI", lat: 53.4000, lon: 9.9833 }
+  - { name: "Buchholz",          bundesland: "NI", lat: 53.3275, lon: 9.8711, suchname: "Buchholz in der Nordheide" }
+  - { name: "Winsen",            bundesland: "NI", lat: 53.3583, lon: 10.2122, suchname: "Winsen (Luhe)" }
+  - { name: "Tostedt",           bundesland: "NI", lat: 53.2833, lon: 9.7167 }

@@ -664,6 +664,36 @@ wird.
      von der Firmen-IT selbst in `.env` gewählt; übertragen wird nur eine kurze Zusammenfassung
      (Kommune, Vorhaben-Titel, WE-Zahl, Quell-Link) je Treffer, kein Dokumenttext, keine Anlagen.
 
+   **Nachträglich ergänzt (27.10.2026): Web-Recherche Phase 3/4** (`radar/web_recherche.py`,
+   `config/web_recherche.yaml`). Sucht per Such-API nach erteilten Baugenehmigungen (Phase 3) und
+   Baubeginnen (Phase 4: Spatenstich, Grundsteinlegung, Richtfest) im Umkreis von 50 km um
+   Norderstedt - die Phasen, die in Ratsunterlagen oft fehlen, aber am nächsten am Küchenbedarf
+   liegen.
+   - **Tavily statt Perplexity:** Tavily liefert echte Suchergebnisse (Titel/URL/Auszug),
+     Perplexity eine KI-formulierte Antwort, die Zahlen erfinden könnte. Anbieter hinter dem
+     `SuchAnbieter`-Protokoll, REST-Aufruf direkt über `requests` (keine neue Abhängigkeit).
+   - **Umkreis ohne Geocoding-Dienst:** Orte mit Koordinaten in der YAML, Luftlinie per Haversine;
+     Orte außerhalb von `radius_km` werden automatisch übersprungen (derzeit 44 von 45, Tostedt
+     liegt knapp außerhalb). Hamburg je Bezirk eine eigene Suche.
+   - **Ohne LLM:** Treffer brauchen Ortsnamen (Wortgrenze), einen Wohnbau-Begriff und ein
+     Phasen-Stichwort (Phase 4 schlägt Phase 3). WE-Zahl nur per Regex mit wörtlichem Zitat.
+   - **Eigene Tabelle `web_funde`** (Schema v4, Dedup über normalisierte URL) statt `projekte`:
+     ein Presseartikel ist keine ausgewertete Vorlage. Phase wird nur hochgestuft, eine WE-Zahl
+     nie durch "nicht gefunden" gelöscht, `status`/`notizen` nie von einem Lauf überschrieben.
+   - **Kostenbremse:** `max_anfragen_pro_lauf`/`-pro_tag` (Tabelle `such_nutzung`, harte
+     Obergrenze 500), 401/403/432/433 stoppen sofort, `max_fehler_in_folge` als Notbremse.
+     Keine automatischen Retries.
+   - Dashboard: zweiter Tab "🌐 Web-Recherche" mit eigenem Filter (Phase, Umkreis-Slider, Ort,
+     Status, nur mit WE-Zahl), Status/Notizen-Editor, Excel-Export, Start-Knopf (Subprozess
+     `python -m radar web-recherche`). Demo-Modus enthält 4 synthetische Funde (example.org).
+   - **Offen:** noch kein echter Abruf (kein `TAVILY_API_KEY`), Client nur gegen das dokumentierte
+     Antwortformat getestet; Trefferqualität und Ortsliste nach dem ersten Lauf prüfen. 37 neue
+     Tests.
+   - **Im Wochenlauf:** `radar/scheduler.py` führt die Web-Recherche direkt nach `run_full()` aus,
+     unabhängig von dessen Erfolg und fehlerisoliert; abschaltbar über `scheduler.web_recherche`,
+     ohne `TAVILY_API_KEY` still übersprungen. Neue Web-Funde gehen (noch) nicht in die
+     E-Mail-Benachrichtigung. 3 weitere Tests, 361 insgesamt.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.

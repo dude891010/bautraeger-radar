@@ -1,4 +1,5 @@
-"""Geplanter Lauf (Schritt 7): `radar.scraper.run_full()` wöchentlich ausführen.
+"""Geplanter Lauf (Schritt 7): `radar.scraper.run_full()` wöchentlich ausführen, danach die
+Web-Recherche (`radar.web_recherche`, abschaltbar über `scheduler.web_recherche`).
 
 Läuft als eigener Dauerprozess (siehe docker-compose.yml, Service "scheduler") statt über
 System-Cron: kein zusätzliches Paket, keine Cron-Rechte für den Nicht-Root-Nutzer im Container
@@ -8,6 +9,7 @@ nötig, und dieselbe Logik lässt sich ohne Netzzugriff testen (siehe tests/test
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -15,6 +17,7 @@ from datetime import datetime, timedelta
 from radar.config import Settings, load_settings
 from radar.notifier import send_notification
 from radar.scraper import LaufLaeuftBereits, run_full
+from radar.web_recherche import run_web_recherche
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +67,26 @@ def run_forever(
             logger.warning("Geplanter Lauf übersprungen: %s", exc)
         except Exception:
             logger.exception("Geplanter Lauf fehlgeschlagen")
+        _geplante_web_recherche(settings)
         runs += 1
+
+
+def _geplante_web_recherche(settings: Settings) -> None:
+    """Eigener Schritt nach dem Hauptlauf, unabhängig von dessen Erfolg (die Such-API hat mit
+    Ratsinformationssystemen und Anthropic-Guthaben nichts zu tun). Ohne `TAVILY_API_KEY` still
+    übersprungen - die Web-Recherche ist optional, ein fehlender Key ist kein Betriebsfehler."""
+    if not settings.scheduler.web_recherche:
+        return
+    if not os.environ.get("TAVILY_API_KEY", "").strip():
+        logger.info("Web-Recherche übersprungen: TAVILY_API_KEY nicht gesetzt")
+        return
+    logger.info("Geplante Web-Recherche startet")
+    try:
+        ergebnis = run_web_recherche(settings)
+        if not ergebnis.ok:
+            logger.warning("Web-Recherche mit Problemen beendet: %s", ergebnis.zusammenfassung())
+    except Exception:
+        logger.exception("Geplante Web-Recherche fehlgeschlagen")
 
 
 if __name__ == "__main__":
