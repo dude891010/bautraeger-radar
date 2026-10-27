@@ -49,7 +49,10 @@ Testsuche mit wenigen Credits: `python -m radar web-recherche --test --db data/t
 nächstgelegenen Orte). **Live-Demo ohne Key und ohne Credits:** `python -m radar web-recherche --demo`
 schreibt frei erfundene, mit „(Demo)“ markierte Beispielfunde in die Demo-Datenbank – im Dashboard
 sichtbar mit „Demo-Daten anzeigen“. `--test` ohne Key weicht automatisch darauf aus. Demo-Daten landen
-nie in `data/radar.db` und werden nie per E-Mail verschickt.
+nie in `data/radar.db` und werden nie per E-Mail verschickt. Einzige echte Ausnahme: das mit ⭐
+markierte, an zwei Quellen geprüfte Instone-Projekt „Nordlicht“ (Norderstedt, 198 WE, Baubeginn).
+Reine Eigentumsprojekte erscheinen in der Web-Recherche ab 12 WE (`eigentum_min_we` in
+`config/web_recherche.yaml`).
 
 ## Struktur
 

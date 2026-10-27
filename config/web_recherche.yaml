@@ -35,6 +35,7 @@ phasen_stichworte:
     - "Baustart"
     - "Spatenstich"
     - "Grundsteinlegung"
+    - "Grundstein gelegt"
     - "Richtfest"
     - "Bauarbeiten begonnen"
     - "Bauarbeiten haben begonnen"
@@ -67,6 +68,24 @@ wohn_stichworte:
   - "Wohnprojekt"
   - "Sozialwohnung"
   - "geförderte"
+
+# Wohnform eines Treffers (Teilstring, Groß-/Kleinschreibung egal):
+#   nur Eigentum-Begriffe -> EIGENTUM, nur Miet-/Förder-Begriffe -> MIETE, beides -> GEMISCHT, keins -> UNKLAR.
+# Reine Eigentumsprojekte sind hier bewusst NICHT pauschal ausgeschlossen (Kundenwunsch Hummel, 10/2026):
+# Großprojekte/Quartiersentwicklungen sind auch als ETW relevante B2B-Küchenleads. Verworfen wird ein
+# reines ETW-Projekt nur, wenn der Text ausdrücklich weniger als `eigentum_min_we` Wohnungen nennt.
+# Ohne WE-Zahl bleibt es drin (unklare Fälle nie stillschweigend verwerfen).
+eigentum_stichworte:
+  - "Eigentumswohnung"
+  - "ETW"
+miet_stichworte:
+  - "Miet"
+  - "gefördert"
+  - "Sozialwohnung"
+  - "Drittelmix"
+  - "Belegungsbindung"
+  - "Wohnberechtigungsschein"
+eigentum_min_we: 12
 
 # Immobilienportale verkaufen fertige Eigentumswohnungen - kein Objektgeschäft für Hummel.
 ausgeschlossene_domains:

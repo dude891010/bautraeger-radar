@@ -113,6 +113,10 @@ class WebRechercheConfig:
     # Steht einer dieser Begriffe direkt um ein Phase-4-Stichwort ("Baubeginn ist für 2027 geplant"),
     # ist der Baubeginn nur angekündigt - diese Stelle zählt dann nicht als Phase 4.
     zukunft_stichworte: list[str] = field(default_factory=list)
+    # Wohnform-Erkennung und Mindestgröße für reine Eigentumsprojekte (siehe config/web_recherche.yaml).
+    eigentum_stichworte: list[str] = field(default_factory=list)
+    miet_stichworte: list[str] = field(default_factory=list)
+    eigentum_min_we: int = 12
     ausgeschlossene_domains: list[str] = field(default_factory=list)
     max_ergebnisse_pro_suche: int = 8
     zeitraum: str = "year"
@@ -138,6 +142,8 @@ class WebRechercheConfig:
             raise ValueError(f"web_recherche: zeitraum muss einer von {sorted(ZEITRAEUME)} sein")
         if self.suchtiefe not in SUCHTIEFEN:
             raise ValueError(f"web_recherche: suchtiefe muss einer von {sorted(SUCHTIEFEN)} sein")
+        if self.eigentum_min_we < 1:
+            raise ValueError("web_recherche: eigentum_min_we muss >= 1 sein")
         if self.max_fehler_in_folge < 1:
             raise ValueError("web_recherche: max_fehler_in_folge muss >= 1 sein")
         if self.request_delay_seconds < 0 or not 0 < self.timeout_seconds <= 120:
@@ -237,6 +243,21 @@ class SucheGesperrt(Exception):
 # die Demo auch die Filterlogik zeigt. Bewusst KEINE echten Firmen- oder Projektnamen: eine Demo
 # soll nichts als Fund präsentieren, was so nicht belegt ist.
 _DEMO = "https://example.org/demo/"
+
+# Einzige echte Ausnahme in den Demo-Daten: ein reales, an zwei Quellen geprüftes Projekt als Highlight
+# (geprüft am 27.10.2026). Titel = wörtlicher Titel der konii.de-Meldung vom 05.06.2026; der Auszug ist
+# aus den übereinstimmenden Angaben beider Quellen zusammengestellt (nicht wörtlich zitiert):
+#   https://www.konii.de/news/grundstein-gelegt-instone-startet-bau-des-wohnquartiers-nordlicht-in-norderstedt/
+#   https://www.entwicklungsstadt.de/norderstedt-500-wohnungen-noerdlich-von-hamburg-geplant/ (09.06.2026)
+# Fakten: Instone Real Estate, Kösliner Weg 7-9, 198 Eigentumswohnungen in neun Gebäuden, rund 60
+# barrierefrei, Grundstein gelegt (Phase 4), Fertigstellung 2029, Förderanteil nicht genannt.
+# Ohne abschließenden "/": so wie `normalisiere_url()` sie speichert (konii.de leitet auf die Fassung mit
+# "/" weiter), sonst fände das Dashboard den gespeicherten Fund in VERIFIZIERTE_DEMO_URLS nicht wieder.
+NORDLICHT_URL = (
+    "https://www.konii.de/news/grundstein-gelegt-instone-startet-bau-des-wohnquartiers-nordlicht-in-norderstedt"
+)
+NORDLICHT_ZWEITQUELLE = "https://www.entwicklungsstadt.de/norderstedt-500-wohnungen-noerdlich-von-hamburg-geplant/"
+VERIFIZIERTE_DEMO_URLS = {NORDLICHT_URL}
 DEMO_SUCHERGEBNISSE: dict[tuple[str, Phase], list[Suchergebnis]] = {
     ("Norderstedt", Phase.BAUGENEHMIGUNG): [
         Suchergebnis(
@@ -255,6 +276,14 @@ DEMO_SUCHERGEBNISSE: dict[tuple[str, Phase], list[Suchergebnis]] = {
     ],
     ("Norderstedt", Phase.BAUBEGINN): [
         Suchergebnis(
+            titel="Grundstein gelegt: Instone startet Bau des Wohnquartiers „Nordlicht“ in Norderstedt",
+            url=NORDLICHT_URL,
+            inhalt="Instone Real Estate hat in Norderstedt den Grundstein für das Wohnquartier „Nordlicht“ gelegt. "
+            "Am Kösliner Weg 7–9 entstehen 198 Eigentumswohnungen in neun Gebäuden, rund 60 davon "
+            f"barrierefrei. Fertigstellung 2029. Weitere Quelle: {NORDLICHT_ZWEITQUELLE}",
+            veroeffentlicht="2026-06-05",
+        ),
+        Suchergebnis(
             titel="Spatenstich im Quartier Am Musterpark in Norderstedt (Demo)",
             url=_DEMO + "norderstedt-musterpark",
             inhalt="Mit dem Spatenstich haben in Norderstedt die Arbeiten am Quartier Am Musterpark begonnen. "
@@ -265,6 +294,13 @@ DEMO_SUCHERGEBNISSE: dict[tuple[str, Phase], list[Suchergebnis]] = {
             titel="Norderstedt: Neubau-Eigentumswohnung, Baubeginn erfolgt (Demo)",
             url="https://www.immobilienscout24.de/expose/demo-0000",
             inhalt="3-Zimmer-Wohnung in Norderstedt kaufen, Baubeginn erfolgt.",
+        ),
+    ],
+    ("Quickborn", Phase.BAUBEGINN): [
+        Suchergebnis(
+            titel="Quickborn: Baubeginn für 8 Eigentumswohnungen (Demo)",
+            url=_DEMO + "quickborn-etw-klein",
+            inhalt="In Quickborn haben die Bauarbeiten begonnen: 8 Eigentumswohnungen in einem Stadthaus.",
         ),
     ],
     ("Quickborn", Phase.BAUGENEHMIGUNG): [
@@ -402,6 +438,7 @@ class WebFund:
     evidenz: str | None
     suchanfrage: str
     veroeffentlicht: str | None = None
+    wohnform: str = "UNKLAR"  # EIGENTUM | MIETE | GEMISCHT | UNKLAR (siehe bestimme_wohnform)
 
 
 def _enthaelt(text: str, begriffe: list[str]) -> bool:
@@ -429,6 +466,22 @@ def _baubeginn_erfolgt(text: str, config: WebRechercheConfig) -> bool:
             if not any(z in davor + treffer.group(0) + danach for z in zukunft):
                 return True
     return False
+
+
+def bestimme_wohnform(text: str, config: WebRechercheConfig) -> str:
+    """Grobe Wohnform aus Stichworten (ohne LLM). "ETW" nur als ganzes Wort, sonst trifft es Fremdwörter."""
+    eigentum = any(
+        re.search(rf"\b{re.escape(s)}", text, re.IGNORECASE) if s.isupper() else s.lower() in text.lower()
+        for s in config.eigentum_stichworte
+    )
+    miete = _enthaelt(text, config.miet_stichworte)
+    if eigentum and miete:
+        return "GEMISCHT"
+    if eigentum:
+        return "EIGENTUM"
+    if miete:
+        return "MIETE"
+    return "UNKLAR"
 
 
 def klassifiziere_phase(text: str, config: WebRechercheConfig) -> Phase | None:
@@ -504,6 +557,9 @@ def bewerte_ergebnis(ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRe
     if phase is None:
         return None
     we_anzahl, evidenz = extrahiere_we(text)
+    wohnform = bestimme_wohnform(text, config)
+    if wohnform == "EIGENTUM" and we_anzahl is not None and we_anzahl < config.eigentum_min_we:
+        return None  # kleines reines ETW-Projekt; Großprojekte und Fälle ohne Zahl bleiben drin
     return WebFund(
         url=normalisiere_url(ergebnis.url),
         titel=(ergebnis.titel or ergebnis.url)[:300],
@@ -517,6 +573,7 @@ def bewerte_ergebnis(ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRe
         evidenz=evidenz,
         suchanfrage=auftrag.anfrage,
         veroeffentlicht=ergebnis.veroeffentlicht,
+        wohnform=wohnform,
     )
 
 
@@ -557,6 +614,7 @@ class WebRechercheErgebnis:
     abbruch_grund: str | None = None
     demo: bool = False  # Ergebnisse vom DemoAnbieter, keine echte Suche
     neu_fuer_mail: list[NeuerWebFund] = field(default_factory=list)  # für radar/notifier.py
+    alle_funde: list[NeuerWebFund] = field(default_factory=list)  # neue + bekannte (Terminal-Ausgabe --test)
 
     @property
     def ok(self) -> bool:
@@ -628,6 +686,8 @@ def fuehre_recherche_aus(
                 continue
             _, ist_neu = database.upsert_web_fund(conn, fund)
             ergebnis.funde += 1
+            if fund.url not in {f.url for f in ergebnis.alle_funde}:
+                ergebnis.alle_funde.append(als_mail_eintrag(fund))
             if ist_neu:
                 ergebnis.neue_funde += 1
                 ergebnis.neu_fuer_mail.append(als_mail_eintrag(fund))

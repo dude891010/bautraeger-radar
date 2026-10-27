@@ -27,7 +27,7 @@ import sys
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
 from radar.scraper import LaufLaeuftBereits, run_full
-from radar.web_recherche import run_web_recherche
+from radar.web_recherche import VERIFIZIERTE_DEMO_URLS, run_web_recherche
 
 WEB_TEST_ORTE = 3  # `web-recherche --test`: so viele nächstgelegene Orte, je 2 Anfragen
 
@@ -140,11 +140,18 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         if args.test or demo:
             if demo:
-                print("\n*** DEMO-MODUS: frei erfundene Beispieldaten, keine echte Suche, 0 Credits ***")
+                print(
+                    "\n*** DEMO-MODUS: Beispieldaten, keine echte Suche, 0 Credits. Erfunden (mit \"(Demo)\"), "
+                    "außer den mit ⭐ markierten echten, geprüften Projekten ***"
+                )
             print(f"\n{ergebnis.zusammenfassung()}")
-            for fund in ergebnis.neu_fuer_mail:
+            # Alle Funde des Laufs, nicht nur neue: sonst zeigt eine wiederholte Live-Demo fast nichts mehr.
+            neue_urls = {f.url for f in ergebnis.neu_fuer_mail}
+            for fund in ergebnis.alle_funde:
                 we = fund.we_anzahl if fund.we_anzahl is not None else "?"
-                print(f"- {fund.phase} | {fund.ort} ({fund.entfernung_km:.0f} km): {fund.titel} ({we} WE)")
+                neu = "NEU | " if fund.url in neue_urls else ""
+                stern = "⭐ ECHTES PROJEKT (Quelle geprüft) | " if fund.url in VERIFIZIERTE_DEMO_URLS else ""
+                print(f"- {neu}{stern}{fund.phase} | {fund.ort} ({fund.entfernung_km:.0f} km): {fund.titel} ({we} WE)")
                 print(f"  {fund.url}")
         if args.notify and demo:
             logging.getLogger(__name__).warning("--notify ignoriert: Demo-Daten werden nie per E-Mail verschickt")

@@ -193,7 +193,13 @@ CREATE TABLE such_nutzung (
 );
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4]
+# V5: Wohnform je Web-Fund (radar/web_recherche.bestimme_wohnform) - reine Eigentumsprojekte werden dort
+# ab `eigentum_min_we` Wohnungen behalten und sollen im Dashboard erkennbar sein.
+_SCHEMA_V5 = """
+ALTER TABLE web_funde ADD COLUMN wohnform TEXT NOT NULL DEFAULT 'UNKLAR';
+"""
+
+_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -673,6 +679,7 @@ def upsert_web_fund(conn: sqlite3.Connection, fund: WebFund, *, when: datetime |
         "evidenz": fund.evidenz,
         "suchanfrage": fund.suchanfrage,
         "veroeffentlicht": fund.veroeffentlicht,
+        "wohnform": fund.wohnform,
         "jetzt": now_iso,
     }
     existing = conn.execute("SELECT id FROM web_funde WHERE url = ?", (fund.url,)).fetchone()
@@ -686,6 +693,7 @@ def upsert_web_fund(conn: sqlite3.Connection, fund: WebFund, *, when: datetime |
                 we_anzahl = COALESCE(:we_anzahl, we_anzahl),
                 evidenz = CASE WHEN :we_anzahl IS NOT NULL THEN :evidenz ELSE evidenz END,
                 veroeffentlicht = COALESCE(:veroeffentlicht, veroeffentlicht),
+                wohnform = CASE WHEN :wohnform != 'UNKLAR' THEN :wohnform ELSE wohnform END,
                 aktualisiert_am = :jetzt
             WHERE url = :url
             """,
@@ -698,10 +706,10 @@ def upsert_web_fund(conn: sqlite3.Connection, fund: WebFund, *, when: datetime |
         """
         INSERT INTO web_funde (
             url, titel, auszug, domain, ort, bundesland, entfernung_km, phase, we_anzahl, evidenz,
-            suchanfrage, veroeffentlicht, status, notizen, erstellt_am, aktualisiert_am
+            suchanfrage, veroeffentlicht, wohnform, status, notizen, erstellt_am, aktualisiert_am
         ) VALUES (
             :url, :titel, :auszug, :domain, :ort, :bundesland, :entfernung_km, :phase, :we_anzahl, :evidenz,
-            :suchanfrage, :veroeffentlicht, 'Neu', '', :jetzt, :jetzt
+            :suchanfrage, :veroeffentlicht, :wohnform, 'Neu', '', :jetzt, :jetzt
         )
         """,
         felder,

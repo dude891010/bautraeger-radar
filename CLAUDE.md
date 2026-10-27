@@ -712,6 +712,23 @@ wird.
      geplant") zählt nicht mehr als Phase 4 (`zukunft_stichworte`, geprüft im selben Satzteil um
      das Stichwort). Aufgefallen am Demo-Text - echte Presseartikel formulieren genauso.
      381 Tests insgesamt.
+   - **Eigentumsprojekte (Kundenwunsch Hummel, 27.10.2026, nur Web-Recherche):** reine ETW-Projekte
+     werden nicht mehr pauschal ausgeschlossen - Großprojekte/Quartiersentwicklungen sind auch als
+     ETW relevante B2B-Küchenleads. `bestimme_wohnform()` (EIGENTUM/MIETE/GEMISCHT/UNKLAR per
+     `eigentum_stichworte`/`miet_stichworte`), verworfen wird ein reines ETW-Projekt nur, wenn der
+     Text ausdrücklich weniger als `eigentum_min_we` (12) WE nennt; genau 12 und Fälle ohne Zahl
+     bleiben drin. Spalte `web_funde.wohnform` (Schema v5), Dashboard-Filter "Wohnform".
+     **Abweichung:** für die Ratsunterlagen steht weiterhin `filters.exclude_pure_ownership: true`
+     in settings.yaml - das Feld wird im Code allerdings nirgends ausgewertet (nur Konfiguration);
+     ob dieselbe Regel dort gelten soll, ist offen.
+   - **Verifiziertes Demo-Highlight:** Instone "Nordlicht", Norderstedt, Kösliner Weg 7-9, 198
+     Eigentumswohnungen, Grundstein gelegt (Phase 4), Fertigstellung 2029 - geprüft am 27.10.2026
+     an konii.de (05.06.2026) und entwicklungsstadt.de (09.06.2026), beide Links erreichbar. Einzige
+     echte Ausnahme in `DEMO_SUCHERGEBNISSE` (`VERIFIZIERTE_DEMO_URLS`), im Dashboard "⭐ echtes
+     Projekt", im Terminal "⭐ ECHTES PROJEKT". Auszug aus beiden Quellen zusammengestellt, nicht
+     wörtlich. Phasen-Stichwort "Grundstein gelegt" ergänzt (Meldungen formulieren oft so).
+     `--test`/`--demo` zeigen im Terminal jetzt alle Funde des Laufs (neue mit "NEU"), sonst
+     blieb eine wiederholte Live-Demo fast leer. 397 Tests insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

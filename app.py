@@ -30,7 +30,7 @@ from fpdf.fonts import FontFace
 from radar import auth, database, demo_data
 from radar.config import PROJECT_ROOT, Settings, load_settings, load_sources
 from radar.scraper import lauf_sperre_aktiv
-from radar.web_recherche import PHASE_LABEL, Phase, load_web_config, orte_im_radius
+from radar.web_recherche import PHASE_LABEL, VERIFIZIERTE_DEMO_URLS, Phase, load_web_config, orte_im_radius
 
 LOG_TAIL_CHARS = 4000
 MAX_NOTIZ_LAENGE = 2000
@@ -602,8 +602,21 @@ WEB_PHASE_BADGE = {
     Phase.BAUGENEHMIGUNG.value: f"🟢 {PHASE_LABEL[Phase.BAUGENEHMIGUNG]}",
     Phase.BAUBEGINN.value: f"🏗️ {PHASE_LABEL[Phase.BAUBEGINN]}",
 }
+WEB_WOHNFORM_LABEL = {
+    "MIETE": "Miete/gefördert",
+    "GEMISCHT": "Gemischt",
+    "EIGENTUM": "Eigentum",
+    "UNKLAR": "unklar",
+}
+# Im Demo-Modus: echte, geprüfte Projekte von den frei erfundenen Beispielen unterscheidbar machen.
+WEB_HINWEIS_VERIFIZIERT = "⭐ echtes Projekt"
+WEB_HINWEIS_DEMO = "Demo (erfunden)"
+DEMO_URL_PRAEFIX = "https://example.org/demo/"
+
 WEB_EXPORT_SPALTEN = [
+    "hinweis",
     "phase_label",
+    "wohnform_label",
     "ort",
     "bundesland",
     "entfernung_km",
@@ -626,7 +639,15 @@ def build_web_funde_df(rows: list) -> pd.DataFrame:
         return pd.DataFrame()
     df = pd.DataFrame([dict(r) for r in rows])
     df["phase_label"] = df["phase"].map(WEB_PHASE_BADGE).fillna(df["phase"])
+    df["wohnform_label"] = df["wohnform"].map(WEB_WOHNFORM_LABEL).fillna(df["wohnform"])
     df["we_anzahl"] = df["we_anzahl"].astype("Int64")
+    df["hinweis"] = df["url"].map(
+        lambda u: WEB_HINWEIS_VERIFIZIERT
+        if u in VERIFIZIERTE_DEMO_URLS
+        else WEB_HINWEIS_DEMO
+        if str(u).startswith(DEMO_URL_PRAEFIX)
+        else ""
+    )
     return df
 
 
@@ -638,6 +659,7 @@ def apply_web_filter(
     orte: list[str] | None = None,
     status: list[str] | None = None,
     nur_mit_we: bool = False,
+    wohnformen: list[str] | None = None,
 ) -> pd.DataFrame:
     """Filter des Web-Recherche-Tabs. Wie `apply_filters()`: leer/`None` = kein Filter.
     `phasen` sind die Rohwerte (`BAUGENEHMIGUNG`/`BAUBEGINN`), `max_km` der Umkreis um das Zentrum."""
@@ -653,6 +675,8 @@ def apply_web_filter(
         df = df[df["status"].isin(status)]
     if nur_mit_we:
         df = df[df["we_anzahl"].notna()]
+    if wohnformen:
+        df = df[df["wohnform"].isin(wohnformen)]
     return df
 
 
@@ -753,7 +777,10 @@ def _web_recherche_tab(
         "Mehrere Artikel können dasselbe Vorhaben beschreiben."
     )
     if demo_modus:
-        st.info("Demo-Modus: Es werden synthetische Beispielfunde angezeigt, keine echten Daten.")
+        st.info(
+            "Demo-Modus: frei erfundene Beispielfunde (\"Demo (erfunden)\") - mit Ausnahme der mit "
+            f"\"{WEB_HINWEIS_VERIFIZIERT}\" markierten Projekte: die sind real und an der verlinkten Quelle geprüft."
+        )
 
     web_aktiv = run_is_active(st.session_state.get("web_process"))
     col_start, col_log = st.columns([1, 3])
@@ -792,23 +819,42 @@ def _web_recherche_tab(
         f_km = st.slider("Umkreis (km)", min_value=5, max_value=radius, value=radius, step=5, key="web_km")
     with f3:
         f_orte = st.multiselect("Ort", sorted(web_df["ort"].dropna().unique()), key="web_ort")
+        f_wohnform = st.multiselect(
+            "Wohnform",
+            list(WEB_WOHNFORM_LABEL),
+            format_func=lambda w: WEB_WOHNFORM_LABEL.get(w, w),
+            key="web_wohnform",
+            help=f"Reine Eigentumsprojekte erscheinen ab {web_config.eigentum_min_we} WE (Großprojekte sind "
+            "B2B-relevant); kleinere werden bei der Recherche verworfen.",
+        )
         f_status = st.multiselect("Status", sorted(web_df["status"].dropna().unique()), key="web_status")
     with f4:
         f_nur_we = st.checkbox("nur mit WE-Zahl", key="web_nur_we")
 
     gefiltert = apply_web_filter(
-        web_df, phasen=f_phasen, max_km=f_km, orte=f_orte, status=f_status, nur_mit_we=f_nur_we
+        web_df,
+        phasen=f_phasen,
+        max_km=f_km,
+        orte=f_orte,
+        status=f_status,
+        nur_mit_we=f_nur_we,
+        wohnformen=f_wohnform,
     )
     st.caption(f"{len(gefiltert)} von {len(web_df)} Funden")
 
-    bearbeitbar = gefiltert[
-        ["id", "phase_label", "ort", "entfernung_km", "titel", "we_anzahl", "url", "status", "notizen"]
-    ]
+    spalten = ["id", "phase_label", "wohnform_label", "ort", "entfernung_km", "titel", "we_anzahl", "url"]
+    if demo_modus:
+        spalten.insert(1, "hinweis")
+    bearbeitbar = gefiltert[spalten + ["status", "notizen"]]
     bearbeitet = st.data_editor(
         bearbeitbar,
-        disabled=["id", "phase_label", "ort", "entfernung_km", "titel", "we_anzahl", "url"],
+        disabled=spalten,
         column_config={
+            "hinweis": st.column_config.TextColumn(
+                "Herkunft", help="Echtes, geprüftes Projekt oder erfundenes Beispiel"
+            ),
             "phase_label": st.column_config.TextColumn("Phase", width="medium"),
+            "wohnform_label": st.column_config.TextColumn("Wohnform"),
             "ort": "Ort",
             "entfernung_km": st.column_config.NumberColumn("km", format="%.0f"),
             "titel": st.column_config.TextColumn("Titel", width="large"),

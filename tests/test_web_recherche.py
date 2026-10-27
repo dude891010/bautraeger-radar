@@ -26,6 +26,8 @@ from radar.config import (
 )
 from radar.web_recherche import (
     MAX_ANFRAGEN_HARD_LIMIT,
+    NORDLICHT_URL,
+    VERIFIZIERTE_DEMO_URLS,
     Ort,
     Phase,
     Suchauftrag,
@@ -401,7 +403,7 @@ def test_apply_web_filter(conn):
 
 def test_web_export_view_spalten(conn):
     export = web_export_view(_web_df(conn))
-    assert list(export.columns)[:2] == ["phase_label", "ort"]
+    assert list(export.columns)[:4] == ["hinweis", "phase_label", "wohnform_label", "ort"]
     assert "url" in export.columns and "id" not in export.columns
 
 
@@ -413,7 +415,8 @@ def test_demo_enthaelt_web_funde_und_reset_setzt_zurueck(settings):
     with closing(database.connect(demo)) as c:
         funde = database.list_web_funde(c)
         assert len(funde) >= 3
-        assert all(f["url"].startswith("https://example.org/demo/") for f in funde)
+        assert all(f["url"].startswith("https://example.org/demo/") or f["url"] in VERIFIZIERTE_DEMO_URLS
+                   for f in funde)
         database.set_web_fund_notizen(c, funde[0]["id"], "Notiz")
     demo_data.reset_demo(settings)
     with closing(database.connect(demo)) as c:
@@ -472,13 +475,13 @@ def test_demo_funde_durchlaufen_die_echte_bewertung(config):
     from radar.web_recherche import demo_funde
 
     funde = {f.url: f for f in demo_funde(config)}
-    assert all(url.startswith("https://example.org/demo/") for url in funde)
-    assert all("(Demo)" in f.titel for f in funde.values())
+    erfundene = [f for url, f in funde.items() if url not in VERIFIZIERTE_DEMO_URLS]
+    assert all(f.url.startswith("https://example.org/demo/") and "(Demo)" in f.titel for f in erfundene)
     beispielweg = funde["https://example.org/demo/norderstedt-beispielweg"]
     assert (beispielweg.phase, beispielweg.we_anzahl) == (Phase.BAUGENEHMIGUNG, 96)
     assert funde["https://example.org/demo/norderstedt-musterpark"].phase is Phase.BAUBEGINN
     # bewusst verworfene Beispiele: Gewerbe, Immobilienportal, B-Plan ohne Phase 3/4
-    for verworfen in ("norderstedt-logistik", "ellerau-bplan"):
+    for verworfen in ("norderstedt-logistik", "ellerau-bplan", "quickborn-etw-klein"):
         assert "https://example.org/demo/" + verworfen not in funde
     assert not any("immobilienscout24" in url for url in funde)
 
@@ -544,3 +547,89 @@ def test_demo_verschickt_nie_eine_mail(settings, monkeypatch, tmp_path):
 )
 def test_angekuendigter_baubeginn_ist_nicht_phase_4(config, text, erwartet):
     assert klassifiziere_phase(text, config) is erwartet
+
+
+
+# -- Eigentumsprojekte (Kundenwunsch 10/2026: ab eigentum_min_we behalten) --------------------------------
+
+
+@pytest.mark.parametrize(
+    "text, erwartet",
+    [
+        ("Es entstehen 198 Eigentumswohnungen.", "EIGENTUM"),
+        ("96 Mietwohnungen, davon 30 öffentlich gefördert.", "MIETE"),
+        ("40 Eigentumswohnungen und 60 geförderte Mietwohnungen im Drittelmix.", "GEMISCHT"),
+        ("Neubau mit 50 Wohnungen.", "UNKLAR"),
+        ("Neue ETW am Stadtpark", "EIGENTUM"),
+        ("Das Netwerk-Treffen", "UNKLAR"),  # "ETW" nur als Wortanfang
+    ],
+)
+def test_bestimme_wohnform(config, text, erwartet):
+    from radar.web_recherche import bestimme_wohnform
+
+    assert bestimme_wohnform(text, config) == erwartet
+
+
+@pytest.mark.parametrize(
+    "we, behalten",
+    [("198", True), ("12", True), ("11", False), (None, True)],
+)
+def test_reines_etw_projekt_nur_ab_mindestgroesse(config, we, behalten):
+    menge = f"{we} " if we else ""
+    ergebnis = _ergebnis(titel=f"Quickborn: Baugenehmigung für {menge}Eigentumswohnungen erteilt")
+    fund = bewerte_ergebnis(ergebnis, _auftrag(), config)
+    assert (fund is not None) is behalten
+    if fund is not None:
+        assert fund.wohnform == "EIGENTUM"
+
+
+def test_kleines_mietprojekt_bleibt_drin(config):
+    # Die Mindestgröße gilt nur für reine Eigentumsprojekte, Miet-/Förderprojekte sind nicht betroffen
+    ergebnis = _ergebnis(titel="Quickborn: Baugenehmigung für 8 Mietwohnungen erteilt")
+    assert bewerte_ergebnis(ergebnis, _auftrag(), config).wohnform == "MIETE"
+
+
+def test_nordlicht_ist_verifiziertes_phase_4_highlight(config):
+    from radar.web_recherche import demo_funde
+
+    nordlicht = next(f for f in demo_funde(config) if f.url == NORDLICHT_URL)
+    assert nordlicht.ort == "Norderstedt"
+    assert nordlicht.phase is Phase.BAUBEGINN
+    assert nordlicht.we_anzahl == 198
+    assert nordlicht.wohnform == "EIGENTUM"
+    assert "(Demo)" not in nordlicht.titel
+    assert "entwicklungsstadt.de" in nordlicht.auszug  # zweite Quelle mitgeführt
+
+
+def test_wohnform_wird_gespeichert_und_nicht_auf_unklar_zurueckgesetzt(conn):
+    database.upsert_web_fund(conn, _fund(wohnform="EIGENTUM"))
+    database.upsert_web_fund(conn, _fund(wohnform="UNKLAR"))
+    assert database.list_web_funde(conn)[0]["wohnform"] == "EIGENTUM"
+
+
+def test_dashboard_markiert_herkunft_und_filtert_wohnform(conn):
+    database.upsert_web_fund(conn, _fund(url=NORDLICHT_URL, wohnform="EIGENTUM"))
+    database.upsert_web_fund(conn, _fund(url="https://example.org/demo/x", wohnform="MIETE"))
+    database.upsert_web_fund(conn, _fund(url="https://www.abendblatt.de/echt", wohnform="UNKLAR"))
+    df = build_web_funde_df(database.list_web_funde(conn)).set_index("url")
+    assert df.loc[NORDLICHT_URL, "hinweis"].startswith("⭐")
+    assert df.loc["https://example.org/demo/x", "hinweis"] == "Demo (erfunden)"
+    assert df.loc["https://www.abendblatt.de/echt", "hinweis"] == ""
+    assert list(apply_web_filter(df.reset_index(), wohnformen=["EIGENTUM"])["url"]) == [NORDLICHT_URL]
+
+
+def test_verifizierte_urls_sind_bereits_normalisiert():
+    # sonst passt die gespeicherte (normalisierte) URL nicht mehr zur Markierung im Dashboard
+    assert all(normalisiere_url(u) == u for u in VERIFIZIERTE_DEMO_URLS)
+
+
+
+def test_wiederholte_demo_zeigt_alle_funde_im_terminal(settings, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    befehl = ["web-recherche", "--demo", "--test", "--db", str(tmp_path / "t.db")]
+    assert main(befehl) == 0
+    capsys.readouterr()
+    assert main(befehl) == 0  # zweiter Lauf: nichts mehr neu
+    ausgabe = capsys.readouterr().out
+    assert "Beispielweg" in ausgabe and "Nordlicht" in ausgabe
+    assert "NEU |" not in ausgabe
