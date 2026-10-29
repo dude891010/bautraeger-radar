@@ -339,7 +339,9 @@ def _read_yaml(path: Path) -> dict:
 
 
 def load_settings(path: str | Path | None = None) -> Settings:
-    """Einstellungen laden. Reihenfolge: Argument > $RADAR_CONFIG > config/settings.yaml."""
+    """Einstellungen laden. Reihenfolge: Argument > $RADAR_CONFIG > config/settings.yaml.
+    `$RADAR_DATABASE_PATH` ersetzt `database.path` (setzt `python -m radar app --db PFAD`, damit das
+    Dashboard z. B. die Test-Datenbank zeigt, ohne settings.yaml zu ändern)."""
     if load_dotenv is not None:
         load_dotenv(PROJECT_ROOT / ".env")
     config_path = Path(path or os.environ.get("RADAR_CONFIG") or DEFAULT_CONFIG)
@@ -350,6 +352,9 @@ def load_settings(path: str | Path | None = None) -> Settings:
         if code not in BUNDESLAENDER:
             raise ValueError(f"regions: unbekanntes Bundesland-Kürzel '{code}'")
         settings.regions[code] = _build(RegionConfig, region)
+    db_override = os.environ.get("RADAR_DATABASE_PATH", "").strip()
+    if db_override:
+        settings.database = DatabaseConfig(path=db_override)
     return settings
 
 

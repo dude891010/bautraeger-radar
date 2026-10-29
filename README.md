@@ -13,7 +13,8 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env               # dann SCRAPER_CONTACT (und ab Schritt 3 ANTHROPIC_API_KEY) eintragen
 pytest
-streamlit run app.py               # Dashboard starten
+python -m radar app                # Dashboard starten (oder: streamlit run app.py)
+python -m radar app --db data/test_radar.db   # Dashboard auf der Test-Datenbank
 ```
 
 ## Betrieb per Docker

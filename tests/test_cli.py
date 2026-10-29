@@ -92,3 +92,32 @@ def test_missing_command_exits_nonzero():
 def test_unknown_command_exits_nonzero():
     with pytest.raises(SystemExit):
         main(["irgendwas"])
+
+
+def test_app_startet_streamlit_mit_datenbank_override(monkeypatch, tmp_path):
+    db = tmp_path / "test_radar.db"
+    db.write_bytes(b"")
+    aufrufe = []
+
+    class _Ergebnis:
+        returncode = 0
+
+    monkeypatch.setattr("radar.cli.subprocess.run", lambda befehl, env: aufrufe.append((befehl, env)) or _Ergebnis())
+    assert main(["app", "--db", str(db), "--port", "8599"]) == 0
+    befehl, env = aufrufe[0]
+    assert befehl[1:4] == ["-m", "streamlit", "run"] and befehl[4].endswith("app.py")
+    assert befehl[5:7] == ["--server.port", "8599"]
+    assert befehl[-2:] == ["--server.fileWatcherType", "none"]
+    assert env["RADAR_DATABASE_PATH"] == str(db.resolve())
+
+
+def test_app_mit_unbekannter_datenbank_startet_nicht(monkeypatch, tmp_path):
+    monkeypatch.setattr("radar.cli.subprocess.run", lambda *a, **kw: pytest.fail("darf nicht starten"))
+    assert main(["app", "--db", str(tmp_path / "gibt_es_nicht.db")]) == 2
+
+
+def test_load_settings_uebernimmt_datenbank_override(monkeypatch, tmp_path):
+    from radar.config import load_settings
+
+    monkeypatch.setenv("RADAR_DATABASE_PATH", str(tmp_path / "x.db"))
+    assert load_settings().database.path == str(tmp_path / "x.db")

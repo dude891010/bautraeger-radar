@@ -9,6 +9,8 @@ Befehle:
                 scheduler) und benachrichtigt danach immer (kein --notify nötig/vorhanden)
   test-email  - SMTP-Konfiguration mit Beispieldaten testen, unabhängig von einem echten Lauf
                 (radar/notifier.py)
+  app         - Dashboard starten (Streamlit), optional mit --db auf einer anderen Datenbank, z. B.
+                `python -m radar app --db data/test_radar.db`. Läuft, bis es mit Strg+C beendet wird.
   web-recherche - Phase 3/4 (Baugenehmigung, Baubeginn) im Umkreis um Norderstedt per Such-API
                 suchen (radar/web_recherche.py, braucht TAVILY_API_KEY in .env). --notify wie bei scrape.
                 --demo (oder --test ohne Key): Beispieldaten statt echter Suche, 0 Credits.
@@ -22,7 +24,9 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import subprocess
 import sys
+from pathlib import Path
 
 from radar.config import LIVE_AUS_HINWEIS
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
@@ -74,6 +78,33 @@ def _test_email() -> int:
     return 1
 
 
+def _app_befehl(port: int) -> list[str]:
+    """Ohne Datei-Überwachung (`fileWatcherType none`): die braucht nur, wer am Code arbeitet (Neuladen bei
+    Änderungen), und sie hängt am Paket `watchdog` - ist das beschädigt, lädt das Dashboard gar nicht
+    (so am 29.10.2026 lokal passiert: `No module named 'watchdog.observers.api'`)."""
+    app_py = Path(__file__).resolve().parent.parent / "app.py"
+    return [
+        sys.executable, "-m", "streamlit", "run", str(app_py),
+        "--server.port", str(port), "--server.fileWatcherType", "none",
+    ]
+
+
+def _app(db: str | None, port: int) -> int:
+    """Dashboard als Kindprozess starten. Die Datenbank geht per $RADAR_DATABASE_PATH an
+    radar.config.load_settings() - Streamlit-Skripte bekommen keine eigenen Kommandozeilen-Argumente."""
+    env = dict(os.environ)
+    if db:
+        pfad = Path(db).resolve()
+        if not pfad.exists():
+            print(f"Datenbank {pfad} gibt es nicht (Tippfehler?). Für die Test-Datenbank zuerst: "
+                  "python -m radar web-recherche --test --db data/test_radar.db")
+            return 2
+        env["RADAR_DATABASE_PATH"] = str(pfad)
+        print(f"Dashboard auf {pfad}", flush=True)
+    print(f"Dashboard: http://localhost:{port}  (beenden mit Strg+C)", flush=True)
+    return subprocess.run(_app_befehl(port), env=env).returncode
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="radar", description="Bauträger-Radar CLI")
     subparsers = parser.add_subparsers(dest="befehl", required=True)
@@ -89,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     subparsers.add_parser("scheduler", help="Dauerprozess: Lauf nach Zeitplan (config/settings.yaml)")
     subparsers.add_parser("test-email", help="SMTP-Konfiguration mit Beispieldaten testen (radar/notifier.py)")
+    app_parser = subparsers.add_parser("app", help="Dashboard starten (Streamlit)")
+    app_parser.add_argument("--db", metavar="PFAD", help="Andere Datenbank anzeigen, z. B. data/test_radar.db")
+    app_parser.add_argument("--port", type=int, default=8501, help="Port (Standard 8501)")
     web_parser = subparsers.add_parser(
         "web-recherche", help="Baugenehmigungen/Baubeginne im Umkreis per Such-API suchen (radar/web_recherche.py)"
     )
@@ -128,6 +162,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.befehl == "test-email":
         return _test_email()
+
+    if args.befehl == "app":
+        return _app(args.db, args.port)
 
     if args.befehl == "web-recherche":
         demo = args.demo

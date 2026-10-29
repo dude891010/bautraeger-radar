@@ -22,3 +22,6 @@ __pycache__/
 # Sitzungsunterlagen niemals einchecken (Testfixtures nur bewusst, anonymisiert/kurz)
 *.pdf
 !tests/fixtures/**/*.pdf
+
+# Lokale Vorschau-Konfiguration der Claude-Desktop-App (enthält absolute Pfade)
+.claude/launch.json
