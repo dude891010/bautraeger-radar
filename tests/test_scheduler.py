@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from radar.config import (
+    BetriebConfig,
     DashboardConfig,
     DatabaseConfig,
     FiltersConfig,
@@ -64,6 +65,7 @@ def settings(monkeypatch):
         database=DatabaseConfig(),
         dashboard=DashboardConfig(),
         scheduler=SchedulerConfig(weekday=0, hour=3, minute=0, check_interval_seconds=3600),
+        betrieb=BetriebConfig(live_api_aufrufe=True),  # Live-Weg mit gefälschten Läufen
     )
 
 
@@ -215,3 +217,18 @@ def test_web_funde_werden_auch_gemeldet_wenn_der_lauf_scheitert(monkeypatch, set
     run_forever(settings, max_runs=1, sleep=clock.sleep, now=clock.now)
 
     assert aufrufe == [([], {"web_funde": [fund]})]
+
+
+
+def test_ohne_live_betrieb_keine_web_recherche_auch_mit_key(monkeypatch, settings, _keine_echte_web_recherche):
+    from dataclasses import replace
+
+    clock = _FakeClock(datetime(2026, 9, 14, 8, 0))
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")  # Key vorhanden, aber Live-Betrieb aus
+    monkeypatch.setattr("radar.scheduler.run_full", lambda s: [])
+    monkeypatch.setattr("radar.scheduler.send_notification", lambda treffer, **kw: False)
+    aus = replace(settings, betrieb=BetriebConfig(live_api_aufrufe=False))
+
+    run_forever(aus, max_runs=1, sleep=clock.sleep, now=clock.now)
+
+    assert _keine_echte_web_recherche == []

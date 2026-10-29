@@ -8,6 +8,7 @@ import pytest
 
 from radar import database
 from radar.config import (
+    BetriebConfig,
     DashboardConfig,
     DatabaseConfig,
     FiltersConfig,
@@ -323,6 +324,7 @@ def settings_full(tmp_path, monkeypatch):
         ),
         database=DatabaseConfig(path=str(tmp_path / "radar.db")),
         dashboard=DashboardConfig(),
+        betrieb=BetriebConfig(live_api_aufrufe=True),  # Live-Weg, aber mit FakeAnthropicClient
     )
 
 
@@ -649,3 +651,24 @@ def test_run_full_refuses_to_start_while_another_run_is_active(monkeypatch, sett
         with pytest.raises(LaufLaeuftBereits):
             run_full(settings_full, client=FakeAnthropicClient([]))
 
+
+
+
+def test_run_full_ohne_live_betrieb_baut_keinen_anthropic_client(settings_full, monkeypatch):
+    """betrieb.live_api_aufrufe: false (Standard): es wird nicht einmal ein Client gebaut."""
+    from dataclasses import replace
+
+    from radar import scraper
+
+    aus = replace(settings_full, betrieb=BetriebConfig(live_api_aufrufe=False))
+    monkeypatch.setattr(scraper, "make_client", lambda s: pytest.fail("make_client darf nicht laufen"))
+    monkeypatch.setattr(scraper, "load_sources", lambda s: [])
+    assert scraper.run_full(aus) == []
+
+
+def test_live_budget_ist_bei_aus_von_anfang_an_gesperrt():
+    from radar.config import LIVE_AUS_HINWEIS
+
+    budget = LLMBudget(10, 10, gesperrt_grund=LIVE_AUS_HINWEIS)
+    assert budget.reserve("q") is False
+    assert "Live-API-Aufrufe deaktiviert" in budget.ablehnungsgrund("q")

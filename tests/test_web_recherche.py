@@ -16,6 +16,7 @@ from app import WEB_PHASE_BADGE, apply_web_filter, build_web_funde_df, web_expor
 from radar import database, demo_data
 from radar.cli import main
 from radar.config import (
+    BetriebConfig,
     DashboardConfig,
     DatabaseConfig,
     FiltersConfig,
@@ -59,6 +60,12 @@ def settings(tmp_path, monkeypatch):
         database=DatabaseConfig(path=str(tmp_path / "radar.db")),
         dashboard=DashboardConfig(),
     )
+
+
+@pytest.fixture
+def live_settings(settings):
+    """Live-Betrieb eingeschaltet - nur für Tests, die den Tavily-Weg (per requests-mock) prüfen."""
+    return replace(settings, betrieb=BetriebConfig(live_api_aufrufe=True))
 
 
 @pytest.fixture
@@ -423,9 +430,9 @@ def test_demo_enthaelt_web_funde_und_reset_setzt_zurueck(settings):
         assert all(f["notizen"] == "" for f in database.list_web_funde(c))
 
 
-def test_cli_ohne_api_key_meldet_fehler_ohne_anfrage(settings, monkeypatch, requests_mock):
+def test_cli_ohne_api_key_meldet_fehler_ohne_anfrage(live_settings, monkeypatch, requests_mock):
     monkeypatch.setenv("TAVILY_API_KEY", "")
-    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: live_settings)
     assert main(["web-recherche"]) == 2
     assert not requests_mock.called
 
@@ -439,6 +446,7 @@ def test_cli_notify_meldet_neue_web_funde(monkeypatch):
                         entfernung_km=6.3, url="https://example.org/a")
     monkeypatch.setattr("radar.cli.run_web_recherche", lambda **kw: WebRechercheErgebnis(neu_fuer_mail=[fund]))
     aufrufe = []
+    monkeypatch.setattr("radar.cli.live_aufrufe_erlaubt", lambda: True)
     monkeypatch.setattr("radar.cli.send_notification", lambda t, **kw: aufrufe.append((t, kw)))
     assert main(["web-recherche"]) == 0
     assert aufrufe == []  # ohne --notify keine Mail
@@ -447,9 +455,9 @@ def test_cli_notify_meldet_neue_web_funde(monkeypatch):
 
 
 
-def test_cli_testsuche_mit_eigener_db(settings, monkeypatch, requests_mock, tmp_path, capsys):
+def test_cli_testsuche_mit_eigener_db(settings, live_settings, monkeypatch, requests_mock, tmp_path, capsys):
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
-    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: live_settings)
     monkeypatch.setattr("radar.web_recherche._sleep", lambda s: None)
     requests_mock.post(
         TavilyClient.URL,
@@ -502,9 +510,10 @@ def test_cli_test_ohne_key_weicht_auf_demo_aus(settings, monkeypatch, requests_m
         assert database.such_anfragen_am(c, date.today().isoformat()) == 0  # nicht gegen das Limit gezählt
 
 
-def test_normaler_lauf_ohne_key_bekommt_nie_demo_daten(settings, monkeypatch, requests_mock):
+def test_normaler_lauf_ohne_key_bekommt_nie_demo_daten(settings, live_settings, monkeypatch, requests_mock):
+    # Live-Betrieb an, aber Key fehlt: Fehler statt stiller Demo-Daten
     monkeypatch.setenv("TAVILY_API_KEY", "")
-    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: live_settings)
     assert main(["web-recherche"]) == 2
     with closing(database.connect(settings)) as c:
         assert database.list_web_funde(c) == []
@@ -645,3 +654,38 @@ def test_etw_grenze_in_web_yaml_wird_abgelehnt(settings, tmp_path):
     pfad.write_text("eigentum_min_we: 12\n", encoding="utf-8")
     with pytest.raises(ValueError, match="settings.yaml"):
         load_web_config(settings, pfad)
+
+
+
+# -- Live-Betrieb aus (Standard): nie eine Anfrage an Tavily ------------------------------------------
+
+
+def test_echte_konfiguration_hat_live_betrieb_aus():
+    from radar.config import load_settings
+
+    assert load_settings().betrieb.live_api_aufrufe is False
+
+
+@pytest.mark.parametrize("befehl", [["web-recherche"], ["web-recherche", "--test"], ["web-recherche", "--notify"]])
+def test_ohne_live_betrieb_laeuft_jeder_cli_aufruf_als_demo(settings, monkeypatch, requests_mock, capsys, befehl):
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-vorhanden-aber-ohne-guthaben")
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    gesendet = []
+    monkeypatch.setattr("radar.cli.send_notification", lambda *a, **kw: gesendet.append(a))
+
+    assert main(befehl) == 0
+
+    assert not requests_mock.called  # keine Tavily-Anfrage, obwohl ein Key gesetzt ist
+    assert gesendet == []  # Demo-Funde werden nie gemailt
+    assert "DEMO-MODUS" in capsys.readouterr().out
+    with closing(database.connect(settings)) as c:
+        assert database.list_web_funde(c) == []  # echte Datenbank unberührt
+
+
+def test_run_web_recherche_verweigert_echte_suche_ohne_live_betrieb(settings, monkeypatch, requests_mock):
+    from radar.web_recherche import LiveAufrufeDeaktiviert, run_web_recherche
+
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-test")
+    with pytest.raises(LiveAufrufeDeaktiviert):
+        run_web_recherche(settings)
+    assert not requests_mock.called

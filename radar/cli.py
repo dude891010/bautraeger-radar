@@ -24,10 +24,11 @@ import logging
 import os
 import sys
 
+from radar.config import LIVE_AUS_HINWEIS
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
 from radar.scraper import LaufLaeuftBereits, run_full
-from radar.web_recherche import VERIFIZIERTE_DEMO_URLS, run_web_recherche
+from radar.web_recherche import VERIFIZIERTE_DEMO_URLS, live_aufrufe_erlaubt, run_web_recherche
 
 WEB_TEST_ORTE = 3  # `web-recherche --test`: so viele nächstgelegene Orte, je 2 Anfragen
 
@@ -124,6 +125,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.befehl == "web-recherche":
         demo = args.demo
+        if not demo and not live_aufrufe_erlaubt():
+            # Kein Guthaben/Plan: jeder Aufruf läuft als Demo (0 Credits, nie in die echte Datenbank).
+            logging.getLogger(__name__).warning("%s - läuft als Demo", LIVE_AUS_HINWEIS)
+            demo = True
         if args.test and not demo and not os.environ.get("TAVILY_API_KEY", "").strip():
             # Nur im Testmodus: statt abzubrechen auf Beispieldaten ausweichen. Ein normaler Lauf
             # (und der Scheduler) bekommt nie stillschweigend Demo-Daten untergeschoben.

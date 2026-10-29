@@ -87,6 +87,14 @@ filters:
     - "Wohngebäude"
     - "Baubeginn"
 
+# Kostenpflichtige externe APIs (Anthropic-KI-Analyse, Tavily-Web-Recherche). AUS, solange kein
+# Guthaben/Plan vorhanden ist: dann geht KEINE Anfrage raus - weder per Scheduler noch per Dashboard-Knopf
+# oder CLI. Die Web-Recherche läuft dann nur als Demo (0 Credits), Ratsunterlagen werden weiter geladen,
+# ihre KI-Analyse wartet (Vorlagen bleiben offen und werden nach dem Einschalten nachgeholt).
+# Erst auf true setzen, wenn Guthaben bei Anthropic bzw. ein bezahlter Tavily-Plan vorhanden ist.
+betrieb:
+  live_api_aufrufe: false
+
 llm:
   provider: "anthropic"
   triage_model: "claude-haiku-4-5-20251001"   # günstige Vorprüfung (Ja/Nein/Unklar)

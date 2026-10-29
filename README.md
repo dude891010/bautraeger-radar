@@ -103,6 +103,13 @@ möglich, unabhängig testbar per `python -m radar test-email`), verdrahtet in
 `radar/scheduler.py` (immer) und optional in manuelle Läufe (`python -m radar scrape --notify`,
 Dashboard-Checkbox – Default aus). Details: [CLAUDE.md](CLAUDE.md), Abschnitt "Roadmap".
 
+## Live-Betrieb (Anthropic, Tavily) – standardmäßig aus
+`betrieb.live_api_aufrufe: false` in `config/settings.yaml`: Solange kein Guthaben bzw. bezahlter Plan
+vorhanden ist, sendet das Radar **keine** Anfrage an Anthropic oder Tavily – weder per Scheduler noch per
+Dashboard-Knopf oder CLI. Eingetragene Keys bleiben als Vorbereitung in `.env`. Ein Lauf lädt dann nur die
+Ratsunterlagen (KI-Analyse wird später nachgeholt), die Web-Recherche läuft als Demo (0 Credits). Erst
+auf `true` setzen, wenn Guthaben/Plan da ist, und zuerst `python -m radar web-recherche --test` laufen lassen.
+
 ## Kostenschutz (Anthropic-API)
 Ein Lauf kann nie unkontrolliert API-Kosten verursachen (`radar/parser.py`, `LLMBudget`/`_call`):
 - **Jede HTTP-Anfrage zählt** gegen `llm.max_calls_per_run` (Standard 300, harte Obergrenze 1000 im

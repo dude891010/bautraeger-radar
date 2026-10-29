@@ -34,7 +34,7 @@ import anthropic
 
 from radar import database
 from radar.committees import committee_matches
-from radar.config import Settings, Source, enabled_sources, load_settings, load_sources
+from radar.config import LIVE_AUS_HINWEIS, Settings, Source, enabled_sources, load_settings, load_sources
 from radar.http_client import HttpClient
 from radar.notifier import NeuerTreffer
 from radar.parser import (
@@ -416,7 +416,13 @@ def _run_full_gesperrt(
 ) -> list[SourceRunResult]:
     own_conn = conn is None
     conn = conn or database.connect(settings)
-    client = client or make_client(settings)
+    live = settings.betrieb.live_api_aufrufe
+    if not live:
+        # Budget von Anfang an gesperrt: analyze_documents() macht dann nur den kostenlosen Stichwort-
+        # Vorfilter, alles Weitere wird BUDGET_ERSCHOEPFT (kein Fehlversuch) und beim ersten Lauf mit
+        # eingeschaltetem Live-Betrieb nachgeholt. Kein Client -> nicht einmal ein Key wird gelesen.
+        logger.warning("%s: Ratsunterlagen werden geladen, die KI-Analyse wartet", LIVE_AUS_HINWEIS)
+    client = client or (make_client(settings) if live else None)
     heute = date.today().isoformat()
     tagesrest = max(0, settings.llm.max_calls_per_day - database.llm_anfragen_am(conn, heute))
     if tagesrest == 0:
@@ -429,6 +435,7 @@ def _run_full_gesperrt(
         max_consecutive_errors=settings.llm.max_consecutive_errors,
         tagesrest=tagesrest,
         bei_anfrage=lambda: database.zaehle_llm_anfrage(conn, heute),
+        gesperrt_grund=None if live else LIVE_AUS_HINWEIS,
     )
     cache = ResultCache(settings.resolve_path(settings.llm.cache_dir))
 
@@ -468,7 +475,7 @@ def _run_full_gesperrt(
     finally:
         if own_conn:
             conn.close()
-        log = logger.error if budget.gesperrt_grund is not None else logger.info
+        log = logger.error if budget.gesperrt_grund not in (None, LIVE_AUS_HINWEIS) else logger.info
         log("LLM-Verbrauch dieses Laufs: %s", budget.zusammenfassung())
 
     return results

@@ -697,8 +697,11 @@ def _scrape_command(*, notify: bool) -> list[str]:
     return befehl
 
 
-def _web_recherche_command() -> list[str]:
-    return [sys.executable, "-m", "radar", "web-recherche"]
+def _web_recherche_command(*, demo: bool = False) -> list[str]:
+    befehl = [sys.executable, "-m", "radar", "web-recherche"]
+    if demo:
+        befehl.append("--demo")
+    return befehl
 
 
 def start_run(
@@ -785,10 +788,22 @@ def _web_recherche_tab(
     web_aktiv = run_is_active(st.session_state.get("web_process"))
     col_start, col_log = st.columns([1, 3])
     with col_start:
-        if not os.environ.get("TAVILY_API_KEY", "").strip():
-            st.warning("TAVILY_API_KEY fehlt in .env - Recherche nicht möglich.")
-        elif web_aktiv:
+        live = settings.betrieb.live_api_aufrufe
+        if web_aktiv:
             st.info("Web-Recherche läuft …")
+        elif not live:
+            # Kein Guthaben/Plan: der Knopf startet nur die Demo (0 Credits, schreibt in die Demo-Datenbank).
+            st.caption("Live-Betrieb aus (config/settings.yaml: betrieb.live_api_aufrufe) - keine Tavily-Anfragen.")
+            if st.button(
+                "Demo-Recherche starten (0 Credits)",
+                help="Beispieldaten in die Demo-Datenbank - sichtbar mit 'Demo-Daten anzeigen'.",
+            ):
+                process, log_path = start_run(settings, befehl=_web_recherche_command(demo=True), log_praefix="web")
+                st.session_state["web_process"] = process
+                st.session_state["web_log_path"] = log_path
+                st.rerun()
+        elif not os.environ.get("TAVILY_API_KEY", "").strip():
+            st.warning("TAVILY_API_KEY fehlt in .env - Recherche nicht möglich.")
         elif st.button("Web-Recherche jetzt starten", help="Läuft immer gegen die echte Datenbank."):
             process, log_path = start_run(settings, befehl=_web_recherche_command(), log_praefix="web")
             st.session_state["web_process"] = process
@@ -972,6 +987,11 @@ def main() -> None:
         with closing(database.connect(settings)) as conn:
             heute_verbraucht = database.llm_anfragen_am(conn, datetime.now().date().isoformat())
         st.caption(f"LLM-Anfragen heute: {heute_verbraucht} von max. {settings.llm.max_calls_per_day}")
+        if not settings.betrieb.live_api_aufrufe:
+            st.caption(
+                "Live-Betrieb aus: ein Lauf lädt die Ratsunterlagen, die KI-Analyse (Anthropic) wartet, "
+                "bis betrieb.live_api_aufrufe in config/settings.yaml eingeschaltet ist."
+            )
         if aktiv:
             st.info("Ein Lauf läuft im Hintergrund …")
             if st.button("Aktualisieren"):

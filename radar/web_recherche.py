@@ -46,7 +46,15 @@ from urllib.parse import urlparse, urlunparse
 import requests
 
 from radar import database
-from radar.config import BUNDESLAENDER, DatabaseConfig, Settings, _build, _read_yaml, load_settings
+from radar.config import (
+    BUNDESLAENDER,
+    LIVE_AUS_HINWEIS,
+    DatabaseConfig,
+    Settings,
+    _build,
+    _read_yaml,
+    load_settings,
+)
 from radar.notifier import NeuerWebFund
 
 logger = logging.getLogger(__name__)
@@ -237,6 +245,14 @@ class Suchergebnis:
 
 class SuchAnbieter(Protocol):
     def suche(self, anfrage: str) -> list[Suchergebnis]: ...
+
+
+class LiveAufrufeDeaktiviert(RuntimeError):
+    """Echte Suche verlangt, aber betrieb.live_api_aufrufe ist aus (siehe radar/config.BetriebConfig)."""
+
+
+def live_aufrufe_erlaubt(settings: Settings | None = None) -> bool:
+    return (settings or load_settings()).betrieb.live_api_aufrufe
 
 
 class SucheGesperrt(Exception):
@@ -733,6 +749,8 @@ def run_web_recherche(
         naechste = {ort.name for ort, _ in orte_im_radius(config)[:max_orte]}
         config = replace(config, orte=[o for o in config.orte if o.name in naechste])
     if anbieter is None:
+        if not demo and not settings.betrieb.live_api_aufrufe:
+            raise LiveAufrufeDeaktiviert(LIVE_AUS_HINWEIS)  # letzte Sicherung, falls ein Aufrufer es übersieht
         anbieter = DemoAnbieter(config) if demo else TavilyClient(tavily_api_key(), config)
     logger.info(
         "Web-Recherche: %d Orte im Umkreis von %.0f km um %s",

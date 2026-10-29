@@ -161,6 +161,22 @@ class SchedulerConfig:
 
 
 @dataclass
+class BetriebConfig:
+    """Zentraler Schalter für kostenpflichtige externe APIs (Anthropic, Tavily). Standard AUS: solange
+    kein Guthaben/Plan vorhanden ist, geht keine einzige Anfrage raus - auch nicht vom Scheduler oder
+    einem Dashboard-Knopf. Eingetragene Keys bleiben in .env als Vorbereitung liegen. Ratsinformations-
+    systeme werden weiter abgerufen (kostenlos, öffentlich); nur die KI-Analyse wartet dann."""
+
+    live_api_aufrufe: bool = False
+
+
+LIVE_AUS_HINWEIS = (
+    "Live-API-Aufrufe deaktiviert (betrieb.live_api_aufrufe: false in config/settings.yaml) - "
+    "keine Anfragen an Anthropic/Tavily"
+)
+
+
+@dataclass
 class RegionConfig:
     name: str
     tier: str = "B"
@@ -246,6 +262,7 @@ class Settings:
     database: DatabaseConfig
     dashboard: DashboardConfig
     scheduler: SchedulerConfig = field(default_factory=SchedulerConfig)
+    betrieb: BetriebConfig = field(default_factory=BetriebConfig)
     sources_file: str = "config/sources.yaml"
     regions: dict = field(default_factory=dict)  # Bundesland-Kürzel -> RegionConfig
 

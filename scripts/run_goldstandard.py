@@ -21,7 +21,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from radar.config import load_settings  # noqa: E402
+from radar.config import LIVE_AUS_HINWEIS, load_settings  # noqa: E402
 from radar.parser import (  # noqa: E402
     LLMBudget,
     LLMGesperrt,
@@ -99,6 +99,9 @@ def run_case(client: anthropic.Anthropic, settings, budget: LLMBudget, case: dic
 
 def main() -> None:
     settings = load_settings()
+    if not settings.betrieb.live_api_aufrufe:
+        # Der Goldstandard misst die echte KI und kostet Geld - nur mit eingeschaltetem Live-Betrieb.
+        raise SystemExit(f"Goldstandard nicht gestartet: {LIVE_AUS_HINWEIS}")
     client = make_client(settings)  # wirft früh, falls Key fehlt; ohne SDK-interne Retries
     faelle = yaml.safe_load(GOLD_FILE.read_text(encoding="utf-8"))["faelle"]
     # Dieselbe Kostenbremse wie im echten Lauf: jede Anfrage zählt, Notbremse bei Konto-Fehlern.

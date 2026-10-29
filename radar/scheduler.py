@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from radar.config import Settings, load_settings
+from radar.config import LIVE_AUS_HINWEIS, Settings, load_settings
 from radar.notifier import NeuerTreffer, NeuerWebFund, send_notification
 from radar.scraper import LaufLaeuftBereits, run_full
 from radar.web_recherche import run_web_recherche
@@ -79,6 +79,9 @@ def _geplante_web_recherche(settings: Settings) -> list[NeuerWebFund]:
     übersprungen - die Web-Recherche ist optional, ein fehlender Key ist kein Betriebsfehler.
     Liefert die neuen Funde für die E-Mail (leer bei Fehler/Überspringen)."""
     if not settings.scheduler.web_recherche:
+        return []
+    if not settings.betrieb.live_api_aufrufe:
+        logger.info("Web-Recherche übersprungen: %s", LIVE_AUS_HINWEIS)
         return []
     if not os.environ.get("TAVILY_API_KEY", "").strip():
         logger.info("Web-Recherche übersprungen: TAVILY_API_KEY nicht gesetzt")

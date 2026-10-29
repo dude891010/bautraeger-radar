@@ -740,6 +740,20 @@ wird.
      `--test`/`--demo` zeigen im Terminal jetzt alle Funde des Laufs (neue mit "NEU"), sonst
      blieb eine wiederholte Live-Demo fast leer. 408 Tests insgesamt (nach ETW-Regel für Ratsunterlagen).
 
+**Live-Betrieb-Schalter (29.10.2026): `betrieb.live_api_aufrufe` in config/settings.yaml, Standard `false`.**
+Solange kein Anthropic-Guthaben und kein bezahlter Tavily-Plan vorhanden sind (Tavily-Key steht als inaktive
+Vorbereitung in `.env`), geht **keine** Anfrage an Anthropic oder Tavily raus - auch nicht automatisch:
+- `scraper.run_full()`: kein Client wird gebaut, `LLMBudget` startet mit `gesperrt_grund=LIVE_AUS_HINWEIS`.
+  Ratsunterlagen werden weiter geladen (kostenlos), der Stichwort-Vorfilter läuft, alles Weitere wird
+  `BUDGET_ERSCHOEPFT` (kein Fehlversuch, kein Quellen-Fehler) und nach dem Einschalten nachgeholt.
+- Web-Recherche: jeder CLI-Aufruf (`web-recherche`, `--test`, `--notify`) läuft als Demo (0 Credits,
+  nie in `data/radar.db`, nie per Mail); `run_web_recherche()` wirft `LiveAufrufeDeaktiviert` als letzte
+  Sicherung; der Scheduler überspringt sie; das Dashboard bietet nur "Demo-Recherche starten (0 Credits)".
+- `scripts/run_goldstandard.py` verweigert den Start.
+- Tests: Fixtures, die bewusst den Live-Weg prüfen (mit Fake-Clients/requests-mock), setzen
+  `BetriebConfig(live_api_aufrufe=True)`; der Dataclass-Standard ist `False` (sicher). 416 Tests.
+Einschalten erst mit Guthaben/Plan - dann einmal `--test` (6 Tavily-Anfragen) vor dem vollen Lauf.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.
