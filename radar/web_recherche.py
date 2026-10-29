@@ -280,9 +280,42 @@ NORDLICHT_URL = (
     "https://www.konii.de/news/grundstein-gelegt-instone-startet-bau-des-wohnquartiers-nordlicht-in-norderstedt"
 )
 NORDLICHT_ZWEITQUELLE = "https://www.entwicklungsstadt.de/norderstedt-500-wohnungen-noerdlich-von-hamburg-geplant/"
-VERIFIZIERTE_DEMO_URLS = {NORDLICHT_URL}
+
+# Zwei weitere echte Norderstedter Projekte (geprüft am 29.10.2026, beide Links erreichbar) - bewusst in
+# einer FRÜHPHASE: sie laufen durch die normale Bewertung und werden dort verworfen (keine Baugenehmigung,
+# kein Baubeginn). Die Demo zeigt damit, dass das Radar Planungen nicht als kurzfristige Leads ausgibt.
+#   SonnenHeyde (Grundstücksgesellschaft Manke): Projektseite führt es unter "Geplante Projekte", ca. 144 WE
+#   in Reihen-, Doppel- und Mehrfamilienhäusern am Mühlenweg (Harksheide), angeboten zum Kauf, kein Datum.
+#   Richtweg (Instone): konii.de 08.06.2026, rund 316 Wohnungen, ca. 30 % gefördert, Bebauungsplan in
+#   Aufstellung, Baubeginn für 2027 geplant. (Auszüge zusammengefasst, nicht wörtlich.)
+SONNENHEYDE_URL = "https://www.manke-bau.de/projekte/sonnenheyde-in-norderstedt"
+RICHTWEG_URL = (
+    "https://www.konii.de/news/instone-erwirbt-grundstueck-im-hamburger-grossraum-weiteres-wohnprojekt-in-norderstedt-geplant"
+)
+# Kurzname je echtem Projekt für die Terminal-Ausgabe (die Quell-Überschriften nennen ihn nicht immer).
+VERIFIZIERTE_DEMO_PROJEKTE = {
+    NORDLICHT_URL: "Nordlicht (Instone)",
+    SONNENHEYDE_URL: "SonnenHeyde (Manke)",
+    RICHTWEG_URL: "Richtweg (Instone)",
+}
+VERIFIZIERTE_DEMO_URLS = set(VERIFIZIERTE_DEMO_PROJEKTE)
 DEMO_SUCHERGEBNISSE: dict[tuple[str, Phase], list[Suchergebnis]] = {
     ("Norderstedt", Phase.BAUGENEHMIGUNG): [
+        Suchergebnis(
+            titel="SonnenHeyde, Reihen-, Doppel- und Mehrfamilienhäuser in Norderstedt",
+            url=SONNENHEYDE_URL,
+            inhalt="Geplantes Projekt der Grundstücksgesellschaft Manke am Mühlenweg in Norderstedt-Harksheide: "
+            "ca. 144 Wohneinheiten, aufgeteilt auf Reihen- und Doppelhäuser und Geschossbau, zum Kauf. "
+            "Termine sind noch nicht veröffentlicht.",
+        ),
+        Suchergebnis(
+            titel="Instone erwirbt Grundstück im Hamburger Großraum – weiteres Wohnprojekt in Norderstedt geplant",
+            url=RICHTWEG_URL,
+            inhalt="Instone hat am Richtweg im Garstedter Dreieck in Norderstedt ein Grundstück für rund 316 "
+            "Wohnungen erworben, davon ca. 30 % öffentlich gefördert. Das Bebauungsplanverfahren ist in "
+            "Aufstellung, der Baubeginn ist für 2027 geplant.",
+            veroeffentlicht="2026-06-08",
+        ),
         Suchergebnis(
             titel="Norderstedt: Baugenehmigung für 96 Mietwohnungen am Beispielweg (Demo)",
             url=_DEMO + "norderstedt-beispielweg",
@@ -475,18 +508,24 @@ def _enthaelt(text: str, begriffe: list[str]) -> bool:
 _ZUKUNFT_VORHER = 25
 _ZUKUNFT_NACHHER = 45
 _SATZTEIL_GRENZE = re.compile(r"[.,;:!?\n]")
+_JAHR_RE = re.compile(r"\b(20\d\d)\b")
 
 
-def _baubeginn_erfolgt(text: str, config: WebRechercheConfig) -> bool:
-    """Mindestens eine Erwähnung eines Phase-4-Stichworts, die nicht nur angekündigt ist."""
+def _baubeginn_erfolgt(text: str, config: WebRechercheConfig, heute: date | None = None) -> bool:
+    """Mindestens eine Erwähnung eines Phase-4-Stichworts, die nicht nur angekündigt ist. Angekündigt
+    heißt: ein Zukunftsbegriff (`zukunft_stichworte`) ODER ein künftiges Jahr im selben Satzteil -
+    "Den Baubeginn setzt der Entwickler für 2027 an" kommt ganz ohne "geplant"/"soll" aus."""
     lowered = text.lower()
     zukunft = [z.lower() for z in config.zukunft_stichworte]
+    jahr = (heute or date.today()).year
     for stichwort in config.phasen_stichworte.get(Phase.BAUBEGINN.value, []):
         for treffer in re.finditer(re.escape(stichwort.lower()), lowered):
             # Nur derselbe Satzteil: "Baubeginn war im Mai, der Bezug ist geplant" bleibt Phase 4.
             davor = _SATZTEIL_GRENZE.split(lowered[max(0, treffer.start() - _ZUKUNFT_VORHER) : treffer.start()])[-1]
             danach = _SATZTEIL_GRENZE.split(lowered[treffer.end() : treffer.end() + _ZUKUNFT_NACHHER])[0]
-            if not any(z in davor + treffer.group(0) + danach for z in zukunft):
+            satzteil = davor + treffer.group(0) + danach
+            kuenftiges_jahr = any(int(j) > jahr for j in _JAHR_RE.findall(satzteil))
+            if not kuenftiges_jahr and not any(z in satzteil for z in zukunft):
                 return True
     return False
 
@@ -507,11 +546,11 @@ def bestimme_wohnform(text: str, config: WebRechercheConfig) -> str:
     return "UNKLAR"
 
 
-def klassifiziere_phase(text: str, config: WebRechercheConfig) -> Phase | None:
+def klassifiziere_phase(text: str, config: WebRechercheConfig, heute: date | None = None) -> Phase | None:
     """Phase 4 vor Phase 3: nennt ein Artikel Genehmigung UND (erfolgten) Baubeginn, ist das
     Vorhaben schon weiter. Ein nur angekündigter Baubeginn ("soll im Frühjahr starten") zählt nicht
     als Phase 4 (`zukunft_stichworte`). `None`, wenn keine der beiden Phasen erkennbar ist."""
-    if _baubeginn_erfolgt(text, config):
+    if _baubeginn_erfolgt(text, config, heute):
         return Phase.BAUBEGINN
     if _enthaelt(text, config.phasen_stichworte.get(Phase.BAUGENEHMIGUNG.value, [])):
         return Phase.BAUGENEHMIGUNG
@@ -563,26 +602,32 @@ def _domain_ausgeschlossen(domain: str, config: WebRechercheConfig) -> bool:
     return any(domain == d or domain.endswith("." + d) for d in config.ausgeschlossene_domains)
 
 
-def bewerte_ergebnis(ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRechercheConfig) -> WebFund | None:
-    """Fund oder `None` (verworfen). Bedingungen: Ort genannt (Wortgrenze, sonst passt z. B.
-    "Stade" auch in fremde Wörter), Wohnbau-Begriff vorhanden, Phase 3/4 erkennbar, Domain nicht
-    ausgeschlossen. Die Phase kommt aus dem Text, nicht aus der Suchanfrage - eine Suche nach
-    "Baugenehmigung" findet oft auch Artikel zum Baubeginn."""
+GRUND_FRUEHPHASE = "keine Baugenehmigung und kein Baubeginn im Text (Frühphase)"
+
+
+def pruefe_ergebnis(
+    ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRechercheConfig, heute: date | None = None
+) -> tuple[WebFund | None, str | None]:
+    """`(Fund, None)` oder `(None, Grund)`. Bedingungen: Domain nicht ausgeschlossen, Ort genannt
+    (Wortgrenze, sonst passt z. B. "Stade" auch in fremde Wörter), Wohnbau-Begriff vorhanden, Phase 3/4
+    erkennbar, kein kleines reines Eigentumsprojekt. Die Phase kommt aus dem Text, nicht aus der
+    Suchanfrage - eine Suche nach "Baugenehmigung" findet oft auch Artikel zum Baubeginn."""
     text = f"{ergebnis.titel}\n{ergebnis.inhalt}"
     domain = _domain(ergebnis.url)
     if _domain_ausgeschlossen(domain, config):
-        return None
+        return None, f"Website ausgeschlossen ({domain})"
     if not re.search(rf"\b{re.escape(auftrag.ort.erkennungs_wort)}\b", text, re.IGNORECASE):
-        return None
+        return None, f"Ort {auftrag.ort.erkennungs_wort} nicht genannt"
     if not _enthaelt(text, config.wohn_stichworte):
-        return None
-    phase = klassifiziere_phase(text, config)
+        return None, "kein Wohnbau"
+    phase = klassifiziere_phase(text, config, heute)
     if phase is None:
-        return None
+        return None, GRUND_FRUEHPHASE
     we_anzahl, evidenz = extrahiere_we(text)
     wohnform = bestimme_wohnform(text, config)
     if wohnform == "EIGENTUM" and we_anzahl is not None and we_anzahl < config.eigentum_min_we:
-        return None  # kleines reines ETW-Projekt; Großprojekte und Fälle ohne Zahl bleiben drin
+        # kleines reines ETW-Projekt; Großprojekte und Fälle ohne Zahl bleiben drin
+        return None, f"reines Eigentumsprojekt mit {we_anzahl} WE (unter {config.eigentum_min_we})"
     return WebFund(
         url=normalisiere_url(ergebnis.url),
         titel=(ergebnis.titel or ergebnis.url)[:300],
@@ -597,7 +642,14 @@ def bewerte_ergebnis(ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRe
         suchanfrage=auftrag.anfrage,
         veroeffentlicht=ergebnis.veroeffentlicht,
         wohnform=wohnform,
-    )
+    ), None
+
+
+def bewerte_ergebnis(
+    ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRechercheConfig, heute: date | None = None
+) -> WebFund | None:
+    """Fund oder `None` (verworfen), siehe `pruefe_ergebnis()` für die Bedingungen und den Grund."""
+    return pruefe_ergebnis(ergebnis, auftrag, config, heute)[0]
 
 
 def als_mail_eintrag(fund: WebFund) -> NeuerWebFund:
@@ -638,6 +690,8 @@ class WebRechercheErgebnis:
     demo: bool = False  # Ergebnisse vom DemoAnbieter, keine echte Suche
     neu_fuer_mail: list[NeuerWebFund] = field(default_factory=list)  # für radar/notifier.py
     alle_funde: list[NeuerWebFund] = field(default_factory=list)  # neue + bekannte (Terminal-Ausgabe --test)
+    # Echte, geprüfte Projekte (VERIFIZIERTE_DEMO_URLS), die die Bewertung verworfen hat: (Ort, Titel, URL, Grund)
+    verworfene_echte: list[tuple[str, str, str, str]] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -703,9 +757,12 @@ def fuehre_recherche_aus(
 
         ergebnis.ergebnisse += len(treffer)
         for t in treffer:
-            fund = bewerte_ergebnis(t, auftrag, config)
+            fund, grund = pruefe_ergebnis(t, auftrag, config)
             if fund is None:
                 ergebnis.verworfen += 1
+                url = normalisiere_url(t.url)
+                if url in VERIFIZIERTE_DEMO_URLS and url not in {v[2] for v in ergebnis.verworfene_echte}:
+                    ergebnis.verworfene_echte.append((auftrag.ort.name, t.titel, url, grund or ""))
                 continue
             _, ist_neu = database.upsert_web_fund(conn, fund)
             ergebnis.funde += 1

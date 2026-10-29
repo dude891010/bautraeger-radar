@@ -754,6 +754,19 @@ Vorbereitung in `.env`), geht **keine** Anfrage an Anthropic oder Tavily raus - 
   `BetriebConfig(live_api_aufrufe=True)`; der Dataclass-Standard ist `False` (sicher). 416 Tests.
 Einschalten erst mit Guthaben/Plan - dann einmal `--test` (6 Tavily-Anfragen) vor dem vollen Lauf.
 
+**Echte Norderstedter Projekte in der Demo (29.10.2026, alle Links geprüft und erreichbar):**
+- Treffer: nur **Nordlicht** (Instone, 198 ETW, Phase 4).
+- **SonnenHeyde** (Manke, ca. 144 WE, "Geplante Projekte", Kauf) und **Richtweg** (Instone, rund 316 WE,
+  ca. 30 % gefördert, B-Plan in Aufstellung, Baubeginn 2027 geplant) laufen als echte Suchergebnisse durch
+  `pruefe_ergebnis()` und werden verworfen (`GRUND_FRUEHPHASE`) - nie in `web_funde`, im Terminal als
+  "⭐ ECHTES PROJEKT (In Frühphase verworfen)" mit Grund (`WebRechercheErgebnis.verworfene_echte`).
+- **Nicht aufgenommen:** "Liesel-Hünichen-Weg"/Adlershorst (keine Quelle auffindbar, nur Startseite noa4.de
+  genannt) und "Berliner Allee"/Vonovia-BUWOG (198 Mietwohnungen, Fertigstellung 2026 laut Suchindex, aber
+  die Projektseite liefert inzwischen 404 und keine Quelle nennt einen Baubeginn).
+- Dabei Einordnung verbessert: ein Phase-4-Stichwort neben einem **künftigen Jahr** im selben Satzteil gilt
+  als angekündigt ("Den Baubeginn setzt der Entwickler für 2027 an" kommt ohne "geplant" aus).
+  `pruefe_ergebnis()` liefert jetzt `(Fund, Grund)`, `bewerte_ergebnis()` bleibt als Kurzform. 421 Tests.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.

@@ -28,7 +28,13 @@ from radar.config import LIVE_AUS_HINWEIS
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
 from radar.scraper import LaufLaeuftBereits, run_full
-from radar.web_recherche import VERIFIZIERTE_DEMO_URLS, live_aufrufe_erlaubt, run_web_recherche
+from radar.web_recherche import (
+    GRUND_FRUEHPHASE,
+    VERIFIZIERTE_DEMO_PROJEKTE,
+    VERIFIZIERTE_DEMO_URLS,
+    live_aufrufe_erlaubt,
+    run_web_recherche,
+)
 
 WEB_TEST_ORTE = 3  # `web-recherche --test`: so viele nächstgelegene Orte, je 2 Anfragen
 
@@ -158,6 +164,12 @@ def main(argv: list[str] | None = None) -> int:
                 stern = "⭐ ECHTES PROJEKT (Quelle geprüft) | " if fund.url in VERIFIZIERTE_DEMO_URLS else ""
                 print(f"- {neu}{stern}{fund.phase} | {fund.ort} ({fund.entfernung_km:.0f} km): {fund.titel} ({we} WE)")
                 print(f"  {fund.url}")
+            # Echte Projekte, die die Bewertung verworfen hat: zeigen, dass Frühphasen kein heißer Lead sind.
+            for ort, titel, url, grund in ergebnis.verworfene_echte:
+                art = "In Frühphase verworfen" if grund == GRUND_FRUEHPHASE else f"verworfen: {grund}"
+                print(f"- ⭐ ECHTES PROJEKT ({art}) | {VERIFIZIERTE_DEMO_PROJEKTE[url]}, {ort}: {titel}")
+                print(f"  Grund: {grund}")
+                print(f"  {url}")
         if args.notify and demo:
             logging.getLogger(__name__).warning("--notify ignoriert: Demo-Daten werden nie per E-Mail verschickt")
         elif args.notify:

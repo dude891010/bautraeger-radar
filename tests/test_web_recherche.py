@@ -689,3 +689,54 @@ def test_run_web_recherche_verweigert_echte_suche_ohne_live_betrieb(settings, mo
     with pytest.raises(LiveAufrufeDeaktiviert):
         run_web_recherche(settings)
     assert not requests_mock.called
+
+
+# -- Echte Projekte in der Frühphase (SonnenHeyde, Richtweg): werden verworfen ----------------------------
+
+
+def test_echte_fruehphasen_projekte_werden_von_der_bewertung_verworfen(config):
+    from radar.web_recherche import (
+        DEMO_SUCHERGEBNISSE,
+        GRUND_FRUEHPHASE,
+        RICHTWEG_URL,
+        SONNENHEYDE_URL,
+        demo_funde,
+        pruefe_ergebnis,
+    )
+
+    norderstedt = next(o for o, _ in orte_im_radius(config) if o.name == "Norderstedt")
+    auftrag = Suchauftrag(ort=norderstedt, entfernung_km=0.0, phase=Phase.BAUGENEHMIGUNG, anfrage="q")
+    for url in (SONNENHEYDE_URL, RICHTWEG_URL):
+        ergebnis = next(e for e in DEMO_SUCHERGEBNISSE[("Norderstedt", Phase.BAUGENEHMIGUNG)] if e.url == url)
+        fund, grund = pruefe_ergebnis(ergebnis, auftrag, config, heute=date(2026, 10, 29))
+        assert fund is None and grund == GRUND_FRUEHPHASE
+    assert not {SONNENHEYDE_URL, RICHTWEG_URL} & {f.url for f in demo_funde(config)}
+
+
+@pytest.mark.parametrize("jahr, erwartet", [(2026, None), (2028, Phase.BAUBEGINN)])
+def test_baubeginn_in_kuenftigem_jahr_ist_nur_angekuendigt(config, jahr, erwartet):
+    # Ohne "geplant"/"soll": allein das künftige Jahr macht es zur Ankündigung
+    text = "Den Baubeginn setzt der Entwickler für 2027 an."
+    assert klassifiziere_phase(text, config, heute=date(jahr, 1, 1)) is erwartet
+
+
+def test_demo_terminal_zeigt_verworfene_echte_projekte(settings, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    test_db = tmp_path / "t.db"
+    assert main(["web-recherche", "--demo", "--test", "--db", str(test_db)]) == 0
+    ausgabe = capsys.readouterr().out
+    assert ausgabe.count("⭐ ECHTES PROJEKT (In Frühphase verworfen)") == 2
+    assert "SonnenHeyde (Manke)" in ausgabe and "Richtweg (Instone)" in ausgabe
+    assert "⭐ ECHTES PROJEKT (Quelle geprüft)" in ausgabe  # Nordlicht weiterhin als Treffer
+    with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as c:
+        urls = {f["url"] for f in database.list_web_funde(c)}
+    assert "manke-bau.de" not in " ".join(urls) and "erwirbt-grundstueck" not in " ".join(urls)
+
+
+def test_nur_belegte_echte_projekte_in_der_demo():
+    from radar.web_recherche import DEMO_SUCHERGEBNISSE
+
+    echte = {e.url for liste in DEMO_SUCHERGEBNISSE.values() for e in liste if "example.org" not in e.url}
+    echte -= {"https://www.immobilienscout24.de/expose/demo-0000"}  # erfundenes Portal-Negativbeispiel
+    assert {normalisiere_url(u) for u in echte} == VERIFIZIERTE_DEMO_URLS
+    assert not any(w in " ".join(echte) for w in ("vonovia", "buwog", "noa4", "adlershorst"))
