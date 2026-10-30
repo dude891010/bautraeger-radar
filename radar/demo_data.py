@@ -668,6 +668,8 @@ def ensure_demo_seeded(settings: Settings) -> Settings:
             seed(conn)
         if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_id = ?", (ECHTE_QUELLE_ID,)).fetchone()[0] == 0:
             seed_echte_projekte(conn)  # ältere Demo-Datenbanken bekommen sie nachträglich
+        if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_url IS NOT NULL").fetchone()[0] == 0:
+            seed_norderstedt_projekte(conn)  # die 5 geprüften Norderstedter Projekte (30.10.2026), ebenso
         # Eigene Prüfung: ältere Demo-Datenbanken (vor der Web-Recherche angelegt) haben Projekte,
         # aber noch keine Web-Funde - ein erneutes seed() würde dort bearbeitete Status zurücksetzen.
         if conn.execute("SELECT COUNT(*) FROM web_funde").fetchone()[0] == 0:
@@ -691,12 +693,14 @@ def reset_demo(settings: Settings) -> Settings:
     try:
         seed(conn)
         seed_echte_projekte(conn)
+        seed_norderstedt_projekte(conn)
         for projekt in database.list_projekte(conn):
             # seed() setzt nur die erfundenen Projekte auf ihren Status zurück; die echten starten bei "Neu".
             if projekt["quelle_id"] == ECHTE_QUELLE_ID and projekt["status"] != "Neu":
                 database.set_projekt_status(conn, projekt["id"], "Neu")
             if projekt["notizen"]:
                 database.set_projekt_notizen(conn, projekt["id"], "")
+        seed_norderstedt_projekte(conn)  # setzt deren Ausgangs-Notizen wieder (nur in leere Felder)
         # Komplett neu statt nur aktualisieren: so verschwinden auch Beispielfunde, die es in
         # DEMO_SUCHERGEBNISSE nicht mehr gibt, und Status/Notizen stehen wieder auf Anfang.
         conn.execute("DELETE FROM web_funde")

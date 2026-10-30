@@ -800,7 +800,8 @@ AUFSTELLUNGSBESCHLUSS, 343/319 -> AUSLEGUNG (Entwurf veröffentlicht), Rahmenpla
 drei B-Pläne UNKLAR ("⚠ prüfen" mit Prüfauftrag): die Begründungen nennen nur den geförderten Anteil. Schema v6: `projekte.quelle_url`
 (Link-Spalte "Quelle" im Projekte-Tab, nie von `upsert_projekt()` geschrieben); Spalte "WE" zeigt "WE offen" statt
 leer. Einspielen: `scripts/seed_demo_data.py --norderstedt --db data/test_radar.db` (idempotent, verweigert
-`data/radar.db`, Notizen nur wenn leer). 436 Tests.
+`data/radar.db`, Notizen nur wenn leer). Seit 30.10.2026 auch fester Teil der Demo-Datenbank
+(`ensure_demo_seeded()`/`reset_demo()`, Reset stellt deren Ausgangs-Notizen wieder her). 438 Tests.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

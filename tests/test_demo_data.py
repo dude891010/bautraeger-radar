@@ -98,6 +98,7 @@ def test_reset_demo_restores_edited_status_and_clears_notizen(settings):
     with closing(database.connect(demo1)) as conn:
         projekt = database.list_projekte(conn)[0]
         projekt_id, urspruenglicher_status = projekt["id"], projekt["status"]
+        urspruengliche_notiz = projekt["notizen"]  # Echtprojekte haben eine Ausgangs-Notiz, die übrigen keine
         database.set_projekt_status(conn, projekt_id, "Archiviert")
         database.set_projekt_notizen(conn, projekt_id, "Testnotiz")
 
@@ -105,7 +106,7 @@ def test_reset_demo_restores_edited_status_and_clears_notizen(settings):
     with closing(database.connect(demo2)) as conn:
         row = next(p for p in database.list_projekte(conn) if p["id"] == projekt_id)
         assert row["status"] == urspruenglicher_status
-        assert row["notizen"] == ""
+        assert row["notizen"] == urspruengliche_notiz
 
 
 def test_reset_demo_does_not_duplicate_projects(settings):
@@ -156,7 +157,8 @@ def test_echte_fruehphasen_projekte_stehen_sichtbar_in_der_demo(settings):
     with closing(database.connect(demo)) as conn:
         echte = {p["projektbezeichnung"]: p for p in database.list_projekte(conn)
                  if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID}
-    assert set(echte) == {"Richtweg / Garstedter Dreieck (Instone)", "SonnenHeyde (Manke)"}
+    assert {"Richtweg / Garstedter Dreieck (Instone)", "SonnenHeyde (Manke)"} <= set(echte)
+    assert len(echte) == 7  # + die 5 geprüften Norderstedter Projekte vom 30.10.2026
     assert (echte["Richtweg / Garstedter Dreieck (Instone)"]["verfahrensstand"], echte[
         "Richtweg / Garstedter Dreieck (Instone)"]["we_gesamt"]) == ("AUFSTELLUNGSBESCHLUSS", 316)
     assert (echte["SonnenHeyde (Manke)"]["verfahrensstand"], echte["SonnenHeyde (Manke)"]["we_gesamt"]) == (
@@ -167,8 +169,9 @@ def test_echte_projekte_idempotent_und_reset_setzt_status_zurueck(settings):
     demo = demo_data.ensure_demo_seeded(settings)
     with closing(database.connect(demo)) as conn:
         demo_data.seed_echte_projekte(conn)  # zweites Mal: keine Duplikate
+        demo_data.seed_norderstedt_projekte(conn)
         echte = [p for p in database.list_projekte(conn) if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID]
-        assert len(echte) == 2
+        assert len(echte) == 7
         database.set_projekt_status(conn, echte[0]["id"], "Kontaktversuch")
     demo_data.reset_demo(settings)
     with closing(database.connect(demo)) as conn:
@@ -267,3 +270,13 @@ def test_bplaene_ohne_belegte_wohnform_bekommen_pruefauftrag(settings):
         assert df.loc[name, "wohnform"] == "UNKLAR"
         assert "Geförderter Anteil bekannt" in df.loc[name, "pruefauftrag"]
     assert df.loc["Berliner Allee – Quartier Garstedt", "pruefen"] == ""
+
+
+def test_demo_enthaelt_norderstedt_projekte_auch_nach_reset(settings):
+    demo = demo_data.ensure_demo_seeded(settings)
+    demo_data.reset_demo(settings)
+    with closing(database.connect(demo)) as conn:
+        projekte = {p["projektbezeichnung"]: p for p in database.list_projekte(conn)}
+    assert "Rahmenplan „Glashütter Kirchenweg“" in projekte
+    assert projekte["Berliner Allee – Quartier Garstedt"]["quelle_url"].startswith("https://www.konii.de/")
+    assert projekte["B-Plan 343 „Meyers Mühle“"]["notizen"].startswith("Ehemaliges Gartencenter")
