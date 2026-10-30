@@ -160,6 +160,35 @@ div[data-testid="stSidebarHeader"] {
 # -- Reine Datenlogik (testbar ohne Streamlit) -----------------------------------------------------
 
 
+# Verfahrensstand im Klartext (Spalte "Stand" im Projekte-Tab) - damit sofort sichtbar ist, wie weit ein
+# Vorhaben vom Küchenbedarf entfernt ist.
+STAND_LABEL = {
+    "VORBERATUNG": "Geplant / Vorbereitung",
+    "AUFSTELLUNGSBESCHLUSS": "B-Plan / In Planung (Aufstellung)",
+    "AUSLEGUNG": "B-Plan / Auslegung",
+    "SATZUNGSBESCHLUSS": "B-Plan / beschlossen",
+    "BAUANTRAG": "Bauantrag gestellt",
+    "BAUGENEHMIGUNG": "Baugenehmigung erteilt",
+    "UNKLAR": "unklar",
+}
+HERKUNFT_ECHT = "⭐ echtes Projekt"
+HERKUNFT_DEMO = "Demo (erfunden)"
+
+
+def add_herkunft_und_stand(df: pd.DataFrame, *, demo_modus: bool) -> pd.DataFrame:
+    """Spalten `stand` (Klartext zu `verfahrensstand`) und `herkunft`: geprüfte Echtprojekte
+    (`demo_data.ECHTE_QUELLE_ID`) bekommen "⭐ echtes Projekt", im Demo-Modus alle übrigen
+    "Demo (erfunden)", sonst bleibt die Herkunft leer (echte Läufe brauchen keine Kennzeichnung)."""
+    if df.empty:
+        return df
+    df = df.copy()
+    df["stand"] = df["verfahrensstand"].map(STAND_LABEL).fillna(df["verfahrensstand"])
+    echt = df["quelle_id"] == demo_data.ECHTE_QUELLE_ID
+    df["herkunft"] = HERKUNFT_DEMO if demo_modus else ""
+    df.loc[echt, "herkunft"] = HERKUNFT_ECHT
+    return df
+
+
 def build_projekte_df(rows: list, tier_by_quelle: dict[str, str]) -> pd.DataFrame:
     """`sqlite3.Row`-Liste aus `database.list_projekte()` in eine DataFrame umwandeln, ergänzt um
     `tier` (kommt aus der Quellen-Konfiguration, nicht aus der Datenbank, siehe CLAUDE.md:
@@ -484,6 +513,7 @@ def to_excel_bytes(df: pd.DataFrame) -> bytes:
 
 
 EXPORT_SPALTEN = [
+    "herkunft",
     "projektbezeichnung",
     "strasse",
     "hausnummer",
@@ -499,6 +529,7 @@ EXPORT_SPALTEN = [
     "kurzfassung",
     "wohnform",
     "verfahrensstand",
+    "stand",
     "lead",
     "konfidenz",
     "pruefen",
@@ -940,6 +971,7 @@ def main() -> None:
 
     sources = load_sources(settings)
     tier_by_quelle = {s.id: settings.tier_for(s) for s in sources}
+    tier_by_quelle.update(demo_data.ECHTE_TIER_BY_QUELLE)
 
     with st.sidebar:
         st.header("Demo-Modus")
@@ -1029,7 +1061,7 @@ def main() -> None:
         web_df = build_web_funde_df(database.list_web_funde(conn))
 
     df = build_projekte_df(projekte_rows, tier_by_quelle)
-    df = add_lead_badge(add_pruef_badge(df))
+    df = add_herkunft_und_stand(add_lead_badge(add_pruef_badge(df)), demo_modus=demo_modus)
 
     kpis = compute_kpis(df)
     if not df.empty:
@@ -1165,13 +1197,20 @@ def main() -> None:
                     "unklarer Wohnform - bitte prüfen."
                 )
 
-            bearbeitbar = gefiltert[
-                ["id", "lead", "pruefen", "projektbezeichnung", "ort", "we_gesamt", "status", "notizen"]
-            ]
+            nur_lesen = ["id", "herkunft", "lead", "pruefen", "projektbezeichnung", "stand", "ort", "we_gesamt"]
+            if not (gefiltert["herkunft"] != "").any():
+                nur_lesen.remove("herkunft")  # echter Betrieb: keine leere Spalte zeigen
+            bearbeitbar = gefiltert[nur_lesen + ["status", "notizen"]]
             bearbeitet = st.data_editor(
                 bearbeitbar,
-                disabled=["id", "lead", "pruefen", "projektbezeichnung", "ort", "we_gesamt"],
+                disabled=nur_lesen,
                 column_config={
+                    "herkunft": st.column_config.TextColumn(
+                        "Herkunft", help="Echtes, an der Quelle geprüftes Projekt oder erfundenes Beispiel"
+                    ),
+                    "stand": st.column_config.TextColumn(
+                        "Stand", help="Verfahrensstand im Klartext - wie weit ist das Vorhaben vom Küchenbedarf?"
+                    ),
                     "lead": st.column_config.TextColumn(
                         "Lead", help="Baugenehmigung/Bauantrag - siehe Tab 'Kurzfristige Leads'."
                     ),

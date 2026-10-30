@@ -817,4 +817,11 @@ def run_web_recherche(
     )
     logger.info("Ziel-Datenbank: %s", settings.resolve_path(settings.database.path))
     with closing(database.connect(settings)) as conn:
-        return fuehre_recherche_aus(conn, config, anbieter)
+        ergebnis = fuehre_recherche_aus(conn, config, anbieter)
+        if demo:
+            # Echte Frühphasen-Projekte (kein Web-Lead) als sichtbare Projekte im Tab "Projekte" -
+            # nur im Demo-Lauf, der nie in die echte Datenbank schreibt (siehe Prüfung oben).
+            from radar.demo_data import seed_echte_projekte
+
+            seed_echte_projekte(conn)
+        return ergebnis

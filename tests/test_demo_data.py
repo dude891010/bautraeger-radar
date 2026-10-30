@@ -143,3 +143,47 @@ def test_demo_tier_by_quelle_covers_all_seeded_quellen(settings):
         quellen_ids = {row["id"] for row in database.list_quellen(conn)}
 
     assert quellen_ids <= set(demo_data.DEMO_TIER_BY_QUELLE)
+
+
+# -- Echte Frühphasen-Projekte (Richtweg, SonnenHeyde) im Tab "Projekte" ------------------------------
+
+
+def test_echte_fruehphasen_projekte_stehen_sichtbar_in_der_demo(settings):
+    demo = demo_data.ensure_demo_seeded(settings)
+    with closing(database.connect(demo)) as conn:
+        echte = {p["projektbezeichnung"]: p for p in database.list_projekte(conn)
+                 if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID}
+    assert set(echte) == {"Richtweg / Garstedter Dreieck (Instone)", "SonnenHeyde (Manke)"}
+    assert (echte["Richtweg / Garstedter Dreieck (Instone)"]["verfahrensstand"], echte[
+        "Richtweg / Garstedter Dreieck (Instone)"]["we_gesamt"]) == ("AUFSTELLUNGSBESCHLUSS", 316)
+    assert (echte["SonnenHeyde (Manke)"]["verfahrensstand"], echte["SonnenHeyde (Manke)"]["we_gesamt"]) == (
+        "VORBERATUNG", 144)
+
+
+def test_echte_projekte_idempotent_und_reset_setzt_status_zurueck(settings):
+    demo = demo_data.ensure_demo_seeded(settings)
+    with closing(database.connect(demo)) as conn:
+        demo_data.seed_echte_projekte(conn)  # zweites Mal: keine Duplikate
+        echte = [p for p in database.list_projekte(conn) if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID]
+        assert len(echte) == 2
+        database.set_projekt_status(conn, echte[0]["id"], "Kontaktversuch")
+    demo_data.reset_demo(settings)
+    with closing(database.connect(demo)) as conn:
+        assert all(p["status"] == "Neu" for p in database.list_projekte(conn)
+                   if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID)
+
+
+def test_echte_projekte_sind_kein_kurzfristiger_lead_und_haben_klartext_stand(settings):
+    from app import HERKUNFT_DEMO, HERKUNFT_ECHT, add_herkunft_und_stand, add_lead_badge, build_projekte_df
+
+    demo = demo_data.ensure_demo_seeded(settings)
+    with closing(database.connect(demo)) as conn:
+        df = build_projekte_df(database.list_projekte(conn), {})
+    df = add_herkunft_und_stand(add_lead_badge(df), demo_modus=True).set_index("projektbezeichnung")
+    assert df.loc["Richtweg / Garstedter Dreieck (Instone)", "stand"] == "B-Plan / In Planung (Aufstellung)"
+    assert df.loc["SonnenHeyde (Manke)", "stand"] == "Geplant / Vorbereitung"
+    assert df.loc["SonnenHeyde (Manke)", "herkunft"] == HERKUNFT_ECHT
+    assert df.loc["SonnenHeyde (Manke)", "lead"] == ""  # Frühphase ist kein kurzfristiger Lead
+    assert df.loc["Richtweg / Garstedter Dreieck (Instone)", "lead"] == ""
+    andere = df[df["quelle_id"] != demo_data.ECHTE_QUELLE_ID]
+    assert set(andere["herkunft"]) == {HERKUNFT_DEMO}

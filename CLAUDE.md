@@ -767,6 +767,20 @@ Einschalten erst mit Guthaben/Plan - dann einmal `--test` (6 Tavily-Anfragen) vo
   als angekündigt ("Den Baubeginn setzt der Entwickler für 2027 an" kommt ohne "geplant" aus).
   `pruefe_ergebnis()` liefert jetzt `(Fund, Grund)`, `bewerte_ergebnis()` bleibt als Kurzform. 421 Tests.
 
+**Frühphasen-Echtprojekte sichtbar (30.10.2026, Kundenwunsch für die Chef-Demo):** Richtweg (Instone,
+316 WE, ca. 30 % gefördert, B-Plan in Aufstellung) und SonnenHeyde (Manke, ca. 144 WE, Kauf, "Geplante
+Projekte") stehen jetzt als sichtbare Projekte im **Tab "Projekte"** (`demo_data.seed_echte_projekte()`,
+Quelle `echte_projekte`), nicht im Web-Recherche-Tab: der kennt nur Phase 3/4, die Projekte hätten dort eine
+falsche Phase bekommen. Die Web-Bewertung verwirft sie weiterhin als Web-Lead (richtig so); im Terminal heißt
+das jetzt "⭐ ECHTES PROJEKT (Frühphase - kein Web-Lead, im Tab 'Projekte')". Geschrieben wird nur in Demo-/
+Test-Datenbanken (Demo-Seed, `web-recherche --demo/--test`), nie in `data/radar.db`.
+- Projekte-Tab: neue Spalten **"Stand"** (`STAND_LABEL`, Klartext zu `verfahrensstand`, z. B. VORBERATUNG ->
+  "Geplant / Vorbereitung", AUFSTELLUNGSBESCHLUSS -> "B-Plan / In Planung (Aufstellung)") und **"Herkunft"**
+  ("⭐ echtes Projekt" / im Demo-Modus "Demo (erfunden)", im echten Betrieb ausgeblendet); beide auch im Export.
+- Richtweg: `wohnform=UNKLAR` (Quelle nennt Miete/Eigentum der übrigen ~70 % nicht) -> "⚠ prüfen", bewusst.
+  Beide `evidenz` sind wörtliche Zitate der Quellen; keins ist ein kurzfristiger Lead.
+- `reset_demo()` setzt auch den Status der Echtprojekte auf "Neu" zurück. 428 Tests.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.

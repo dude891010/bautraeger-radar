@@ -201,9 +201,13 @@ def main(argv: list[str] | None = None) -> int:
                 stern = "⭐ ECHTES PROJEKT (Quelle geprüft) | " if fund.url in VERIFIZIERTE_DEMO_URLS else ""
                 print(f"- {neu}{stern}{fund.phase} | {fund.ort} ({fund.entfernung_km:.0f} km): {fund.titel} ({we} WE)")
                 print(f"  {fund.url}")
-            # Echte Projekte, die die Bewertung verworfen hat: zeigen, dass Frühphasen kein heißer Lead sind.
+            # Echte Projekte, die kein Web-Lead sind: Frühphasen stehen im Demo-Lauf im Tab "Projekte".
             for ort, titel, url, grund in ergebnis.verworfene_echte:
-                art = "In Frühphase verworfen" if grund == GRUND_FRUEHPHASE else f"verworfen: {grund}"
+                art = (
+                    "Frühphase - kein Web-Lead, im Tab 'Projekte'"
+                    if grund == GRUND_FRUEHPHASE
+                    else f"verworfen: {grund}"
+                )
                 print(f"- ⭐ ECHTES PROJEKT ({art}) | {VERIFIZIERTE_DEMO_PROJEKTE[url]}, {ort}: {titel}")
                 print(f"  Grund: {grund}")
                 print(f"  {url}")

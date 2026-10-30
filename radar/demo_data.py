@@ -47,6 +47,69 @@ DEMO_TIER_BY_QUELLE: dict[str, str] = {
     "demo_bad_oldesloe": "A",
 }
 
+# Echte, an der Quelle geprüfte Norderstedter Projekte in einer FRÜHPHASE (geprüft 29./30.10.2026, Links
+# erreichbar). Für die Web-Recherche (nur Phase 3/4) sind sie bewusst kein Lead, deshalb stehen sie hier als
+# Projekte im Tab "Projekte" - dort, wo frühe Verfahrensstände hingehören. Nur Angaben aus den Quellen;
+# `evidenz` ist ein wörtliches Zitat, die Kurzfassung eigene Worte. Nur in Demo-/Test-Datenbanken.
+ECHTE_QUELLE_ID = "echte_projekte"
+ECHTE_TIER_BY_QUELLE: dict[str, str] = {ECHTE_QUELLE_ID: "A"}
+_ECHTE_PROJEKTE: list[dict] = [
+    dict(
+        projektbezeichnung="Richtweg / Garstedter Dreieck (Instone)",
+        adresse=Adresse(strasse="Richtweg", ort="Norderstedt"),
+        we_gesamt=316,
+        quote_gefoerdert=0.3,
+        we_gefoerdert=True,
+        ausfuehrungszeitraum="Baubeginn für 2027 geplant (laut Instone)",
+        antragsteller="Instone Real Estate",
+        kurzfassung=(
+            "Instone hat am Richtweg im Garstedter Dreieck ein Grundstück für rund 316 Wohnungen erworben, "
+            "ca. 30 % öffentlich gefördert; der Bebauungsplan wird aufgestellt. Quelle: "
+            "https://www.konii.de/news/instone-erwirbt-grundstueck-im-hamburger-grossraum-weiteres-"
+            "wohnprojekt-in-norderstedt-geplant/ (08.06.2026)"
+        ),
+        # Ob die übrigen ~70 % Miete oder Eigentum werden, nennt die Quelle nicht -> UNKLAR ("prüfen").
+        wohnform=Wohnform.UNKLAR,
+        verfahrensstand=Verfahrensstand.AUFSTELLUNGSBESCHLUSS,
+        konfidenz=0.9,
+        evidenz="rund 316 Wohnungen",
+    ),
+    dict(
+        projektbezeichnung="SonnenHeyde (Manke)",
+        adresse=Adresse(strasse="Mühlenweg", ort="Norderstedt"),
+        we_gesamt=144,
+        ausfuehrungszeitraum=None,
+        antragsteller="Grundstücksgesellschaft Manke GmbH & Co. KG",
+        kurzfassung=(
+            "Geplantes Quartier am Mühlenweg in Norderstedt-Harksheide mit ca. 144 Wohneinheiten in Reihen-, "
+            "Doppel- und Mehrfamilienhäusern, angeboten zum Kauf; noch keine Termine veröffentlicht. Quelle: "
+            "https://www.manke-bau.de/projekte/sonnenheyde-in-norderstedt"
+        ),
+        wohnform=Wohnform.EIGENTUM,  # nur Kaufobjekte genannt; 144 WE liegt über filters.eigentum_min_we
+        verfahrensstand=Verfahrensstand.VORBERATUNG,  # Projektseite: "Geplante Projekte"
+        konfidenz=0.9,
+        evidenz="Ca. 144 Wohneinheiten sind aufgeteilt auf Reihen- und Doppelhäuser",
+    ),
+]
+
+
+def seed_echte_projekte(conn: sqlite3.Connection) -> None:
+    """Die echten Frühphasen-Projekte in eine Demo-/Test-Datenbank schreiben (idempotent über
+    `upsert_projekt()`; Status/Notizen bleiben unangetastet)."""
+    conn.execute(
+        "INSERT OR IGNORE INTO quellen (id, name, bundesland, system) VALUES (?, ?, ?, ?)",
+        (ECHTE_QUELLE_ID, "Geprüfte Echtprojekte (Projektseiten/Fachpresse)", "SH", "unknown"),
+    )
+    conn.commit()
+    for eintrag in _ECHTE_PROJEKTE:
+        database.upsert_projekt(
+            conn,
+            quelle_id=ECHTE_QUELLE_ID,
+            bundesland="SH",
+            kommune="Norderstedt",
+            extraktion=ProjektExtraktion(**eintrag),
+        )
+
 # (id, name, bundesland, system) - system nur zur Anzeige im Quellen-Tab, keine echte Adapterwahl.
 _QUELLEN: list[tuple[str, str, str, str]] = [
     ("norderstedt", "Stadt Norderstedt", "SH", "sessionnet"),
@@ -457,6 +520,8 @@ def ensure_demo_seeded(settings: Settings) -> Settings:
         anzahl = conn.execute("SELECT COUNT(*) FROM projekte").fetchone()[0]
         if anzahl == 0:
             seed(conn)
+        if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_id = ?", (ECHTE_QUELLE_ID,)).fetchone()[0] == 0:
+            seed_echte_projekte(conn)  # ältere Demo-Datenbanken bekommen sie nachträglich
         # Eigene Prüfung: ältere Demo-Datenbanken (vor der Web-Recherche angelegt) haben Projekte,
         # aber noch keine Web-Funde - ein erneutes seed() würde dort bearbeitete Status zurücksetzen.
         if conn.execute("SELECT COUNT(*) FROM web_funde").fetchone()[0] == 0:
@@ -479,7 +544,11 @@ def reset_demo(settings: Settings) -> Settings:
     conn = database.connect(demo)
     try:
         seed(conn)
+        seed_echte_projekte(conn)
         for projekt in database.list_projekte(conn):
+            # seed() setzt nur die erfundenen Projekte auf ihren Status zurück; die echten starten bei "Neu".
+            if projekt["quelle_id"] == ECHTE_QUELLE_ID and projekt["status"] != "Neu":
+                database.set_projekt_status(conn, projekt["id"], "Neu")
             if projekt["notizen"]:
                 database.set_projekt_notizen(conn, projekt["id"], "")
         # Komplett neu statt nur aktualisieren: so verschwinden auch Beispielfunde, die es in

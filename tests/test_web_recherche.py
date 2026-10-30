@@ -725,7 +725,7 @@ def test_demo_terminal_zeigt_verworfene_echte_projekte(settings, monkeypatch, tm
     test_db = tmp_path / "t.db"
     assert main(["web-recherche", "--demo", "--test", "--db", str(test_db)]) == 0
     ausgabe = capsys.readouterr().out
-    assert ausgabe.count("⭐ ECHTES PROJEKT (In Frühphase verworfen)") == 2
+    assert ausgabe.count("⭐ ECHTES PROJEKT (Frühphase - kein Web-Lead, im Tab 'Projekte')") == 2
     assert "SonnenHeyde (Manke)" in ausgabe and "Richtweg (Instone)" in ausgabe
     assert "⭐ ECHTES PROJEKT (Quelle geprüft)" in ausgabe  # Nordlicht weiterhin als Treffer
     with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as c:
@@ -740,3 +740,16 @@ def test_nur_belegte_echte_projekte_in_der_demo():
     echte -= {"https://www.immobilienscout24.de/expose/demo-0000"}  # erfundenes Portal-Negativbeispiel
     assert {normalisiere_url(u) for u in echte} == VERIFIZIERTE_DEMO_URLS
     assert not any(w in " ".join(echte) for w in ("vonovia", "buwog", "noa4", "adlershorst"))
+
+
+def test_demo_lauf_schreibt_echte_fruehphasen_projekte_in_die_test_db(settings, monkeypatch, tmp_path):
+    monkeypatch.setattr("radar.web_recherche.load_settings", lambda: settings)
+    test_db = tmp_path / "t.db"
+    assert main(["web-recherche", "--demo", "--test", "--db", str(test_db)]) == 0
+    with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as c:
+        namen = {p["projektbezeichnung"] for p in database.list_projekte(c)}
+        web_urls = {f["url"] for f in database.list_web_funde(c)}
+    assert namen == {"Richtweg / Garstedter Dreieck (Instone)", "SonnenHeyde (Manke)"}
+    assert NORDLICHT_URL in web_urls  # Nordlicht bleibt der Phase-4-Fund im Web-Recherche-Tab
+    with closing(database.connect(settings)) as c:
+        assert database.list_projekte(c) == []  # echte Datenbank unberührt
