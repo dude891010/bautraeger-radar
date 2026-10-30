@@ -183,6 +183,8 @@ def add_herkunft_und_stand(df: pd.DataFrame, *, demo_modus: bool) -> pd.DataFram
         return df
     df = df.copy()
     df["stand"] = df["verfahrensstand"].map(STAND_LABEL).fillna(df["verfahrensstand"])
+    # Text statt Zahl, damit eine noch offene WE-Zahl als "WE offen" erscheint statt als leere Zelle
+    df["we_anzeige"] = df["we_gesamt"].map(lambda v: "WE offen" if pd.isna(v) else str(int(v)))
     echt = df["quelle_id"] == demo_data.ECHTE_QUELLE_ID
     df["herkunft"] = HERKUNFT_DEMO if demo_modus else ""
     df.loc[echt, "herkunft"] = HERKUNFT_ECHT
@@ -573,6 +575,7 @@ EXPORT_SPALTEN = [
     "status",
     "notizen",
     "quelle_id",
+    "quelle_url",
     "aktualisiert_am",
 ]
 
@@ -1245,10 +1248,13 @@ def main() -> None:
                             st.markdown(f"- {grund}")
 
             nur_lesen = [
-                "id", "herkunft", "lead", "pruefen", "pruefauftrag", "projektbezeichnung", "stand", "ort", "we_gesamt"
+                "id", "herkunft", "lead", "pruefen", "pruefauftrag", "projektbezeichnung", "stand", "ort", "we_anzeige",
+                "quelle_url",
             ]
             if not (gefiltert["herkunft"] != "").any():
                 nur_lesen.remove("herkunft")  # echter Betrieb: keine leere Spalte zeigen
+            if "quelle_url" not in gefiltert.columns or gefiltert["quelle_url"].isna().all():
+                nur_lesen.remove("quelle_url")
             bearbeitbar = gefiltert[nur_lesen + ["status", "notizen"]]
             bearbeitet = st.data_editor(
                 bearbeitbar,
@@ -1257,6 +1263,10 @@ def main() -> None:
                     "herkunft": st.column_config.TextColumn(
                         "Herkunft", help="Echtes, an der Quelle geprüftes Projekt oder erfundenes Beispiel"
                     ),
+                    "we_anzeige": st.column_config.TextColumn(
+                        "WE", help="Wohneinheiten gesamt; 'WE offen' = noch keine Zahl"
+                    ),
+                    "quelle_url": st.column_config.LinkColumn("Quelle", display_text="öffnen"),
                     "stand": st.column_config.TextColumn(
                         "Stand", help="Verfahrensstand im Klartext - wie weit ist das Vorhaben vom Küchenbedarf?"
                     ),

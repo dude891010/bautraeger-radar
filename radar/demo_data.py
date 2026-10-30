@@ -93,6 +93,152 @@ _ECHTE_PROJEKTE: list[dict] = [
 ]
 
 
+# Fünf weitere echte Norderstedter Projekte (Daten vom Nutzer recherchiert, Quellen am 30.10.2026 von uns
+# gegengeprüft: alle WE-Zahlen, Förderquoten und Verfahrensdaten stehen so in den Dokumenten). `evidenz` ist
+# jeweils ein wörtliches Zitat aus der verlinkten Quelle. `quelle_url` = erste erreichbare Quelle, weitere
+# Quellen stehen in der Kurzfassung. Verfahrensstand = nächstpassender vorhandener Wert ("im Bau" gibt es
+# nicht -> BAUGENEHMIGUNG; B-Plan je nach Stand AUFSTELLUNGSBESCHLUSS bzw. AUSLEGUNG; "in Planung" ->
+# VORBERATUNG). Wohnform der drei B-Pläne UNKLAR (Nutzerentscheidung 30.10.2026): die Begründungen nennen nur
+# den geförderten Anteil, ob der Rest Miete oder Eigentum wird, ist offen -> Prüfauftrag statt Annahme.
+# Nur für Demo-/Test-Datenbanken (scripts/seed_demo_data.py --norderstedt --db ...).
+_NORDERSTEDT_PROJEKTE: list[dict] = [
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Berliner Allee – Quartier Garstedt",
+            adresse=Adresse(strasse="Berliner Allee", hausnummer="4–12", ort="Norderstedt"),
+            we_gesamt=198,
+            we_miete=198,
+            we_gefoerdert_anzahl=60,
+            we_gefoerdert=True,
+            ausfuehrungszeitraum="Baustart Juli 2024, Fertigstellung laut BUWOG 2026",
+            antragsteller="BUWOG (Vonovia); Projektstart durch QUARTERBACK Immobilien, Bau: PORR",
+            kurzfassung=(
+                "Garstedt, Berliner Allee 4–12: 198 Mietwohnungen (2–4 Zimmer), laut Projektstart-Meldung 60 davon "
+                "gefördert; im Bau (Baustart Juli 2024, Fertigstellung laut BUWOG 2026). Weitere Quelle: "
+                "BUWOG-Projektseite https://ibexa.vonovia.de/buwog_de_eng_gb/residential-projects/"
+                "norderstedt-berliner-allee (am 30.10.2026 nicht erreichbar, 404)."
+            ),
+            wohnform=Wohnform.MIETE,
+            verfahrensstand=Verfahrensstand.BAUGENEHMIGUNG,  # "im Bau" gibt es nicht
+            konfidenz=0.9,
+            evidenz="QUARTERBACK baut Wohn- und Geschäftshaus mit 198 Wohneinheiten",
+        ),
+        quelle_url="https://www.konii.de/news/quarterback-startet-neubauprojekt-quartier-garstedt/",
+        notiz="Kurz vor Fertigstellung – für Küchen ggf. schon vergeben; als Demo für Phase 'im Bau'.",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="B-Plan 339 „zwischen Berliner Allee, Schumanstraße und Adenauerplatz“",
+            adresse=Adresse(strasse="Berliner Allee / Schumanstraße / Adenauerplatz", ort="Norderstedt"),
+            we_gesamt=230,
+            we_gefoerdert=True,
+            quote_gefoerdert=0.3,
+            antragsteller="Wohnungsunternehmen Plambeck (Vorhabenträger)",
+            kurzfassung=(
+                "Garstedt: ca. 230 WE in 4 Mehrfamilienhäusern, 30 % gefördert, Kita geplant. Aufstellungsbeschluss "
+                "16.04.2019; überarbeitetes Konzept im ASV beschlossen 06.11.2025; Begründung Stand 07.11.2025."
+            ),
+            wohnform=Wohnform.UNKLAR,  # Begründung nennt nur den geförderten Anteil -> prüfen
+            verfahrensstand=Verfahrensstand.AUFSTELLUNGSBESCHLUSS,
+            konfidenz=0.9,
+            evidenz="Errichtung von vier Mehrfamilienhäusern mit insgesamt ca. 230 Wohneinheiten",
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_12671_1.PDF",
+        notiz="Hochpunkt 8 Geschosse an Berliner Allee/Schumanstraße, sonst 4–5 + Staffel.",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="B-Plan 343 „Meyers Mühle“",
+            adresse=Adresse(strasse="Ohechaussee", hausnummer="20", ort="Norderstedt"),
+            we_gesamt=119,
+            we_gefoerdert=True,
+            quote_gefoerdert=0.5,
+            antragsteller="Privater Investor (in den Unterlagen nicht namentlich genannt)",
+            kurzfassung=(
+                "Garstedt, Ohechaussee 20 / Ecke Ochsenzoller Straße: bis zu 119 WE, 50 % gefördert, dazu 6–8 "
+                "Gewerbe-/Praxiseinheiten. Aufstellungsbeschluss 20.01.2022; Entwurf veröffentlicht 25.09.–05.11.2025; "
+                "Begründung Stand 10.11.2025 (Richtung Satzungsbeschluss). Weitere Quelle: Begründung "
+                "https://www.norderstedt.de/media/custom/3224_12714_1.PDF"
+            ),
+            wohnform=Wohnform.UNKLAR,  # Begründung nennt nur den geförderten Anteil -> prüfen
+            verfahrensstand=Verfahrensstand.AUSLEGUNG,  # Entwurf öffentlich ausgelegt
+            konfidenz=0.9,
+            evidenz="Es soll ein Wohn- und Geschäftshaus mit ca. 119 Wohnungen",
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_11778_1.PDF",
+        notiz="Ehemaliges Gartencenter-Gelände, Kopfbau 6 Geschosse.",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="B-Plan 319 „Quartier südlich Moorbektwiete / westlich Ulzburger Straße“",
+            adresse=Adresse(strasse="Ulzburger Straße", hausnummer="457–463", ort="Norderstedt"),
+            we_gesamt=26,
+            we_gefoerdert=True,
+            quote_gefoerdert=0.3,
+            ausfuehrungszeitraum="laut Stadt kein Bau unmittelbar nach Rechtskraft",
+            antragsteller="Private Eigentümer (in den Unterlagen nicht namentlich genannt)",
+            kurzfassung=(
+                "Friedrichsgabe, Ulzburger Straße 457–463 / Moorbektwiete: ca. 26 zusätzliche WE (Nachverdichtung, "
+                "4 neue Gebäude), 30 % gefördert. Entwurf veröffentlicht 08.09.–10.10.2025; Begründung Stand "
+                "15.10.2025. Weitere Quelle: Begründung https://www.norderstedt.de/media/custom/3224_12322_1.PDF"
+            ),
+            wohnform=Wohnform.UNKLAR,  # Begründung nennt nur den geförderten Anteil -> prüfen
+            verfahrensstand=Verfahrensstand.AUSLEGUNG,  # Entwurf öffentlich ausgelegt
+            konfidenz=0.9,
+            evidenz="Das dem Bebauungsplan zu Grunde liegende städtebauliche Konzept sieht insgesamt ca. 26 "
+            "zusätzliche Wohnungen vor.",
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_11655_1.PDF",
+        notiz="Kleinstes Projekt der Liste, aber über der 6-WE-Schwelle.",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Rahmenplan „Glashütter Kirchenweg“",
+            adresse=Adresse(strasse="Glashütter Kirchenweg", ort="Norderstedt"),
+            we_gesamt=None,  # WE noch offen - keine Zahl erfinden
+            we_gefoerdert=True,
+            quote_gefoerdert=0.5,
+            antragsteller="EGNO – Entwicklungsgesellschaft Norderstedt mbH (Flächeneigentümerin)",
+            kurzfassung=(
+                "Glashütte, Segeberger Chaussee / Hummelsbütteler Steindamm / Fuchsmoorweg / Glashütter Kirchenweg: "
+                "ca. 8,75 ha gemischtes Quartier, Ziel 50 % geförderter Wohnungsbau, WE noch offen. Rahmenplan "
+                "gestartet, Auftaktveranstaltung 20.06.2025; noch kein B-Plan."
+            ),
+            wohnform=Wohnform.UNKLAR,  # Mischgebiet, Wohnform noch nicht festgelegt
+            verfahrensstand=Verfahrensstand.VORBERATUNG,  # frühe Rahmenplanung
+            konfidenz=0.9,
+            evidenz="mit einem Anteil von 50 Prozent gefördertem Wohnungsbau",
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_10995_1.PDF",
+        notiz="Sehr frühe Phase – gut als Beispiel für den Zeitvorsprung des Radars.",
+    ),
+]
+
+
+def seed_norderstedt_projekte(conn: sqlite3.Connection) -> None:
+    """Die 5 geprüften Norderstedter Projekte schreiben (idempotent über `upsert_projekt()`: gleiche
+    Adresse = gleicher Datensatz). Quell-URL und Notiz nur setzen, wenn noch leer - im Dashboard gepflegte
+    Notizen bleiben unangetastet."""
+    conn.execute(
+        "INSERT OR IGNORE INTO quellen (id, name, bundesland, system) VALUES (?, ?, ?, ?)",
+        (ECHTE_QUELLE_ID, "Geprüfte Echtprojekte (Projektseiten/Fachpresse)", "SH", "unknown"),
+    )
+    conn.commit()
+    for eintrag in _NORDERSTEDT_PROJEKTE:
+        projekt_id, _ = database.upsert_projekt(
+            conn,
+            quelle_id=ECHTE_QUELLE_ID,
+            bundesland="SH",
+            kommune="Norderstedt",
+            extraktion=ProjektExtraktion(**eintrag["extraktion"]),
+        )
+        zeile = conn.execute("SELECT quelle_url, notizen FROM projekte WHERE id = ?", (projekt_id,)).fetchone()
+        if not zeile["quelle_url"]:
+            database.set_projekt_quelle_url(conn, projekt_id, eintrag["quelle_url"])
+        if not zeile["notizen"]:
+            database.set_projekt_notizen(conn, projekt_id, eintrag["notiz"])
+
+
 def seed_echte_projekte(conn: sqlite3.Connection) -> None:
     """Die echten Frühphasen-Projekte in eine Demo-/Test-Datenbank schreiben (idempotent über
     `upsert_projekt()`; Status/Notizen bleiben unangetastet)."""

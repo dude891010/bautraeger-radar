@@ -199,7 +199,14 @@ _SCHEMA_V5 = """
 ALTER TABLE web_funde ADD COLUMN wohnform TEXT NOT NULL DEFAULT 'UNKLAR';
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5]
+# V6: Link zur Quelle je Projekt (z. B. Projektseite, Pressemitteilung, B-Plan-Begründung). Projekte aus
+# Ratsunterlagen haben ihre Links über projekt_vorlage -> sitzungen; dieses Feld ist für Projekte, die aus
+# einer einzelnen geprüften Quelle stammen. Nie von upsert_projekt() geschrieben, nur von set_projekt_quelle_url().
+_SCHEMA_V6 = """
+ALTER TABLE projekte ADD COLUMN quelle_url TEXT;
+"""
+
+_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5, _SCHEMA_V6]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -606,6 +613,11 @@ def set_projekt_status(
         (neuer_status, when.isoformat(), projekt_id),
     )
     _log_status(conn, projekt_id, row["status"], neuer_status, notiz, when)
+    conn.commit()
+
+
+def set_projekt_quelle_url(conn: sqlite3.Connection, projekt_id: int, url: str) -> None:
+    conn.execute("UPDATE projekte SET quelle_url = ? WHERE id = ?", (url, projekt_id))
     conn.commit()
 
 

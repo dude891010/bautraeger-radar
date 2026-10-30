@@ -789,6 +789,19 @@ Hover-Hilfe an der ⚠-Überschrift und ein Aufklapper **"Was ist zu prüfen? (N
 Grenzen kommen aus `filters.min_units`/`eigentum_min_we`. Dabei die Regel aus "Fachliche Regeln" vervollständigt:
 auch eine **fehlende WE-Zahl** setzt jetzt "prüfen" (vorher nur unklare Wohnform/geringe Konfidenz). 432 Tests.
 
+**5 weitere geprüfte Norderstedter Projekte (30.10.2026, `demo_data.seed_norderstedt_projekte()`):** Berliner
+Allee/Quartier Garstedt (198 WE, im Bau), B-Plan 339 (ca. 230 WE), B-Plan 343 Meyers Mühle (ca. 119 WE),
+B-Plan 319 (ca. 26 WE), Rahmenplan Glashütter Kirchenweg (WE offen). Daten vom Nutzer recherchiert, von uns an
+den Quellen gegengeprüft (PDF-Text per pdfplumber, isoliert): WE-Zahlen, Förderquoten, Verfahrensdaten stimmen;
+`evidenz` ist je ein wörtliches Zitat. Die BUWOG-Seite zu Berliner Allee liefert 404 -> `quelle_url` ist die
+konii-Meldung, die BUWOG-URL steht mit Vermerk in der Kurzfassung. Phasen-Mapping auf vorhandene Werte: "im Bau"
+-> BAUGENEHMIGUNG (ein IM_BAU gibt es nicht; dadurch auch Kurzfristiger Lead), B-Plan 339 ->
+AUFSTELLUNGSBESCHLUSS, 343/319 -> AUSLEGUNG (Entwurf veröffentlicht), Rahmenplan -> VORBERATUNG. Wohnform der
+drei B-Pläne UNKLAR ("⚠ prüfen" mit Prüfauftrag): die Begründungen nennen nur den geförderten Anteil. Schema v6: `projekte.quelle_url`
+(Link-Spalte "Quelle" im Projekte-Tab, nie von `upsert_projekt()` geschrieben); Spalte "WE" zeigt "WE offen" statt
+leer. Einspielen: `scripts/seed_demo_data.py --norderstedt --db data/test_radar.db` (idempotent, verweigert
+`data/radar.db`, Notizen nur wenn leer). 436 Tests.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.

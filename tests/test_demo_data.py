@@ -2,7 +2,10 @@
 Schalter. Reines SQLite, kein Netzzugriff, `tmp_path` pro Test (wie tests/test_database.py)."""
 
 from contextlib import closing
+from dataclasses import replace
+from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from radar import database, demo_data
@@ -187,3 +190,80 @@ def test_echte_projekte_sind_kein_kurzfristiger_lead_und_haben_klartext_stand(se
     assert df.loc["Richtweg / Garstedter Dreieck (Instone)", "lead"] == ""
     andere = df[df["quelle_id"] != demo_data.ECHTE_QUELLE_ID]
     assert set(andere["herkunft"]) == {HERKUNFT_DEMO}
+
+
+# -- 5 geprüfte Norderstedter Projekte (scripts/seed_demo_data.py --norderstedt) -----------------------
+
+
+def _norderstedt_db(settings):
+    with closing(database.connect(settings)) as conn:
+        demo_data.seed_echte_projekte(conn)
+        demo_data.seed_norderstedt_projekte(conn)
+        demo_data.seed_norderstedt_projekte(conn)  # zweimal: idempotent
+        return {p["projektbezeichnung"]: dict(p) for p in database.list_projekte(conn)}
+
+
+def test_norderstedt_projekte_idempotent_mit_quelle_und_notiz(settings):
+    projekte = _norderstedt_db(settings)
+    assert len(projekte) == 7  # 5 neue + Richtweg + SonnenHeyde
+    garstedt = projekte["Berliner Allee – Quartier Garstedt"]
+    assert (garstedt["we_gesamt"], garstedt["we_gefoerdert_anzahl"], garstedt["verfahrensstand"]) == (
+        198, 60, "BAUGENEHMIGUNG")
+    assert garstedt["quelle_url"].startswith("https://www.konii.de/news/quarterback")
+    assert garstedt["notizen"].startswith("Kurz vor Fertigstellung")
+    assert projekte["B-Plan 343 „Meyers Mühle“"]["verfahrensstand"] == "AUSLEGUNG"
+    assert projekte["B-Plan 339 „zwischen Berliner Allee, Schumanstraße und Adenauerplatz“"][
+        "verfahrensstand"] == "AUFSTELLUNGSBESCHLUSS"
+
+
+def test_glashuetter_kirchenweg_hat_keine_erfundene_we_zahl(settings):
+    from app import add_herkunft_und_stand, add_pruef_badge, build_projekte_df
+
+    with closing(database.connect(settings)) as conn:
+        demo_data.seed_norderstedt_projekte(conn)
+        df = build_projekte_df(database.list_projekte(conn), {})
+    df = add_herkunft_und_stand(add_pruef_badge(df), demo_modus=False).set_index("projektbezeichnung")
+    zeile = df.loc["Rahmenplan „Glashütter Kirchenweg“"]
+    assert pd.isna(zeile["we_gesamt"]) and zeile["we_anzeige"] == "WE offen"
+    assert zeile["stand"] == "Geplant / Vorbereitung"
+    assert "Keine Zahl der Wohneinheiten" in zeile["pruefauftrag"]
+    assert df.loc["B-Plan 319 „Quartier südlich Moorbektwiete / westlich Ulzburger Straße“", "we_anzeige"] == "26"
+
+
+def test_manuelle_notiz_bleibt_beim_erneuten_seeden(settings):
+    with closing(database.connect(settings)) as conn:
+        demo_data.seed_norderstedt_projekte(conn)
+        projekte = database.list_projekte(conn)
+        pid = next(p["id"] for p in projekte if p["projektbezeichnung"] == "B-Plan 343 „Meyers Mühle“")
+        database.set_projekt_notizen(conn, pid, "Investor angerufen")
+        demo_data.seed_norderstedt_projekte(conn)
+        assert next(p for p in database.list_projekte(conn) if p["id"] == pid)["notizen"] == "Investor angerufen"
+
+
+def test_seed_skript_verweigert_echte_datenbank_und_schreibt_test_db(settings, monkeypatch, tmp_path):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("seed_demo_data", Path(__file__).parent.parent / "scripts" /
+                                                  "seed_demo_data.py")
+    skript = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(skript)
+    monkeypatch.setattr(skript, "load_settings", lambda: settings)
+    assert skript.main(["--norderstedt", "--db", settings.database.path]) == 2
+    test_db = tmp_path / "test_radar.db"
+    assert skript.main(["--norderstedt", "--db", str(test_db)]) == 0
+    with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as conn:
+        assert len(database.list_projekte(conn)) == 7
+
+
+def test_bplaene_ohne_belegte_wohnform_bekommen_pruefauftrag(settings):
+    from app import add_pruef_badge, build_projekte_df
+
+    with closing(database.connect(settings)) as conn:
+        demo_data.seed_norderstedt_projekte(conn)
+        df = add_pruef_badge(build_projekte_df(database.list_projekte(conn), {})).set_index("projektbezeichnung")
+    bplaene = [n for n in df.index if n.startswith("B-Plan")]
+    assert len(bplaene) == 3
+    for name in bplaene:
+        assert df.loc[name, "wohnform"] == "UNKLAR"
+        assert "Geförderter Anteil bekannt" in df.loc[name, "pruefauftrag"]
+    assert df.loc["Berliner Allee – Quartier Garstedt", "pruefen"] == ""
