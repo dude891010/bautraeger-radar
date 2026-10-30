@@ -307,18 +307,53 @@ PRUEF_BADGE = "⚠ prüfen"
 PRUEF_HIGHLIGHT_FARBE = "#FFE8CC"  # dezentes Warn-Orange, passend zum Corporate Design
 
 
-def add_pruef_badge(df: pd.DataFrame) -> pd.DataFrame:
-    """Fügt eine Spalte `pruefen` hinzu: `PRUEF_BADGE` für unsichere Fälle (Konfidenz unter
-    `KONFIDENZ_SCHWELLE` oder `wohnform == "UNKLAR"`), sonst ein leerer String. Damit gehen
-    unsichere Treffer im Dashboard nicht zwischen sicheren unter (CLAUDE.md: "Ein Fehlalarm ist
-    für den Vertrieb billiger als ein verpasstes Projekt")."""
+def _leer(wert: object) -> bool:
+    return wert is None or (not isinstance(wert, str) and pd.isna(wert))
+
+
+def pruef_gruende(zeile: pd.Series, *, min_units: int = 6, eigentum_min_we: int = 12) -> list[str]:
+    """Warum ein Projekt geprüft werden muss und WAS zu tun ist - je Grund ein Satz mit Auftrag.
+    Leere Liste = nichts zu prüfen. Aus den Daten abgeleitet, damit es für jedes künftige Projekt
+    gilt (Dashboard: Spalte "Prüfauftrag" und Liste "Was ist zu prüfen?")."""
+    gruende = []
+    if zeile.get("wohnform", "UNKLAR") == "UNKLAR":
+        quote = zeile.get("quote_gefoerdert")
+        bekannt = (
+            f"Geförderter Anteil bekannt (ca. {quote:.0%}), für den Rest nennt die Quelle nicht, ob Miete oder "
+            "Eigentum."
+            if not _leer(quote)
+            else "Die Quelle sagt nicht, ob Miete, gefördert oder Eigentum."
+        )
+        gruende.append(
+            f"Wohnform unklar: {bekannt} Prüfen: beim Bauträger oder in den Anlagen klären - relevant ab "
+            f"{min_units} Miet-/geförderten WE bzw. {eigentum_min_we} Eigentums-WE."
+        )
+    if all(_leer(zeile.get(s)) for s in ("we_gesamt", "we_miete", "we_gefoerdert_anzahl")):
+        gruende.append(
+            "Keine Zahl der Wohneinheiten gefunden. Prüfen: Anzahl in den Anlagen (Begründung, städtebaulicher "
+            "Vertrag) oder beim Bauträger nachsehen."
+        )
+    konfidenz = zeile.get("konfidenz", 1.0)
+    konfidenz = 0.0 if _leer(konfidenz) else float(konfidenz)
+    if konfidenz < KONFIDENZ_SCHWELLE:
+        gruende.append(
+            f"Die KI war sich unsicher (Konfidenz {konfidenz:.0%}). Prüfen: WE-Zahl, Adresse und Verfahrensstand "
+            "mit der Originalquelle abgleichen."
+        )
+    return gruende
+
+
+def add_pruef_badge(df: pd.DataFrame, *, min_units: int = 6, eigentum_min_we: int = 12) -> pd.DataFrame:
+    """Fügt die Spalten `pruefen` (`PRUEF_BADGE` oder "") und `pruefauftrag` (Grund + Auftrag, siehe
+    `pruef_gruende()`) hinzu. Geprüft wird bei unklarer Wohnform, fehlender WE-Zahl (CLAUDE.md: "Fehlt
+    die Anzahl oder die Wohnform ... prüfen") oder Konfidenz unter `KONFIDENZ_SCHWELLE`. Damit gehen
+    unsichere Treffer nicht zwischen sicheren unter ("Ein Fehlalarm ist billiger als ein verpasstes Projekt")."""
     if df.empty:
         return df
     df = df.copy()
-    konfidenz = df["konfidenz"] if "konfidenz" in df.columns else pd.Series(1.0, index=df.index)
-    wohnform_unklar = df["wohnform"] == "UNKLAR" if "wohnform" in df.columns else pd.Series(False, index=df.index)
-    unsicher = konfidenz.fillna(0) < KONFIDENZ_SCHWELLE
-    df["pruefen"] = (unsicher | wohnform_unklar).map({True: PRUEF_BADGE, False: ""})
+    gruende = df.apply(lambda z: pruef_gruende(z, min_units=min_units, eigentum_min_we=eigentum_min_we), axis=1)
+    df["pruefauftrag"] = gruende.map(lambda g: " · ".join(g))
+    df["pruefen"] = gruende.map(lambda g: PRUEF_BADGE if g else "")
     return df
 
 
@@ -366,6 +401,7 @@ LEAD_SPALTEN = [
     "antragsteller",
     "kurzfassung",
     "pruefen",
+    "pruefauftrag",
     "status",
 ]
 
@@ -533,6 +569,7 @@ EXPORT_SPALTEN = [
     "lead",
     "konfidenz",
     "pruefen",
+    "pruefauftrag",
     "status",
     "notizen",
     "quelle_id",
@@ -1061,7 +1098,10 @@ def main() -> None:
         web_df = build_web_funde_df(database.list_web_funde(conn))
 
     df = build_projekte_df(projekte_rows, tier_by_quelle)
-    df = add_herkunft_und_stand(add_lead_badge(add_pruef_badge(df)), demo_modus=demo_modus)
+    pruef_df = add_pruef_badge(
+        df, min_units=settings.filters.min_units, eigentum_min_we=settings.filters.eigentum_min_we
+    )
+    df = add_herkunft_und_stand(add_lead_badge(pruef_df), demo_modus=demo_modus)
 
     kpis = compute_kpis(df)
     if not df.empty:
@@ -1193,11 +1233,20 @@ def main() -> None:
             unsichere_anzahl = int((gefiltert["pruefen"] == PRUEF_BADGE).sum())
             if unsichere_anzahl:
                 st.warning(
-                    f"{PRUEF_BADGE}: {unsichere_anzahl} Projekt(e) mit geringer Konfidenz oder "
-                    "unklarer Wohnform - bitte prüfen."
+                    f"{PRUEF_BADGE}: {unsichere_anzahl} Projekt(e) mit unklarer Wohnform, fehlender WE-Zahl oder "
+                    "geringer Konfidenz - Grund und Auftrag stehen in der Spalte 'Prüfauftrag' und hier darunter."
                 )
+                with st.expander(f"Was ist zu prüfen? ({unsichere_anzahl})"):
+                    for _, zeile in gefiltert[gefiltert["pruefen"] == PRUEF_BADGE].iterrows():
+                        name = zeile["projektbezeichnung"]
+                        name = "(ohne Bezeichnung)" if _leer(name) or not name else name
+                        st.markdown(f"**{name}** ({zeile['ort']})")
+                        for grund in zeile["pruefauftrag"].split(" · "):
+                            st.markdown(f"- {grund}")
 
-            nur_lesen = ["id", "herkunft", "lead", "pruefen", "projektbezeichnung", "stand", "ort", "we_gesamt"]
+            nur_lesen = [
+                "id", "herkunft", "lead", "pruefen", "pruefauftrag", "projektbezeichnung", "stand", "ort", "we_gesamt"
+            ]
             if not (gefiltert["herkunft"] != "").any():
                 nur_lesen.remove("herkunft")  # echter Betrieb: keine leere Spalte zeigen
             bearbeitbar = gefiltert[nur_lesen + ["status", "notizen"]]
@@ -1215,7 +1264,17 @@ def main() -> None:
                         "Lead", help="Baugenehmigung/Bauantrag - siehe Tab 'Kurzfristige Leads'."
                     ),
                     "pruefen": st.column_config.TextColumn(
-                        "⚠", help="Geringe Konfidenz oder unklare Wohnform - bitte prüfen."
+                        "⚠",
+                        help=(
+                            "**Bitte prüfen**, wenn die Wohnform unklar ist, die WE-Zahl fehlt oder die KI unsicher "
+                            "war. Was genau zu tun ist, steht je Projekt in der Spalte **Prüfauftrag** und "
+                            "vollständig unter **Was ist zu prüfen?** oberhalb der Tabelle."
+                        ),
+                    ),
+                    "pruefauftrag": st.column_config.TextColumn(
+                        "Prüfauftrag",
+                        width="large",
+                        help="Warum geprüft werden muss und was zu tun ist. Ganzer Text: 'Was ist zu prüfen?' oben.",
                     ),
                     "status": st.column_config.SelectboxColumn("Status", options=settings.dashboard.statuses),
                     "notizen": st.column_config.TextColumn("Notizen", max_chars=MAX_NOTIZ_LAENGE),

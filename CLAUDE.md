@@ -781,6 +781,14 @@ Test-Datenbanken (Demo-Seed, `web-recherche --demo/--test`), nie in `data/radar.
   Beide `evidenz` sind wörtliche Zitate der Quellen; keins ist ein kurzfristiger Lead.
 - `reset_demo()` setzt auch den Status der Echtprojekte auf "Neu" zurück. 428 Tests.
 
+**Prüfauftrag statt nacktem "⚠ prüfen" (30.10.2026, Nutzerwunsch):** Streamlit 1.64 zeigt Tooltips nur an
+Spaltenüberschriften, nicht je Zelle (geprüft im Quellcode `column_types.py`, Styler-Tooltips werden nicht
+übertragen) - deshalb statt Hover je Zeile: `app.pruef_gruende()` leitet aus den Daten je Grund einen Satz mit
+Auftrag ab ("Wohnform unklar: ... Prüfen: ..."), Spalte **"Prüfauftrag"** im Projekte-Editor/Leads/Export,
+Hover-Hilfe an der ⚠-Überschrift und ein Aufklapper **"Was ist zu prüfen? (N)"** mit dem vollen Text.
+Grenzen kommen aus `filters.min_units`/`eigentum_min_we`. Dabei die Regel aus "Fachliche Regeln" vervollständigt:
+auch eine **fehlende WE-Zahl** setzt jetzt "prüfen" (vorher nur unklare Wohnform/geringe Konfidenz). 432 Tests.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.

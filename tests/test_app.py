@@ -591,3 +591,35 @@ def test_compute_kpis_counts_leads():
 def test_export_view_contains_lead_column():
     df = _lead_df(_row(id=1, verfahrensstand="BAUANTRAG"))
     assert export_view(df).loc[0, "lead"] == LEAD_BADGE_BAUANTRAG
+
+
+# -- Prüfauftrag: Grund + was zu tun ist ------------------------------------------------------------
+
+
+def test_pruefauftrag_nennt_grund_und_auftrag_fuer_unklare_wohnform_mit_foerderquote():
+    from app import pruef_gruende
+
+    gruende = pruef_gruende(pd.Series(_row(wohnform="UNKLAR", quote_gefoerdert=0.3, konfidenz=0.9)))
+    assert len(gruende) == 1
+    assert "Geförderter Anteil bekannt (ca. 30%)" in gruende[0]
+    assert "Prüfen:" in gruende[0] and "6 Miet-/geförderten WE" in gruende[0] and "12 Eigentums-WE" in gruende[0]
+
+
+def test_pruefauftrag_fuer_fehlende_we_und_geringe_konfidenz():
+    from app import pruef_gruende
+
+    zeile = pd.Series(_row(we_gesamt=None, we_miete=None, we_gefoerdert_anzahl=None, konfidenz=0.35))
+    gruende = pruef_gruende(zeile)
+    assert any(g.startswith("Keine Zahl der Wohneinheiten") for g in gruende)
+    assert any("Konfidenz 35%" in g for g in gruende)
+
+
+def test_sicheres_projekt_hat_keinen_pruefauftrag():
+    df = add_pruef_badge(pd.DataFrame([_row(konfidenz=0.9)]))
+    assert df.loc[0, "pruefen"] == "" and df.loc[0, "pruefauftrag"] == ""
+
+
+def test_pruefauftrag_nutzt_konfigurierte_grenzen():
+    df = add_pruef_badge(pd.DataFrame([_row(wohnform="UNKLAR", konfidenz=0.9)]), min_units=8, eigentum_min_we=20)
+    assert df.loc[0, "pruefen"] == PRUEF_BADGE
+    assert "8 Miet-/geförderten WE" in df.loc[0, "pruefauftrag"] and "20 Eigentums-WE" in df.loc[0, "pruefauftrag"]
