@@ -672,3 +672,62 @@ def test_live_budget_ist_bei_aus_von_anfang_an_gesperrt():
     budget = LLMBudget(10, 10, gesperrt_grund=LIVE_AUS_HINWEIS)
     assert budget.reserve("q") is False
     assert "Live-API-Aufrufe deaktiviert" in budget.ablehnungsgrund("q")
+
+
+# -- Zu große PDFs: Warnung statt Quellenfehler (Hummel-Abgleich 11/2026) ------------------------------
+
+
+class _ZuGrossHttp(FakeHttpFiles):
+    def download_pdf(self, url, external_id):
+        from radar.http_client import DownloadZuGross
+
+        if external_id == "gross":
+            raise DownloadZuGross(f"{url}: Download überschreitet Limit (83886080 Bytes)")
+        return super().download_pdf(url, external_id)
+
+
+def test_zu_grosses_pdf_ist_warnung_kein_fehler(tmp_path, conn, source_full, settings_full):
+    database.ensure_quelle(conn, source_full)
+    sessions = [_sitzung("1", "Ausschuss für Stadtentwicklung und Verkehr")]
+    # Dieselbe Anlage hängt an zwei Tagesordnungspunkten -> nur eine Warnung
+    documents = [
+        _dokument("d1", vorlage_id="v1"), _dokument("gross", vorlage_id="v1"), _dokument("gross", vorlage_id="v2")
+    ]
+    adapter = FakeAdapter(sessions, {"1": documents})
+    http = _ZuGrossHttp(tmp_path, {"d1": RELEVANT_TEXT})
+    result = SourceRunResult(source_id="test")
+    budget = LLMBudget(10, 10)
+    cache = ResultCache(tmp_path / "cache")
+    client = FakeAnthropicClient([_TRIAGE_JA, _EXTRAKTION_18_WE])
+
+    _collect_and_persist(
+        adapter, http, conn, client, budget, cache, source_full, settings_full,
+        date(2026, 9, 1), date(2026, 9, 30), result,
+    )
+
+    assert result.ok, result.fehler
+    assert len(result.warnungen) == 1 and "übersprungen" in result.warnungen[0]
+    assert result.treffer == 1  # die übrigen Dokumente der Vorlage werden trotzdem ausgewertet
+
+    database.record_source_run(conn, source_full, result)
+    assert conn.execute("SELECT letzter_erfolg FROM quellen WHERE id = 'test'").fetchone()[0] is not None
+
+
+def test_collect_trockenlauf_zu_grosses_pdf_ist_warnung(tmp_path):
+    from radar.http_client import DownloadZuGross
+
+    class Http(FakeHttp):
+        def download_pdf(self, url, external_id):
+            raise DownloadZuGross("zu groß")
+
+    adapter = FakeAdapter([_sitzung("1", "Ausschuss für Stadtentwicklung und Verkehr")], {"1": [_dokument("x")]})
+    result = SourceRunResult(source_id="test")
+    _collect(adapter, Http(), PATTERNS, date(2026, 9, 1), date(2026, 9, 30), result)
+    assert result.ok and result.warnungen
+
+
+def test_standard_pdf_limit_80_mb():
+    from radar.config import load_settings
+
+    assert ScraperConfig().max_pdf_size_mb == 80
+    assert load_settings().scraper.max_pdf_size_mb == 80

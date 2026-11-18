@@ -16,8 +16,14 @@ regions:
   BE: { name: "Berlin",                 tier: "C", min_units: null }  # "teilweise": Schwelle klären
 
 scan:
-  months_back: 3     # Erstlauf/Backfill
+  months_back: 3     # nur für eine Quelle ohne bisherigen Erfolg UND ohne backfill_ab
   months_ahead: 2    # kommende Sitzungen (Tagesordnung oft schon vorab veröffentlicht)
+  # Rückwirkend nachladen (Hummel-Abgleich 11/2026: B-Pläne von 2024/25 fehlten). Solange eine Quelle noch
+  # nicht ab diesem Datum vollständig gelesen wurde (quellen.erfasst_ab), holt der Lauf alles ab hier nach;
+  # danach nur noch das Fenster unten. Achtung: der erste Backfill dauert lange (höflich 2 s je Abruf).
+  backfill_ab: 2024-01-01
+  ueberlappung_wochen: 6          # jeder Lauf schaut mind. so weit vor den letzten Erfolg zurück
+  offene_sitzungen_max_monate: 6  # Sitzungen ohne Detailseite/Niederschrift so lange erneut prüfen
 
 scraper:
   user_agent_template: "BautraegerRadar/0.1 (+{contact})"
@@ -28,7 +34,7 @@ scraper:
   max_retries: 3
   backoff_factor: 1.5
   respect_robots_txt: true
-  max_pdf_size_mb: 25
+  max_pdf_size_mb: 80   # 11/2026: 25 MB verwarf wichtige Anlagen (Rahmenplan-Berichte, Konzepte); größere = Warnung
   raw_cache_dir: "data/raw"          # PDFs + HTML werden gecacht (Debugging, Reproduzierbarkeit)
 
 filters:

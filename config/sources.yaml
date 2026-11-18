@@ -26,6 +26,10 @@ sources:
     tier: A
     committees:
       - "^Ausschuss für Stadtentwicklung und Verkehr$"
+      # Hummel-Abgleich 11/2026: z. B. "Norderstedter Modell" (Hermann-Klingenberg-Ring) lief nur über
+      # den Hauptausschuss. Namen exakt wie im SessionNet-Kalender (tests/fixtures/norderstedt/).
+      - "^Hauptausschuss$"
+      - "^Stadtvertretung$"
     options:
       entry_page: "info.php"             # zuerst abrufen -> Session-Cookie setzen
       calendar_page: "si0040.php"        # ?__cjahr=2026&__cmonat=9&__canz=1&__cselect=0

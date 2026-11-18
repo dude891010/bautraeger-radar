@@ -27,7 +27,7 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import anthropic
@@ -35,7 +35,7 @@ import anthropic
 from radar import database
 from radar.committees import committee_matches
 from radar.config import LIVE_AUS_HINWEIS, Settings, Source, enabled_sources, load_settings, load_sources
-from radar.http_client import HttpClient
+from radar.http_client import DownloadZuGross, HttpClient
 from radar.notifier import NeuerTreffer
 from radar.parser import (
     AnalyseStatus,
@@ -70,10 +70,22 @@ class SourceRunResult:
     llm_anfragen: int = 0  # tatsächlich gesendete API-Anfragen dieser Quelle (inkl. Retries)
     ohne_llm: int = 0  # Vorlagen, die wegen Budget/Notbremse nicht analysiert wurden (nächster Lauf versucht es)
     fehler: list[str] = field(default_factory=list)
+    # Bewusst übersprungene Dokumente (zu groß) - kein Fehler, die Quelle gilt trotzdem als erfolgreich.
+    warnungen: list[str] = field(default_factory=list)
+    # Kalender ab diesem Datum ohne Abbruch gelesen (-> quellen.erfasst_ab). Einzelne kaputte Sitzungen/
+    # Downloads zählen nicht als Abbruch: sie stehen in `fehler` und kommen über das Überlappungsfenster
+    # bzw. die offenen Sitzungen wieder - sonst würde ein einziges zu großes PDF den Backfill ewig wiederholen.
+    vollstaendig_ab: date | None = None
 
     @property
     def ok(self) -> bool:
         return not self.fehler
+
+
+def _warnung(result: SourceRunResult, text: str) -> None:
+    # Dasselbe Dokument hängt oft an mehreren Tagesordnungspunkten -> nur einmal melden.
+    if text not in result.warnungen:
+        result.warnungen.append(text)
 
 
 class LaufLaeuftBereits(RuntimeError):
@@ -138,9 +150,41 @@ def _shift_months(d: date, months: int) -> date:
 
 
 def scan_range(settings: Settings, today: date | None = None) -> tuple[date, date]:
+    """Festes Fenster ohne Datenbank (nur für den Trockenlauf `run()`)."""
     today = today or date.today()
     start = _shift_months(today, -settings.scan.months_back)
     end = _shift_months(today, settings.scan.months_ahead)
+    return start, end
+
+
+def scan_range_fuer_quelle(
+    conn: sqlite3.Connection, source: Source, settings: Settings, today: date | None = None
+) -> tuple[date, date]:
+    """Fenster des vollständigen Laufs für eine Quelle (Regeln siehe `ScanConfig`):
+    1. Backfill: noch nicht ab `scan.backfill_ab` vollständig gelesen -> ab dort.
+    2. Sonst ab letztem Erfolg minus Überlappung, mindestens aber Überlappung vor heute.
+    3. Noch nie erfolgreich und kein Backfill -> `months_back`.
+    4. Immer weit genug zurück, um die älteste offene Sitzung (ohne Detailseite/Niederschrift,
+       höchstens `offene_sitzungen_max_monate` alt) erneut anzusehen."""
+    today = today or date.today()
+    scan = settings.scan
+    end = _shift_months(today, scan.months_ahead)
+    ueberlappung = timedelta(weeks=scan.ueberlappung_wochen)
+    erfasst_ab, letzter_erfolg = database.quellen_zeitraum(conn, source.id)
+
+    if scan.backfill_ab is not None and (erfasst_ab is None or erfasst_ab > scan.backfill_ab):
+        start = scan.backfill_ab
+    elif letzter_erfolg is not None:
+        start = letzter_erfolg - ueberlappung
+    else:
+        start = _shift_months(today, -scan.months_back)
+    start = min(start, today - ueberlappung)
+
+    offen = database.aelteste_offene_sitzung(
+        conn, source.id, heute=today, nicht_vor=_shift_months(today, -scan.offene_sitzungen_max_monate)
+    )
+    if offen is not None:
+        start = min(start, offen)
     return start, end
 
 
@@ -179,6 +223,8 @@ def _collect(
             try:
                 http.download_pdf(dokument.url, dokument.external_id)
                 result.heruntergeladen += 1
+            except DownloadZuGross as exc:
+                _warnung(result, f"Download {dokument.external_id} ({dokument.titel}) übersprungen: {exc}")
             except Exception as exc:  # ein kaputter Download darf die Quelle nicht abbrechen
                 result.fehler.append(f"Download {dokument.external_id} ({dokument.titel}): {exc}")
 
@@ -222,6 +268,8 @@ def run(settings: Settings | None = None) -> list[SourceRunResult]:
         )
         for fehler in result.fehler:
             logger.warning("Quelle '%s': %s", result.source_id, fehler)
+        for warnung in result.warnungen:
+            logger.info("Quelle '%s': %s", result.source_id, warnung)
 
     return results
 
@@ -282,6 +330,9 @@ def _collect_and_persist(
                 try:
                     pfad = http.download_pdf(dokument.url, dokument.external_id)
                     result.heruntergeladen += 1
+                except DownloadZuGross as exc:
+                    _warnung(result, f"Download {dokument.external_id} ({dokument.titel}) übersprungen: {exc}")
+                    continue
                 except Exception as exc:  # ein kaputter Download darf die Quelle nicht abbrechen
                     result.fehler.append(f"Download {dokument.external_id} ({dokument.titel}): {exc}")
                     continue
@@ -364,6 +415,7 @@ def _collect_and_persist(
                 result.ohne_llm += 1
 
     result.vorlagen = len(vorlagen_ids)
+    result.vollstaendig_ab = start  # Kalender bis hierher ohne Abbruch durchlaufen
 
 
 def run_source_full(
@@ -399,6 +451,7 @@ def run_full(
     settings: Settings | None = None,
     conn: sqlite3.Connection | None = None,
     client: anthropic.Anthropic | None = None,
+    zeitraum: tuple[date, date | None] | None = None,
 ) -> list[SourceRunResult]:
     """Vollständiger Lauf: Scraper -> Parser -> Datenbank für alle aktivierten Quellen (Tier A
     zuerst). Ein gemeinsames `LLMBudget` gilt über den ganzen Lauf. `conn`/`client` lassen sich für
@@ -408,11 +461,26 @@ def run_full(
     Läuft bereits ein anderer Lauf, wird sofort `LaufLaeuftBereits` geworfen (siehe `lauf_sperre`)."""
     settings = settings or load_settings()
     with lauf_sperre(settings):
-        return _run_full_gesperrt(settings, conn, client)
+        return _run_full_gesperrt(settings, conn, client, zeitraum)
+
+
+def _erfasst_ab_darf_gesetzt_werden(
+    conn: sqlite3.Connection, source: Source, von: date, bis: date, heute: date
+) -> bool:
+    """Ein von Hand gewählter Zeitraum (`--von/--bis`) zählt für den Backfill nur, wenn er lückenlos an den
+    schon erfassten anschließt (oder, beim ersten Mal, bis heute reicht) - sonst würde `erfasst_ab` einen
+    Zeitraum als erledigt ausgeben, der in der Mitte Lücken hat."""
+    erfasst_ab, _ = database.quellen_zeitraum(conn, source.id)
+    if erfasst_ab is None:
+        return bis >= heute
+    return bis >= erfasst_ab - timedelta(days=1)
 
 
 def _run_full_gesperrt(
-    settings: Settings, conn: sqlite3.Connection | None, client: anthropic.Anthropic | None
+    settings: Settings,
+    conn: sqlite3.Connection | None,
+    client: anthropic.Anthropic | None,
+    zeitraum: tuple[date, date | None] | None = None,
 ) -> list[SourceRunResult]:
     own_conn = conn is None
     conn = conn or database.connect(settings)
@@ -440,18 +508,28 @@ def _run_full_gesperrt(
     cache = ResultCache(settings.resolve_path(settings.llm.cache_dir))
 
     sources = enabled_sources(load_sources(settings), settings)
-    start, end = scan_range(settings)
 
     results = []
     try:
         for source in sources:
+            database.ensure_quelle(conn, source)
+            if zeitraum is not None:
+                start = zeitraum[0]
+                end = zeitraum[1] or _shift_months(date.today(), settings.scan.months_ahead)
+            else:
+                start, end = scan_range_fuer_quelle(conn, source, settings)
             logger.info("Quelle '%s' (%s): Zeitraum %s bis %s", source.id, source.name, start, end)
             result = run_source_full(source, settings, conn, client, budget, cache, start, end)
             database.record_source_run(conn, source, result)
+            if result.vollstaendig_ab is not None and (
+                zeitraum is None or _erfasst_ab_darf_gesetzt_werden(conn, source, start, end, date.today())
+            ):
+                database.markiere_erfasst_ab(conn, source.id, result.vollstaendig_ab)
             results.append(result)
             logger.info(
                 "Quelle '%s': %d Sitzungen, %d relevant, %d Vorlagen (%d bereits analysiert), "
-                "%d Dokumente, %d Downloads, %d ohne Download (Text), %d Treffer, %d LLM-Anfragen, %d Fehler",
+                "%d Dokumente, %d Downloads, %d ohne Download (Text), %d Treffer, %d LLM-Anfragen, %d Fehler, "
+                "%d PDFs übersprungen (zu groß)",
                 result.source_id,
                 result.sitzungen,
                 result.relevante_sitzungen,
@@ -463,6 +541,7 @@ def _run_full_gesperrt(
                 result.treffer,
                 result.llm_anfragen,
                 len(result.fehler),
+                len(result.warnungen),
             )
             if result.ohne_llm:
                 logger.warning(
@@ -472,6 +551,8 @@ def _run_full_gesperrt(
                 )
             for fehler in result.fehler:
                 logger.warning("Quelle '%s': %s", result.source_id, fehler)
+            for warnung in result.warnungen:
+                logger.info("Quelle '%s': %s", result.source_id, warnung)
     finally:
         if own_conn:
             conn.close()

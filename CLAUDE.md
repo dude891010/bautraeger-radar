@@ -803,6 +803,58 @@ leer. Einspielen: `scripts/seed_demo_data.py --norderstedt --db data/test_radar.
 `data/radar.db`, Notizen nur wenn leer). Seit 30.10.2026 auch fester Teil der Demo-Datenbank
 (`ensure_demo_seeded()`/`reset_demo()`, Reset stellt deren Ausgangs-Notizen wieder her). 438 Tests.
 
+**Hummel-Abgleich Norderstedt (13./14.11.2026, Auftrag `docs/claude-code-gesamtauftrag_radar-norderstedt.md`).**
+Hummel kennt 11 Norderstedter Projekte, die das Radar nicht zeigte. Diagnose (Volltext aller 127 PDFs des einzigen
+Laufs vom 19.09.2026, kein Code geändert): **B** (geladen, nicht erkannt, weil jede LLM-Analyse am fehlenden
+Guthaben scheiterte) 7 Eichen (B 26/0280, 500 WE), Ohepark/B-Plan 322 (B 26/0271, B 26/0215/1, 193 WE), Postgelände
+Falkenbergstraße (B 26/0269, B 26/0360, ca. 100 WE); Königsberger Straße nur als Straßenname auf einer Karte.
+**A** (nie geladen) die übrigen: Zeitfenster zu kurz (Garstedter Tor/B-Plan 337, Harkshörner Weg, Segeberger
+Chaussee 121–125a), Randtag (ASV 18.06. vs. Fensterbeginn 19.06.: Bahnhofstr./Schweriner Str.), Gremium fehlte
+(Klingenberg-Ring: Hauptausschuss), danach kein Lauf mehr bzw. nur Presse (Liesel-Hünichen-Weg, Falkenkamp). Kein C/D.
+Garstedter Tor wurde nie im Code ausgeschlossen. Nordlicht fehlt im Tab "Projekte", weil es ein Web-Fund ist (Tab
+"Web-Recherche"); der Eigentum-Filter war es nicht (198 ETW ≥ 12).
+**Phase 2 umgesetzt (Ratsinfo-Scraper):**
+- Zeitfenster je Quelle statt global: `scraper.scan_range_fuer_quelle()`, Regeln in `config.ScanConfig`
+  (`scan.backfill_ab: 2024-01-01`, `ueberlappung_wochen: 6`, `offene_sitzungen_max_monate: 6`). Schema v7:
+  `quellen.erfasst_ab` - wird nach einem ohne Abbruch durchlaufenen Kalender gesetzt (`SourceRunResult.vollstaendig_ab`,
+  einzelne kaputte Downloads zählen nicht, sonst wiederholte ein zu großes PDF den Backfill ewig).
+- Offene Sitzungen (ohne Detailseite oder ohne Niederschrift) verlängern das Fenster bis zu 6 Monate zurück
+  (`database.aelteste_offene_sitzung()`). `upsert_sitzung()` übernimmt den Platzhalter mit synthetischer ID,
+  sobald die echte `__ksinr` erscheint (gleiches Datum + Gremium), statt eine zweite Zeile anzulegen.
+- Norderstedt liest zusätzlich `^Hauptausschuss$` und `^Stadtvertretung$` (`config/sources.yaml`).
+- Wöchentlich: Docker hatte den `scheduler`-Dienst schon; neu für Windows `scripts/register_weekly_task.ps1` +
+  `scripts/run_weekly.ps1` (Aufgabenplanung, holt verpasste Termine nach). Dashboard zeigt den letzten Lauf
+  (`database.letzter_lauf_gesamt()`, `app.lauf_hinweis()`) und warnt ab 14 Tagen. 18 neue Tests
+  (`tests/test_zeitfenster.py`), 456 insgesamt.
+- **Wichtig:** Solange `betrieb.live_api_aufrufe: false`, findet auch der neue Lauf **kein** Projekt selbst
+  (nur Dokumente + Stichwort-Vorfilter). Die B-Fälle brauchen Guthaben.
+**Phase 3 umgesetzt (Recall-Test):** `tests/fixtures/known_projects_norderstedt.json` (Hummels Liste, 17 + Garstedter
+Tor = 18, drei mit `nur_presse`), `radar/recall.py` (`messe_recall()`, `bericht()`), CLI `python -m radar recall
+[--db] [--liste]` (öffnet die DB nur lesend). Treffer: Suchbegriff in Bezeichnung/Adresse/Kurzfassung eines
+automatisch gefundenen Projekts der Kommune oder in Titel/Auszug eines Web-Funds; "Straße/Str." normalisiert,
+ein Begriff mit Endziffer trifft keine längere Zahl, reine Zahlen nur als B-Plan-Nummer. Gezählt wird nur
+`herkunft = 'radar'` (solange die Spalte fehlt: alles außer Quelle `echte_projekte`). Die Messung gegen
+`data/radar.db` hat den Marker `recall` und ist per `addopts = "-m 'not recall'"` (pyproject.toml) aus dem
+normalen `pytest` ausgenommen - sonst wäre die Suite rot, solange das LLM aus ist; `pytest -m recall` gibt am Ende
+"Das Radar findet X von Y" aus (`pytest_terminal_summary` in tests/conftest.py). Stand 14.11.2026: **0 von 18**.
+Ausgabe ohne ✓/✗ (Windows-Konsole cp1252). 12 neue Tests, 468 insgesamt (+ 18 Recall-Messungen).
+**Phase 4 (17./18.11.2026):** Backfill in drei Scheiben (`scrape --von/--bis`, neueste zuerst; `erfasst_ab` wird bei
+Hand-Zeiträumen nur gesetzt, wenn lückenlos anschließend - `scraper._erfasst_ab_darf_gesetzt_werden()`). Ergebnis:
+122 Sitzungen (ASV 47, Hauptausschuss 50, Stadtvertretung 25), 1.031 Vorlagen, 3.566 PDFs (3,2 GB), `erfasst_ab =
+2024-01-01`. Recall **0 von 18** (LLM aus: 369 Vorlagen `BUDGET_ERSCHOEPFT`). Volltext: 7 der 11 Hummel-Projekte
+stehen jetzt mit WE-Zahl in geladenen Vorlagen (7 Eichen B 24/0248, Ohepark B 24/0315/B 26/0271, Garstedter Tor
+B 24/0295/B 24/0500, Klingenberg B 25/0246, Segeberger Ch. B 25/0499, Postgelände B 26/0269/B 26/0360, Harkshörner
+Weg B 26/0165), alle wartend auf das LLM, keine Hauptvorlage vom Vorfilter verworfen. Nicht in Ratsunterlagen:
+Falkenkamp, Königsberger Str., Liesel-Hünichen-Weg (Presse). Bahnhofstr./Schweriner Str.: am 18.06.2026 gab es keine
+ASV-Sitzung (ASV 04.06./02.07.) - mit Hummel klären, evtl. B-Plan 352 "Bahnhofstraße" Friedrichsgabe.
+**Behoben (19.11.2026):** Das 25-MB-Limit verwarf wichtige Anlagen (u. a. Rahmenplan-Bericht "Sieben Eichen",
+Konzeption Meyers Mühle, Konzept B-Plan 322) -> `scraper.max_pdf_size_mb: 80`. Zu große PDFs waren außerdem
+Quellenfehler, deshalb blieb `letzter_erfolg` leer: jetzt eigene Ausnahme `http_client.DownloadZuGross`
+(Unterklasse von `DownloadError`), im Lauf als `SourceRunResult.warnungen` (je Dokument einmal, Log-Level INFO,
+Zähler "PDFs übersprungen (zu groß)" in der Zusammenfassung) - die Quelle gilt trotzdem als erfolgreich, die
+übrigen Dokumente der Vorlage werden ausgewertet. Die früher abgelehnten Anlagen holt nur ein erneuter Lauf über
+ihren Zeitraum (`scrape --von 2024-01-01`; alles andere liegt im Cache). 3 neue Tests, 473 insgesamt.
+
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.

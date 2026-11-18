@@ -11,6 +11,7 @@ Bewusst nur dataclasses + PyYAML. Unbekannte Schlüssel in der YAML führen zu e
 import os
 import re
 from dataclasses import dataclass, field, fields, is_dataclass
+from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -37,8 +38,30 @@ _ID_RE = re.compile(r"^[a-z0-9_-]+$")
 # --- globale Einstellungen ------------------------------------------------------------------
 @dataclass
 class ScanConfig:
+    """Zeitfenster eines Laufs je Quelle (Logik in `radar.scraper.scan_range_fuer_quelle`):
+    - `backfill_ab`: solange eine Quelle noch nicht ab diesem Datum erfolgreich gelesen wurde
+      (`quellen.erfasst_ab`), holt der Lauf alles ab hier nach. `None` = kein Backfill.
+    - sonst ab dem letzten Erfolg minus `ueberlappung_wochen`, mindestens aber `ueberlappung_wochen`
+      zurück (kein Randtag geht verloren, z. B. 18.06. vs. Fensterbeginn 19.06.).
+    - `months_back` nur für eine Quelle ohne jeden bisherigen Erfolg und ohne Backfill.
+    - Sitzungen ohne Detailseite/Niederschrift werden bis `offene_sitzungen_max_monate` zurück
+      bei jedem Lauf erneut geprüft."""
+
     months_back: int = 3
     months_ahead: int = 2
+    backfill_ab: date | None = None
+    ueberlappung_wochen: int = 6
+    offene_sitzungen_max_monate: int = 6
+
+    def __post_init__(self):
+        if isinstance(self.backfill_ab, str):
+            self.backfill_ab = date.fromisoformat(self.backfill_ab)
+        if isinstance(self.backfill_ab, datetime):
+            self.backfill_ab = self.backfill_ab.date()
+        if self.ueberlappung_wochen < 1:
+            raise ValueError("scan.ueberlappung_wochen muss mindestens 1 sein")
+        if self.offene_sitzungen_max_monate < 0:
+            raise ValueError("scan.offene_sitzungen_max_monate darf nicht negativ sein")
 
 
 @dataclass
@@ -51,7 +74,7 @@ class ScraperConfig:
     max_retries: int = 3
     backoff_factor: float = 1.5
     respect_robots_txt: bool = True
-    max_pdf_size_mb: int = 25
+    max_pdf_size_mb: int = 80
     raw_cache_dir: str = "data/raw"
 
     def __post_init__(self):

@@ -2,7 +2,8 @@
 
 Erkennt Wohnbauprojekte (Miet- und geförderter Wohnungsbau) in den öffentlichen Sitzungsunterlagen
 von Kommunen in Schleswig-Holstein, Hamburg, Niedersachsen, Bremen, Mecklenburg-Vorpommern und
-selektiv Berlin. MVP-Referenzquelle: Norderstedt (Ausschuss für Stadtentwicklung und Verkehr).
+selektiv Berlin. MVP-Referenzquelle: Norderstedt (Ausschuss für Stadtentwicklung und Verkehr,
+Hauptausschuss, Stadtvertretung).
 Vollständige Spezifikation und Regeln: [CLAUDE.md](CLAUDE.md). Weitere Quellen: [docs/QUELLENKATALOG.md](docs/QUELLENKATALOG.md).
 
 ## Einrichtung
@@ -16,6 +17,38 @@ pytest
 python -m radar app                # Dashboard starten (oder: streamlit run app.py)
 python -m radar app --db data/test_radar.db   # Dashboard auf der Test-Datenbank
 ```
+
+## Wöchentlicher Lauf unter Windows (ohne Docker)
+
+Einmalig in PowerShell im Projektordner ausführen (keine Administratorrechte nötig):
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts\register_weekly_task.ps1
+```
+
+Das legt in der Windows-Aufgabenplanung die Aufgabe „Bautraeger-Radar woechentlich“ an (Montag 03:00,
+änderbar mit `-Wochentag Friday -Uhrzeit 06:30`). Ein verpasster Termin (Rechner aus) wird beim
+nächsten Start nachgeholt. Die Aufgabe ruft `scripts/run_weekly.ps1` auf, das Log steht unter
+`data/logs/woechentlich_<Datum>.log`. Sofort testen: `Start-ScheduledTask -TaskName "Bautraeger-Radar woechentlich"`.
+Das Dashboard zeigt oben den Zeitpunkt des letzten Laufs und warnt, wenn er älter als 14 Tage ist.
+
+**Zeitfenster:** Der erste Lauf holt alles ab `scan.backfill_ab` (2024-01-01) nach – das dauert wegen der
+höflichen 2 s Pause je Abruf mehrere Stunden. Danach schaut jeder Lauf ab dem letzten Erfolg mindestens
+`scan.ueberlappung_wochen` (6) zurück und prüft Sitzungen ohne Detailseite/Niederschrift erneut
+(`config/settings.yaml`). Welche Gremien gelesen werden, steht je Quelle unter `committees` in
+`config/sources.yaml` (Norderstedt: ASV, Hauptausschuss, Stadtvertretung).
+
+## Vor jeder Demo: Recall gegen Hummels Liste
+
+```bash
+python -m radar recall
+```
+
+Zeigt, wie viele der bei Hummel bekannten Norderstedter Projekte (`tests/fixtures/known_projects_norderstedt.json`)
+das Radar **selbst** gefunden hat – „Das Radar findet X von 18 bekannten Projekten“ – und listet die fehlenden.
+Manuell nachgetragene Projekte zählen nicht mit. Dasselbe als Test (rot für jedes fehlende Projekt, Presse-only-
+Projekte als xfail): `pytest -m recall`. Ein normales `pytest` lässt diese Messung aus, weil sie vom Stand der
+echten Datenbank abhängt.
 
 ## Betrieb per Docker
 
@@ -69,6 +102,7 @@ Reine Eigentumsprojekte zählen ab 12 WE – in der Web-Recherche und in den Rat
 | `config/prompts/` | Triage-/Extraktions-Prompts (versioniert, nicht im Python-Code) |
 | `scripts/run_goldstandard.py` | Manuelle Goldstandard-Auswertung (echte, kostenpflichtige LLM-Aufrufe) |
 | `scripts/run_daily.sh` | Lauf sofort auslösen (Docker), statt auf den Scheduler zu warten |
+| `scripts/run_weekly.ps1` / `scripts/register_weekly_task.ps1` | Wöchentlicher Lauf unter Windows (Aufgabenplanung) |
 | `data/` | SQLite-Datenbank, PDF-Cache und LLM-Ergebnis-Cache (nicht im Git) |
 | `docs/` | Quellenkatalog, Onboarding neuer Quellen, IT-Übergabedokumentation |
 | `Dockerfile` / `docker-compose.yml` | Container-Image, Dienste `dashboard` (Streamlit) und `scheduler` |

@@ -41,6 +41,11 @@ class DownloadError(RuntimeError):
     """Download verweigert oder ungültig (falscher Host, zu groß, kein PDF, ...)."""
 
 
+class DownloadZuGross(DownloadError):
+    """PDF größer als `scraper.max_pdf_size_mb`. Kein Quellenfehler, sondern eine bewusste Grenze: der Lauf
+    meldet es als Warnung (`SourceRunResult.warnungen`), die Quelle gilt trotzdem als erfolgreich."""
+
+
 class RobotsDisallowedError(DownloadError):
     """robots.txt verbietet diesen Pfad für unseren User-Agent."""
 
@@ -198,7 +203,7 @@ class HttpClient:
                 raise DownloadError(f"{full_url}: unerwarteter Content-Type '{content_type}' (kein PDF)")
             content_length = response.headers.get("Content-Length")
             if content_length and int(content_length) > max_bytes:
-                raise DownloadError(
+                raise DownloadZuGross(
                     f"{full_url}: Content-Length {content_length} überschreitet Limit ({max_bytes} Bytes)"
                 )
 
@@ -208,7 +213,7 @@ class HttpClient:
             for chunk in response.iter_content(chunk_size=65536):
                 total += len(chunk)
                 if total > max_bytes:
-                    raise DownloadError(f"{full_url}: Download überschreitet Limit ({max_bytes} Bytes)")
+                    raise DownloadZuGross(f"{full_url}: Download überschreitet Limit ({max_bytes} Bytes)")
                 hasher.update(chunk)
                 chunks.append(chunk)
 

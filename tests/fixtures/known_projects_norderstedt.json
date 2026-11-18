@@ -1,0 +1,24 @@
+{
+  "_hinweis": "Hummels Liste bekannter Norderstedter Projekte (Stand 13.11.2026) plus Garstedter Tor, Quelle: docs/claude-code-gesamtauftrag_radar-norderstedt.md. 'suche': Treffer, wenn einer der Begriffe in Bezeichnung, Adresse oder Kurzfassung eines vom Radar gefundenen Projekts steht; reine Zahlen gelten nur als B-Plan-Nummer. 'nur_presse': in Ratsunterlagen bisher nicht auffindbar, braucht Presse-Quellen (Phase 6).",
+  "stand": "2026-11-13",
+  "projekte": [
+    {"hummel_nr": null, "name": "Glashütter Kirchenweg", "suche": ["Glashütter Kirchenweg"]},
+    {"hummel_nr": null, "name": "Ulzburger Str. 457-463 / Moorbektwiete (B-Plan 319)", "suche": ["Moorbektwiete", "319", "Ulzburger Straße 457"]},
+    {"hummel_nr": 3933, "name": "Ohechaussee 20 / Meyers Mühle (B-Plan 343)", "suche": ["Ohechaussee 20", "343", "Meyers Mühle"]},
+    {"hummel_nr": 5353, "name": "Berliner Allee / Schumanstraße (B-Plan 339)", "suche": ["Schumanstr", "339"]},
+    {"hummel_nr": 5631, "name": "Berliner Allee 4-12", "suche": ["Berliner Allee 4"]},
+    {"hummel_nr": 3893, "name": "Grüne Heyde / SonnenHeyde (Harckesheyde, Mühlenweg)", "suche": ["Grüne Heyde", "Sonnen Heyde", "SonnenHeyde", "Mühlenweg", "357"]},
+    {"hummel_nr": 5403, "name": "Richtweg 28 / Garstedter Dreieck", "suche": ["Richtweg"]},
+    {"hummel_nr": 4062, "name": "7 Eichen", "suche": ["7 Eichen", "Sieben Eichen", "Glashütter Damm"]},
+    {"hummel_nr": 4887, "name": "Ohepark / B-Plan 322", "suche": ["322", "An der Ohechaussee", "Ohepark", "Ohechaussee 213"]},
+    {"hummel_nr": 5114, "name": "Harkshörner Weg / Ulzburger Str. 490", "suche": ["Harkshörner Weg", "Ulzburger Straße 490"]},
+    {"hummel_nr": 5174, "name": "Hermann-Klingenberg-Ring / Lawaetzstraße", "suche": ["Klingenberg", "Lawaetz"]},
+    {"hummel_nr": 5298, "name": "Segeberger Chaussee 121-125a", "suche": ["Segeberger Chaussee 121", "Segeberger Chaussee 125"]},
+    {"hummel_nr": 5320, "name": "Bahnhofstraße / Schweriner Straße", "suche": ["Schweriner Str"]},
+    {"hummel_nr": 5401, "name": "Falkenkamp 4", "suche": ["Falkenkamp"], "nur_presse": true},
+    {"hummel_nr": 5494, "name": "Königsberger Straße", "suche": ["Königsberger"], "nur_presse": true},
+    {"hummel_nr": 5556, "name": "Liesel-Hünichen-Weg", "suche": ["Hünichen"], "nur_presse": true},
+    {"hummel_nr": 5571, "name": "Postgelände Falkenbergstraße 17", "suche": ["Falkenbergstr", "Postgelände"]},
+    {"hummel_nr": null, "name": "Garstedter Tor (B-Plan 337)", "suche": ["Garstedter Tor", "GARTO", "337"]}
+  ]
+}

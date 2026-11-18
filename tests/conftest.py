@@ -67,3 +67,12 @@ def make_pdf(*page_texts: str | None) -> bytes:
         buf += f"{offsets[num]:010d} 00000 n \n".encode("ascii")
     buf += f"trailer\n<< /Size {total} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF".encode("ascii")
     return bytes(buf)
+
+
+def pytest_terminal_summary(terminalreporter):
+    """Nach `pytest -m recall`: "Das Radar findet X von Y bekannten Projekten" plus Liste ausgeben."""
+    from radar import recall
+
+    if recall.LETZTER_BERICHT:
+        terminalreporter.section("Recall gegen Hummels Liste")
+        terminalreporter.write_line(recall.LETZTER_BERICHT)

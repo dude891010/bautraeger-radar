@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import re
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -206,7 +206,14 @@ _SCHEMA_V6 = """
 ALTER TABLE projekte ADD COLUMN quelle_url TEXT;
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5, _SCHEMA_V6]
+# V7: frühestes Sitzungsdatum, ab dem eine Quelle vollständig gelesen wurde (Kalender ohne Fehler bis
+# zum Ende durchlaufen). Steuert den Backfill (`scan.backfill_ab`, radar.scraper.scan_range_fuer_quelle):
+# liegt erfasst_ab nach backfill_ab oder fehlt, holt der nächste Lauf alles ab backfill_ab nach.
+_SCHEMA_V7 = """
+ALTER TABLE quellen ADD COLUMN erfasst_ab TEXT;
+"""
+
+_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5, _SCHEMA_V6, _SCHEMA_V7]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -298,7 +305,72 @@ def record_source_run(
 # -- Sitzungen / Dokumente ------------------------------------------------------------------------
 
 
+def quellen_zeitraum(conn: sqlite3.Connection, quelle_id: str) -> tuple[date | None, date | None]:
+    """(`erfasst_ab`, Datum des letzten Erfolgs) einer Quelle, je `None` wenn unbekannt."""
+    row = conn.execute("SELECT erfasst_ab, letzter_erfolg FROM quellen WHERE id = ?", (quelle_id,)).fetchone()
+    if row is None:
+        return None, None
+    erfasst_ab = date.fromisoformat(row["erfasst_ab"]) if row["erfasst_ab"] else None
+    letzter_erfolg = datetime.fromisoformat(row["letzter_erfolg"]).date() if row["letzter_erfolg"] else None
+    return erfasst_ab, letzter_erfolg
+
+
+def markiere_erfasst_ab(conn: sqlite3.Connection, quelle_id: str, start: date) -> None:
+    """Nach einem vollständig durchgelaufenen Kalender: `erfasst_ab` auf das frühere von altem Wert und
+    `start` setzen (ein kürzeres Wochenfenster darf einen erledigten Backfill nicht wieder 'vergessen')."""
+    conn.execute(
+        """UPDATE quellen SET erfasst_ab = CASE
+               WHEN erfasst_ab IS NULL OR erfasst_ab > :start THEN :start ELSE erfasst_ab END
+           WHERE id = :id""",
+        {"id": quelle_id, "start": start.isoformat()},
+    )
+    conn.commit()
+
+
+def aelteste_offene_sitzung(conn: sqlite3.Connection, quelle_id: str, *, heute: date, nicht_vor: date) -> date | None:
+    """Datum der ältesten vergangenen, nicht abgesagten Sitzung dieser Quelle seit `nicht_vor`, die noch
+    keine Detailseite oder noch keine Niederschrift hat - die muss der nächste Lauf erneut ansehen
+    (CLAUDE.md: fehlende Unterlagen sind ein Normalfall und beim nächsten Lauf erneut zu prüfen)."""
+    row = conn.execute(
+        """
+        SELECT MIN(s.datum) AS datum FROM sitzungen s
+        WHERE s.quelle_id = ? AND s.abgesagt = 0 AND s.datum < ? AND s.datum >= ?
+          AND (s.url IS NULL OR NOT EXISTS (
+                SELECT 1 FROM dokumente d WHERE d.sitzung_id = s.id AND d.typ = 'niederschrift'))
+        """,
+        (quelle_id, heute.isoformat(), nicht_vor.isoformat()),
+    ).fetchone()
+    return date.fromisoformat(row["datum"]) if row and row["datum"] else None
+
+
+def letzter_lauf_gesamt(conn: sqlite3.Connection) -> datetime | None:
+    """Zeitpunkt des jüngsten Laufs über alle Quellen (Dashboard: Warnung, wenn zu alt)."""
+    row = conn.execute("SELECT MAX(letzter_lauf) AS t FROM quellen WHERE letzter_lauf IS NOT NULL").fetchone()
+    return datetime.fromisoformat(row["t"]) if row and row["t"] else None
+
+
 def upsert_sitzung(conn: sqlite3.Connection, quelle_id: str, sitzung: Sitzung) -> int:
+    """Sitzung anlegen oder aktualisieren. Bekommt eine Sitzung, die bisher ohne Detailseite unter einer
+    synthetischen ID gespeichert war (gleiches Datum + Gremium, `url` leer), jetzt ihre echte ID, wird
+    der Platzhalter übernommen statt eine zweite Zeile anzulegen."""
+    if sitzung.url is not None:
+        conn.execute(
+            """
+            UPDATE sitzungen SET external_id = :external_id
+            WHERE id = (
+                SELECT id FROM sitzungen
+                WHERE quelle_id = :quelle_id AND datum = :datum AND gremium = :gremium AND url IS NULL
+                  AND external_id != :external_id
+                LIMIT 1)
+              AND NOT EXISTS (SELECT 1 FROM sitzungen WHERE quelle_id = :quelle_id AND external_id = :external_id)
+            """,
+            {
+                "quelle_id": quelle_id,
+                "external_id": sitzung.external_id,
+                "datum": sitzung.datum.isoformat(),
+                "gremium": sitzung.gremium,
+            },
+        )
     conn.execute(
         """
         INSERT INTO sitzungen (quelle_id, external_id, gremium, datum, uhrzeit, ort, url, abgesagt)

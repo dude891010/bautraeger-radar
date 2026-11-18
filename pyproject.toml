@@ -1,6 +1,9 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# Recall gegen Hummels Liste hängt vom Stand der echten Datenbank ab -> nur gezielt: `pytest -m recall`
+addopts = "-m 'not recall'"
+markers = ["recall: Messung gegen data/radar.db (radar/recall.py), nur mit -m recall"]
 
 [tool.ruff]
 line-length = 120

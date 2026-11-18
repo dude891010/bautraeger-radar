@@ -24,11 +24,13 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import sqlite3
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
-from radar.config import LIVE_AUS_HINWEIS
+from radar.config import LIVE_AUS_HINWEIS, load_settings
 from radar.notifier import NeuerTreffer, load_smtp_config, send_notification
 from radar.scheduler import run_forever
 from radar.scraper import LaufLaeuftBereits, run_full
@@ -105,6 +107,29 @@ def _app(db: str | None, port: int) -> int:
     return subprocess.run(_app_befehl(port), env=env).returncode
 
 
+def _recall(db: str | None, liste: str | None) -> int:
+    """Recall gegen Hummels Liste ausgeben (vor jeder Demo: "das Radar findet X von Y")."""
+    from radar import recall
+
+    settings = load_settings()
+    pfad = Path(db) if db else settings.resolve_path(settings.database.path)
+    if not pfad.exists():
+        print(f"Datenbank nicht gefunden: {pfad}")
+        return 2
+    conn = sqlite3.connect(f"file:{pfad.as_posix()}?mode=ro", uri=True)  # nur lesen
+    try:
+        listen_pfad = Path(liste) if liste else recall.STANDARD_LISTE
+        if not listen_pfad.exists():  # z. B. im Docker-Image, das tests/ nicht enthält -> --liste angeben
+            print(f"Liste bekannter Projekte nicht gefunden: {listen_pfad} (Pfad mit --liste angeben)")
+            return 2
+        bekannte = recall.lade_bekannte_projekte(listen_pfad)
+        ergebnis = recall.messe_recall(conn, bekannte)
+    finally:
+        conn.close()
+    print(f"Datenbank: {pfad}\n{recall.bericht(ergebnis)}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="radar", description="Bauträger-Radar CLI")
     subparsers = parser.add_subparsers(dest="befehl", required=True)
@@ -117,6 +142,13 @@ def main(argv: list[str] | None = None) -> int:
             "gefunden wurden (radar/notifier.py). Standardmäßig aus, damit manuelle Testläufe "
             "nicht den Vertrieb spammen - für gezielte Demo-/Produktivläufe explizit setzen."
         ),
+    )
+    scrape_parser.add_argument(
+        "--von", metavar="JJJJ-MM-TT", type=date.fromisoformat,
+        help="Nur diesen Zeitraum lesen (Backfill in Scheiben, neueste zuerst), z. B. --von 2026-01-01",
+    )
+    scrape_parser.add_argument(
+        "--bis", metavar="JJJJ-MM-TT", type=date.fromisoformat, help="Ende des Zeitraums (Standard: heute + 2 Monate)"
     )
     subparsers.add_parser("scheduler", help="Dauerprozess: Lauf nach Zeitplan (config/settings.yaml)")
     subparsers.add_parser("test-email", help="SMTP-Konfiguration mit Beispieldaten testen (radar/notifier.py)")
@@ -145,13 +177,23 @@ def main(argv: list[str] | None = None) -> int:
             "data/demo/demo.db (Dashboard: 'Demo-Daten anzeigen'), nie in die echte Datenbank."
         ),
     )
+    recall_parser = subparsers.add_parser(
+        "recall", help="Wie viele bekannte Projekte (Hummels Liste) hat das Radar selbst gefunden? (radar/recall.py)"
+    )
+    recall_parser.add_argument("--db", metavar="PFAD", help="Andere Datenbank prüfen (Standard: settings.yaml)")
+    recall_parser.add_argument("--liste", metavar="PFAD", help="Andere Liste bekannter Projekte (JSON)")
     args = parser.parse_args(argv)
+
+    if args.befehl == "recall":
+        return _recall(args.db, args.liste)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     if args.befehl == "scrape":
         try:
-            results = run_full()
+            if args.bis and not args.von:
+                parser.error("--bis braucht auch --von")
+            results = run_full(zeitraum=(args.von, args.bis)) if args.von else run_full()
         except LaufLaeuftBereits as exc:
             logging.getLogger(__name__).error("Lauf nicht gestartet: %s", exc)
             return 2

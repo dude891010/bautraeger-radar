@@ -17,9 +17,10 @@ import subprocess
 import sys
 import time
 from contextlib import closing
-from datetime import datetime
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import altair as alt
 import pandas as pd
@@ -203,6 +204,26 @@ def build_projekte_df(rows: list, tier_by_quelle: dict[str, str]) -> pd.DataFram
         if spalte in df.columns:
             df[spalte] = df[spalte].astype("Int64")
     return df
+
+
+LAUF_WARNUNG_TAGE = 14  # älter -> Warnhinweis (der Ausfall seit 19.09.2026 fiel wochenlang niemandem auf)
+
+
+def lauf_hinweis(letzter_lauf: datetime | None, jetzt: datetime | None = None) -> tuple[str, str]:
+    """("info" | "warning", Text) zum letzten Scraper-Lauf für die Kopfzeile des Dashboards."""
+    if letzter_lauf is None:
+        return "warning", "Noch kein Lauf protokolliert - das Radar hat noch keine Ratsunterlagen gelesen."
+    jetzt = jetzt or datetime.now(UTC)
+    if letzter_lauf.tzinfo is None:
+        letzter_lauf = letzter_lauf.replace(tzinfo=UTC)
+    alter_tage = (jetzt - letzter_lauf).days
+    zeit = letzter_lauf.astimezone(ZoneInfo("Europe/Berlin")).strftime("%d.%m.%Y %H:%M")
+    if alter_tage > LAUF_WARNUNG_TAGE:
+        return "warning", (
+            f"Letzter Lauf: {zeit} - vor {alter_tage} Tagen. Neue Sitzungen fehlen; bitte Lauf starten "
+            "und den wöchentlichen Lauf (Scheduler/Aufgabenplanung) prüfen."
+        )
+    return "info", f"Letzter Lauf: {zeit} (vor {alter_tage} Tag{'en' if alter_tage != 1 else ''})"
 
 
 def compute_kpis(df: pd.DataFrame) -> dict[str, int | None]:
@@ -1099,6 +1120,11 @@ def main() -> None:
         projekte_rows = database.list_projekte(conn)
         quellen_rows = database.list_quellen(conn)
         web_df = build_web_funde_df(database.list_web_funde(conn))
+        letzter_lauf = database.letzter_lauf_gesamt(conn)
+
+    if not demo_modus:  # die Demo-Datenbank hat keine echten Läufe
+        art, text = lauf_hinweis(letzter_lauf)
+        (st.warning if art == "warning" else st.caption)(("⚠️ " if art == "warning" else "🕒 ") + text)
 
     df = build_projekte_df(projekte_rows, tier_by_quelle)
     pruef_df = add_pruef_badge(
