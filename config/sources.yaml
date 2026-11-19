@@ -60,7 +60,7 @@ sources:
       # Nur Meldungen mit Wohnbau-Titel laden (von ~740 rund 30). Wortgrenzen nötig: ohne sie trifft "Wohn" auch
       # "gewohnt" (Abfallentsorgung "früher als gewohnt").
       titel_muster:
-        - '\bWohn(raum|ungen|ung|ungsbau|bau|quartier|gebiet|anlage|einheiten|projekt)'
+        - '\bWohn(raum|ungen|ungsbau|bau|quartier|gebiet|anlage|einheiten|projekt)'
         - '\bB-Plan'
         - '\bBebauungsplan'
         - '\bRahmenplan'
@@ -84,12 +84,15 @@ sources:
       - '^Presseartikel$'
     options:
       feed_url: "category/lokal/feed/"
-      max_seiten: 5                    # 50 Artikel je Lauf; ältere Artikel kommen in Schritt 3 über die Sitemap
+      # Schritt 3 (20.11.2026): Der Feed lässt sich bis zum ersten Artikel zurückblättern (Seite ~100, Anfang 2025),
+      # danach 404. Der Adapter hört beim Fensterbeginn bzw. beim 404 auf - ein Wochenlauf liest nur wenige Seiten,
+      # der erste Lauf (Backfill) einmal alle (~100 Seiten x 2 s). Die Sitemap ist dafür nicht nötig.
+      max_seiten: 150
       artikel_selektor: 'article.post-detail .the_content'   # Schritt 2: Volltext je passendem Artikel
       ort_muster:
         - '\bNorderstedt'
       titel_muster:                    # wie norderstedt_presse; einfache Anführungszeichen, sonst wird \b ein Steuerzeichen
-        - '\bWohn(raum|ungen|ung|ungsbau|bau|quartier|gebiet|anlage|einheiten|projekt)'
+        - '\bWohn(raum|ungen|ungsbau|bau|quartier|gebiet|anlage|einheiten|projekt)'
         - '\bB-Plan'
         - '\bBebauungsplan'
         - '\bRahmenplan'

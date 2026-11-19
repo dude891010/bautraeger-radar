@@ -21,7 +21,7 @@ Optionen (`options` in config/sources.yaml):
   feed_url      Pfad des Feeds relativ zu `base_url` (Pflicht)
   titel_muster  Regex-Liste (Groß-/Kleinschreibung egal), mindestens eine muss passen; leer = alle
   ort_muster    Regex-Liste, mindestens eine muss passen (z. B. Ortsname); leer = keine Ortsprüfung
-  max_seiten    höchstens so viele Feed-Seiten je Lauf (Standard 5 = 50 Artikel); ältere Artikel holt Schritt 3
+  max_seiten    Obergrenze an Feed-Seiten je Lauf (Standard 5); das Blättern endet sonst am Fensterbeginn oder 404
   artikel_selektor  CSS-Selektor für den Artikeltext auf der Artikelseite; leer = nur Anriss (Schritt 1)
   gremium       Name für das Feld Gremium (Standard "Presseartikel")
 """
@@ -111,6 +111,8 @@ class RssAdapter(SourceAdapter):
             for a in artikel:
                 self._artikel.setdefault(a.artikel_id, a)
             aeltestes = min(a.datum for a in artikel)
+            if seite % 10 == 0:  # Fortschritt für lange Läufe (Backfill: ~100 Seiten x 2 s)
+                logger.info("%s: Feed-Seite %d gelesen, Artikel zurück bis %s", self.source.id, seite, aeltestes)
             if aeltestes < start:
                 break  # Feed ist nach Datum sortiert - ältere Seiten liegen außerhalb des Fensters
         else:

@@ -33,6 +33,7 @@ class BekanntesProjekt:
     hummel_nr: int | None = None
     nur_presse: bool = False
     ratsvorlage: str | None = None  # von uns geprüfte Vorlage mit WE-Zahl (z. B. "B 24/0295")
+    presseartikel: str | None = None  # bzw. geprüfter Presseartikel mit WE-Zahl (z. B. "Artikel 13879", noa4)
 
 
 @dataclass
@@ -57,6 +58,7 @@ def lade_bekannte_projekte(pfad: Path = STANDARD_LISTE) -> list[BekanntesProjekt
             hummel_nr=p.get("hummel_nr"),
             nur_presse=bool(p.get("nur_presse")),
             ratsvorlage=p.get("ratsvorlage"),
+            presseartikel=p.get("presseartikel"),
         )
         for p in daten["projekte"]
     ]
@@ -147,17 +149,22 @@ def messe_unterlagen(conn: sqlite3.Connection, bekannte: list[BekanntesProjekt])
     conn.row_factory = sqlite3.Row
     funde: dict[str, str] = {}
     for bekannt in bekannte:
-        if not bekannt.ratsvorlage:
-            continue
-        zeile = conn.execute(
-            """SELECT s.datum, s.gremium FROM vorlagen v JOIN sitzungen s ON s.id = v.sitzung_id
-               WHERE v.vorlagen_nr = ? AND EXISTS (
-                   SELECT 1 FROM dokumente d WHERE d.vorlage_id = v.id AND d.dateipfad IS NOT NULL)
-               ORDER BY s.datum LIMIT 1""",
-            (bekannt.ratsvorlage,),
-        ).fetchone()
-        if zeile:
-            funde[bekannt.name] = f"Vorlage {bekannt.ratsvorlage} ({zeile['datum']}, {zeile['gremium']})"
+        for beleg in (bekannt.ratsvorlage, bekannt.presseartikel):
+            if not beleg:
+                continue
+            # PDF heruntergeladen - oder bei Presseartikeln (Text ohne Datei, radar/sources/rss.py) gespeichert
+            zeile = conn.execute(
+                """SELECT s.datum, s.gremium FROM vorlagen v JOIN sitzungen s ON s.id = v.sitzung_id
+                   WHERE v.vorlagen_nr = ? AND EXISTS (
+                       SELECT 1 FROM dokumente d WHERE d.vorlage_id = v.id
+                         AND (d.dateipfad IS NOT NULL OR d.typ = 'presseartikel'))
+                   ORDER BY s.datum LIMIT 1""",
+                (beleg,),
+            ).fetchone()
+            if zeile:
+                art = "Vorlage" if beleg == bekannt.ratsvorlage else "Presse"
+                funde[bekannt.name] = f"{art} {beleg} ({zeile['datum']}, {zeile['gremium']})"
+                break
     return funde
 
 
@@ -173,8 +180,9 @@ def bericht(ergebnis: RecallErgebnis, unterlagen: dict[str, str] | None = None) 
         zeilen += [f"  [ ] {_label(p)}{presse if p.nur_presse else ''}" for p in ergebnis.fehlend]
     if unterlagen is not None:
         zeilen.append(
-            f"\nRatsunterlagen bereits geladen: {len(unterlagen)} von {ergebnis.anzahl} "
-            "(geprüfte Vorlage mit WE-Zahl liegt vor - mit KI-Auswertung auffindbar, noch kein Fund des Radars):"
+            f"\nUnterlagen bereits geladen: {len(unterlagen)} von {ergebnis.anzahl} "
+            "(geprüfte Ratsvorlage oder Presseartikel mit WE-Zahl liegt vor - mit KI-Auswertung auffindbar, "
+            "noch kein Fund des Radars):"
         )
         zeilen += [f"  - {name}: {fund}" for name, fund in unterlagen.items()]
     return "\n".join(zeilen)

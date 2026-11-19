@@ -201,6 +201,8 @@ def test_liste_hat_neun_gepruefte_ratsvorlagen():
     assert len(mit) == 12
     assert mit["Garstedter Tor (B-Plan 337)"] == "B 24/0295"
     assert not any(p.ratsvorlage for p in recall.lade_bekannte_projekte() if p.nur_presse)
+    presse = {p.name: p.presseartikel for p in recall.lade_bekannte_projekte() if p.presseartikel}
+    assert presse == {"Liesel-Hünichen-Weg": "Artikel 13879"}  # noa4 vom 06.08.2026
 
 
 def test_unterlagen_zaehlen_nur_geladene_gepruefte_vorlagen(conn, tmp_path):
@@ -232,5 +234,27 @@ def test_unterlagen_zaehlen_nur_geladene_gepruefte_vorlagen(conn, tmp_path):
     assert "B 24/0295 (2024-09-05, ASV)" in funde["Garstedter Tor"]
 
     text = recall.bericht(recall.messe_recall(conn, bekannte), funde)
-    assert "findet 0 von 3" in text and "Ratsunterlagen bereits geladen: 1 von 3" in text
+    assert "findet 0 von 3" in text and "Unterlagen bereits geladen: 1 von 3" in text
     text.encode("cp1252")
+
+
+def test_presseartikel_zaehlt_ohne_pdf(conn):
+    from datetime import date
+
+    from radar.sources.base import Dokument, Sitzung
+
+    sitzung_id = database.upsert_sitzung(
+        conn, "norderstedt",
+        Sitzung(source_id="norderstedt", external_id="13879", gremium="Presseartikel", datum=date(2026, 8, 6),
+                url="https://www.noa4.de/x/"),
+    )
+    vorlage_id, _ = database.upsert_vorlage(conn, "norderstedt", sitzung_id, "artikel-13879", "Artikel 13879", "h")
+    database.upsert_dokument(
+        conn, "norderstedt", sitzung_id, vorlage_id,
+        Dokument(source_id="norderstedt", external_id="artikel-13879", titel="Spatenstich", url="https://www.noa4.de/x/",
+                 sitzung_external_id="13879", vorlage_external_id="artikel-13879", typ="presseartikel", text="..."),
+    )
+    bekannte = [recall.BekanntesProjekt(name="Liesel", suche=("Hünichen",), nur_presse=True,
+                                        presseartikel="Artikel 13879")]
+    funde = recall.messe_unterlagen(conn, bekannte)
+    assert funde["Liesel"].startswith("Presse Artikel 13879 (2026-08-06, Presseartikel)")

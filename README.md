@@ -47,7 +47,8 @@ python -m radar recall
 Zeigt, wie viele der bei Hummel bekannten Norderstedter Projekte (`tests/fixtures/known_projects_norderstedt.json`)
 das Radar **selbst** gefunden hat – „Das Radar findet X von 18 bekannten Projekten“ – und listet die fehlenden.
 Manuell nachgetragene Projekte zählen nicht mit (Dashboard-Badge „manuell nachgetragen“). Darunter steht eine
-zweite Zahl, „Ratsunterlagen bereits geladen: X von 18“: für wie viele Projekte die von uns geprüfte Ratsvorlage mit
+zweite Zahl, „Unterlagen bereits geladen: X von 18“: für wie viele Projekte die von uns geprüfte Ratsvorlage (oder ein
+geprüfter Presseartikel) mit
 WE-Zahl schon im Radar liegt – also was es mit eingeschalteter KI-Auswertung selbst finden könnte. Dasselbe als Test (rot für jedes fehlende Projekt, Presse-only-
 Projekte als xfail): `pytest -m recall`. Ein normales `pytest` lässt diese Messung aus, weil sie vom Stand der
 echten Datenbank abhängt.

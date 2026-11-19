@@ -204,3 +204,29 @@ def test_ohne_selektor_bleibt_es_beim_anriss(quelle):
     adapter = RssAdapter(replace(quelle, options=optionen), http)
     (dok,) = adapter.list_documents(adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))[0])
     assert LIESEL_URL not in http.abrufe and "Liesel-Hünichen-Weg" in dok.text
+
+
+# -- Schritt 3: Backfill durch tiefes Blättern statt Sitemap (20.11.2026) ----------------------------------
+
+
+def test_backfill_blaettert_bis_zum_feed_ende(quelle):
+    assert quelle.options["max_seiten"] >= 120  # noa4 reicht bis Seite ~100 (Anfang 2025)
+    # Seiten 1..4 mit je einem Artikel, jeweils einen Monat älter; Seite 5 gibt es nicht (404)
+    seiten = {}
+    for n, monat in zip(range(1, 5), (8, 7, 6, 5), strict=True):
+        item = WOHNBAU_ITEM.replace("06 Aug 2026", f"06 {['', '', '', '', '', 'May', 'Jun', 'Jul', 'Aug'][monat]} 2026")
+        item = item.replace("?p=14000", f"?p={14000 - n}")
+        seiten["category/lokal/feed/" if n == 1 else f"category/lokal/feed/?paged={n}"] = _feed(item)
+    seiten[LIESEL_URL] = ARTIKEL_LIESEL
+    http = _FakeHttp(seiten)
+    adapter = RssAdapter(quelle, http)
+    sitzungen = adapter.list_sessions(date(2024, 1, 1), date(2026, 12, 31))
+    assert sorted(s.datum.month for s in sitzungen) == [5, 6, 7, 8]
+    assert "category/lokal/feed/?paged=5" in http.abrufe  # bis zum 404 gelesen ...
+    assert adapter.abgedeckt_ab == date(2024, 1, 1)  # ... und damit vollständig
+
+
+def test_wochenlauf_hoert_am_fensterbeginn_auf(quelle):
+    http = _FakeHttp({"category/lokal/feed/": SEITE_1, "category/lokal/feed/?paged=2": SEITE_2})
+    RssAdapter(quelle, http).list_sessions(date(2026, 10, 28), date(2026, 12, 31))
+    assert http.abrufe == ["category/lokal/feed/", "category/lokal/feed/?paged=2"]  # nicht alle 150 Seiten

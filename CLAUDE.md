@@ -881,7 +881,7 @@ Falkenkamp, Königsberger Str., Bahnhofstr./Schweriner Str. bewusst nicht einget
 zählt nie (auch bei Standard-Herkunft); neue zweite Zahl `recall.messe_unterlagen()` = "Ratsunterlagen bereits
 geladen" über geprüfte Vorlagen-Nr. (`ratsvorlage` in der Fixture, 9 Projekte) - eine Volltextsuche zählte bloße
 Erwähnungen und kam auf 17 von 18, darunter Presse-Projekte. Stand: **0 von 18 gefunden, 12 von 18 Ratsunterlagen
-geladen** (20.11.2026 ergänzt: B-Plan 319 -> B 25/0432 "ca. 26 zusätzliche Wohnungen", Grüne Heyde/SonnenHeyde ->
+geladen** (seit 20.11.2026 13 von 18 mit Presse, siehe Phase 6) (20.11.2026 ergänzt: B-Plan 319 -> B 25/0432 "ca. 26 zusätzliche Wohnungen", Grüne Heyde/SonnenHeyde ->
 B 25/0448 Rahmenplan "über 1.200 Wohneinheiten", Richtweg -> B 26/0024 = B-Plan 305 "Richtweg" mit Massenstudie
 "Garstedter Dreieck", BF1 ca. 63 / BF2 ca. 77 WE). Ohne geprüfte Vorlage: Glashütter Kirchenweg (keine WE-Zahl),
 Berliner Allee 4-12 (privat, nie im Rat), Bahnhofstr./Schweriner Str. (unklar, Rückfrage Hummel), 3 Presse-Projekte.
@@ -913,7 +913,16 @@ Nur für *passende* Artikel wird die Seite geladen (2 s Pause), Text = Titel + A
 Treffer = `SourceLayoutError` (je Artikel isoliert). Fixtures: Artikel "Norderstedter Modell" (nennt erst im Volltext
 "40 geförderten Wohnungen") und Liesel-Hünichen-Weg. Ein geänderter Text ergibt wie bei PDFs einen neuen
 Vorlagen-Eintrag (anderer Hash) - die alten Anriss-Einträge bleiben ungenutzt liegen. 4 neue Tests, 505 insgesamt.
-**Offen:** Schritt 3 Sitemap-Backfill (Liesel-Hünichen-Weg 08/2026), Schritt 4 KI-freier Web-Fund für Baubeginn. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
+Schritt 3 ✅ (20.11.2026): **statt Sitemap tiefes Blättern im Feed** - noa4 liefert bis Seite ~100 (Anfang 2025),
+danach 404; die Sitemap hätte nur URLs ohne Titel/Anriss für den Vorfilter gehabt. `max_seiten: 150`; das Blättern
+endet am Fensterbeginn (Wochenlauf: wenige Seiten) oder am 404 (= vollständig, `abgedeckt_ab` = Fensterbeginn).
+Fortschritt alle 10 Seiten im Log. Backfill-Lauf: ~100 Seiten, 37 passende Artikel 04/2025-09/2026, 0 Fehler, 4,5 min,
+`erfasst_ab` 2024-01-01 - darunter Liesel-Hünichen-Weg, 7 Eichen, Postgelände, Segeberger Ch., Meyers Mühle,
+Richtweg, Grüne Heyde, Harkshörner Weg. Etwa 6 Fehltreffer aus Polizeimeldungen ("Feuer", "Einbruch", Anriss mit
+"Wohnung") -> Einzahl "Wohnung" aus `titel_muster` beider Presse-Quellen genommen (Pressemitteilungen unverändert
+24/17). Recall: Fixture-Feld `presseartikel` (Liesel-Hünichen-Weg -> "Artikel 13879"), `messe_unterlagen()` zählt
+Presseartikel ohne Datei (`typ = 'presseartikel'`); Ausgabe heißt jetzt "Unterlagen bereits geladen": **13 von 18**.
+3 neue Tests, 508 insgesamt. **Offen:** Schritt 4 KI-freier Web-Fund für Spatenstich/Baubeginn (optional). Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

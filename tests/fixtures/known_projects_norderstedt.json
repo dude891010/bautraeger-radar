@@ -18,7 +18,7 @@
     {"hummel_nr": 5320, "name": "Bahnhofstraße / Schweriner Straße", "suche": ["Schweriner Str"]},
     {"hummel_nr": 5401, "name": "Falkenkamp 4", "suche": ["Falkenkamp"], "nur_presse": true},
     {"hummel_nr": 5494, "name": "Königsberger Straße", "suche": ["Königsberger"], "nur_presse": true},
-    {"hummel_nr": 5556, "name": "Liesel-Hünichen-Weg", "suche": ["Hünichen"], "nur_presse": true},
+    {"hummel_nr": 5556, "name": "Liesel-Hünichen-Weg", "suche": ["Hünichen"], "nur_presse": true, "presseartikel": "Artikel 13879"},
     {"hummel_nr": 5571, "name": "Postgelände Falkenbergstraße 17", "suche": ["Falkenbergstr", "Postgelände"], "ratsvorlage": "B 26/0269"},
     {"hummel_nr": null, "name": "Garstedter Tor (B-Plan 337)", "suche": ["Garstedter Tor", "GARTO", "337"], "ratsvorlage": "B 24/0295"}
   ]
