@@ -32,6 +32,7 @@ class BekanntesProjekt:
     suche: tuple[str, ...]
     hummel_nr: int | None = None
     nur_presse: bool = False
+    ratsvorlage: str | None = None  # von uns geprüfte Vorlage mit WE-Zahl (z. B. "B 24/0295")
 
 
 @dataclass
@@ -51,7 +52,11 @@ def lade_bekannte_projekte(pfad: Path = STANDARD_LISTE) -> list[BekanntesProjekt
     daten = json.loads(Path(pfad).read_text(encoding="utf-8"))
     return [
         BekanntesProjekt(
-            name=p["name"], suche=tuple(p["suche"]), hummel_nr=p.get("hummel_nr"), nur_presse=bool(p.get("nur_presse"))
+            name=p["name"],
+            suche=tuple(p["suche"]),
+            hummel_nr=p.get("hummel_nr"),
+            nur_presse=bool(p.get("nur_presse")),
+            ratsvorlage=p.get("ratsvorlage"),
         )
         for p in daten["projekte"]
     ]
@@ -83,9 +88,11 @@ def _trifft(bekannt: BekanntesProjekt, text: str) -> str | None:
 
 
 def _ist_radar_projekt(row: sqlite3.Row) -> bool:
-    if "herkunft" in row.keys():
-        return row["herkunft"] == "radar"
-    return row["quelle_id"] not in MANUELLE_QUELLEN
+    # Quelle echte_projekte ist immer von Hand eingetragen - auch wenn ein neuer Eintrag dort (noch) mit der
+    # Standard-Herkunft 'radar' angelegt wurde.
+    if row["quelle_id"] in MANUELLE_QUELLEN:
+        return False
+    return "herkunft" not in row.keys() or row["herkunft"] == "radar"
 
 
 def _texte(conn: sqlite3.Connection, kommune: str) -> list[tuple[str, str]]:
@@ -130,7 +137,31 @@ def messe_recall(
     return ergebnis
 
 
-def bericht(ergebnis: RecallErgebnis) -> str:
+def messe_unterlagen(conn: sqlite3.Connection, bekannte: list[BekanntesProjekt]) -> dict[str, str]:
+    """Zweite Zahl neben dem Recall: Für welche bekannten Projekte liegt die von uns geprüfte Ratsvorlage
+    (`ratsvorlage` in der Liste, mit WE-Zahl belegt) samt heruntergeladenem PDF bereits in der Datenbank? Zeigt,
+    was das Radar mit eingeschalteter KI-Auswertung finden *könnte* - kein Fund des Radars. Bewusst über geprüfte
+    Vorlagen-Nr. statt über eine Volltextsuche: die zählte am 19.11.2026 bloße Erwähnungen (Straßennamen auf
+    Karten, Sammelvorlagen) mit und kam auf 17 von 18, darunter nachweislich nur über die Presse bekannte
+    Projekte. Ergebnis: Projektname -> Fundstelle ("Vorlage B 24/0295 (2024-09-05, Ausschuss ...)")."""
+    conn.row_factory = sqlite3.Row
+    funde: dict[str, str] = {}
+    for bekannt in bekannte:
+        if not bekannt.ratsvorlage:
+            continue
+        zeile = conn.execute(
+            """SELECT s.datum, s.gremium FROM vorlagen v JOIN sitzungen s ON s.id = v.sitzung_id
+               WHERE v.vorlagen_nr = ? AND EXISTS (
+                   SELECT 1 FROM dokumente d WHERE d.vorlage_id = v.id AND d.dateipfad IS NOT NULL)
+               ORDER BY s.datum LIMIT 1""",
+            (bekannt.ratsvorlage,),
+        ).fetchone()
+        if zeile:
+            funde[bekannt.name] = f"Vorlage {bekannt.ratsvorlage} ({zeile['datum']}, {zeile['gremium']})"
+    return funde
+
+
+def bericht(ergebnis: RecallErgebnis, unterlagen: dict[str, str] | None = None) -> str:
     zeilen = [ergebnis.zusammenfassung() + "."]
     if ergebnis.gefunden:
         zeilen.append("\nGefunden:")
@@ -140,6 +171,12 @@ def bericht(ergebnis: RecallErgebnis) -> str:
         zeilen.append("\nFehlt:")
         presse = " (nur über Presse auffindbar)"
         zeilen += [f"  [ ] {_label(p)}{presse if p.nur_presse else ''}" for p in ergebnis.fehlend]
+    if unterlagen is not None:
+        zeilen.append(
+            f"\nRatsunterlagen bereits geladen: {len(unterlagen)} von {ergebnis.anzahl} "
+            "(geprüfte Vorlage mit WE-Zahl liegt vor - mit KI-Auswertung auffindbar, noch kein Fund des Radars):"
+        )
+        zeilen += [f"  - {name}: {fund}" for name, fund in unterlagen.items()]
     return "\n".join(zeilen)
 
 

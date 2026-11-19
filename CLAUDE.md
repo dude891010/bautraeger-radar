@@ -865,6 +865,23 @@ Sitzungsseite mehr, offenbar von der Stadt zurückgezogen. **Abgelaufene Cookie-
 (Dez. 2024-Feb. 2025) lieferten nach ~20 min Laufzeit keine Tagesordnung, ein Einzelabruf danach war einwandfrei.
 `SessionNetAdapter.list_documents()` steigt jetzt bei fehlender Tagesordnung einmal neu ein (`info.php`) und
 wiederholt; fehlt sie dann noch, bleibt es ein `SourceLayoutError`. 2 neue Tests, 478 insgesamt.
+**Phase 5 (19.11.2026): 8 Hummel-Projekte manuell nachgetragen.** Schema v8: `projekte.herkunft` (`radar` |
+`manuell_nachgetragen`, Default `radar`; die Migration setzt alle Einträge der Quelle `echte_projekte` auf
+`manuell_nachgetragen`, weil sie alle von Hand stammen - sonst zählte der Recall sie). `database.set_projekt_herkunft()`,
+nie von `upsert_projekt()` geschrieben. `demo_data._NACHGETRAGENE_PROJEKTE` (Garstedter Tor, 7 Eichen, Ohepark,
+Harkshörner Weg, Segeberger Ch. 121-125a, Postgelände, Klingenberg-Ring, Liesel-Hünichen-Weg), über
+`seed_norderstedt_projekte()` in Demo- und Test-DB (`scripts/seed_demo_data.py --norderstedt --db data/test_radar.db`),
+nie in `data/radar.db`. Quell-Links (Auftrag) am 19.11.2026 alle erreichbar; `evidenz` für 7 Projekte wörtlich aus den
+vom Radar geladenen Ratsunterlagen (mit `seite`), Liesel-Hünichen-Weg aus noa4 (06.08.2026). Abweichungen zum Auftrag:
+Garstedter Tor ist SATZUNGSBESCHLUSS (Stadtvertretung 18.02.2025, B 24/0500), nicht nur ausgelegt; 7 Eichen
+AUFSTELLUNGSBESCHLUSS statt "in Planung" (B-Plan 353 läuft); Ohepark 200 WE wie im Auftrag, Kurzfassung nennt die
+193 WE der neuesten Vorlage B 26/0271; Hummel-Zahlen 300 (7 Eichen) und 91 (Segeberger Ch.) nur als "abgleichen".
+Falkenkamp, Königsberger Str., Bahnhofstr./Schweriner Str. bewusst nicht eingetragen. Dashboard: `app.HERKUNFT_MANUELL`
+("✍️ manuell nachgetragen"), Echtprojekte "⭐ echtes Projekt · manuell nachgetragen". Recall: Quelle `echte_projekte`
+zählt nie (auch bei Standard-Herkunft); neue zweite Zahl `recall.messe_unterlagen()` = "Ratsunterlagen bereits
+geladen" über geprüfte Vorlagen-Nr. (`ratsvorlage` in der Fixture, 9 Projekte) - eine Volltextsuche zählte bloße
+Erwähnungen und kam auf 17 von 18, darunter Presse-Projekte. Stand: **0 von 18 gefunden, 9 von 18 Ratsunterlagen
+geladen**. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

@@ -158,7 +158,7 @@ def test_echte_fruehphasen_projekte_stehen_sichtbar_in_der_demo(settings):
         echte = {p["projektbezeichnung"]: p for p in database.list_projekte(conn)
                  if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID}
     assert {"Richtweg / Garstedter Dreieck (Instone)", "SonnenHeyde (Manke)"} <= set(echte)
-    assert len(echte) == 7  # + die 5 geprüften Norderstedter Projekte vom 30.10.2026
+    assert len(echte) == 15  # + 5 geprüfte Norderstedter Projekte (30.10.2026) + 8 aus dem Hummel-Abgleich (19.11.2026)
     assert (echte["Richtweg / Garstedter Dreieck (Instone)"]["verfahrensstand"], echte[
         "Richtweg / Garstedter Dreieck (Instone)"]["we_gesamt"]) == ("AUFSTELLUNGSBESCHLUSS", 316)
     assert (echte["SonnenHeyde (Manke)"]["verfahrensstand"], echte["SonnenHeyde (Manke)"]["we_gesamt"]) == (
@@ -171,7 +171,7 @@ def test_echte_projekte_idempotent_und_reset_setzt_status_zurueck(settings):
         demo_data.seed_echte_projekte(conn)  # zweites Mal: keine Duplikate
         demo_data.seed_norderstedt_projekte(conn)
         echte = [p for p in database.list_projekte(conn) if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID]
-        assert len(echte) == 7
+        assert len(echte) == 15
         database.set_projekt_status(conn, echte[0]["id"], "Kontaktversuch")
     demo_data.reset_demo(settings)
     with closing(database.connect(demo)) as conn:
@@ -208,7 +208,7 @@ def _norderstedt_db(settings):
 
 def test_norderstedt_projekte_idempotent_mit_quelle_und_notiz(settings):
     projekte = _norderstedt_db(settings)
-    assert len(projekte) == 7  # 5 neue + Richtweg + SonnenHeyde
+    assert len(projekte) == 15  # 5 + 8 Norderstedter + Richtweg + SonnenHeyde
     garstedt = projekte["Berliner Allee – Quartier Garstedt"]
     assert (garstedt["we_gesamt"], garstedt["we_gefoerdert_anzahl"], garstedt["verfahrensstand"]) == (
         198, 60, "BAUGENEHMIGUNG")
@@ -255,7 +255,7 @@ def test_seed_skript_verweigert_echte_datenbank_und_schreibt_test_db(settings, m
     test_db = tmp_path / "test_radar.db"
     assert skript.main(["--norderstedt", "--db", str(test_db)]) == 0
     with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as conn:
-        assert len(database.list_projekte(conn)) == 7
+        assert len(database.list_projekte(conn)) == 15
 
 
 def test_bplaene_ohne_belegte_wohnform_bekommen_pruefauftrag(settings):
@@ -280,3 +280,59 @@ def test_demo_enthaelt_norderstedt_projekte_auch_nach_reset(settings):
     assert "Rahmenplan „Glashütter Kirchenweg“" in projekte
     assert projekte["Berliner Allee – Quartier Garstedt"]["quelle_url"].startswith("https://www.konii.de/")
     assert projekte["B-Plan 343 „Meyers Mühle“"]["notizen"].startswith("Ehemaliges Gartencenter")
+
+
+# -- Phase 5 Hummel-Abgleich: 8 nachgetragene Projekte mit Herkunft (19.11.2026) ---------------------------
+
+
+def test_nachgetragene_projekte_haben_herkunft_beleg_und_badge(settings):
+    from app import HERKUNFT_ECHT, HERKUNFT_MANUELL, add_herkunft_und_stand, add_lead_badge, build_projekte_df
+
+    projekte = _norderstedt_db(settings)
+    erwartet = {
+        "Garstedter Tor (B-Plan 337)": (250, "SATZUNGSBESCHLUSS"),
+        "7 Eichen (B-Pläne 353/363)": (500, "AUFSTELLUNGSBESCHLUSS"),
+        "Ohepark – B-Plan 322 „An der Ohechaussee“": (200, "AUSLEGUNG"),
+        "Rahmenplan Harkshörner Weg": (500, "VORBERATUNG"),
+        "Segeberger Chaussee 121–125a (REWE + Wohnen)": (35, "VORBERATUNG"),
+        "Postgelände Falkenbergstraße (B-Plan 365)": (100, "AUFSTELLUNGSBESCHLUSS"),
+        "Hermann-Klingenberg-Ring („Norderstedter Modell“)": (40, "VORBERATUNG"),
+        "Liesel-Hünichen-Weg (ADLERSHORST)": (69, "BAUGENEHMIGUNG"),
+    }
+    for name, (we, stand) in erwartet.items():
+        p = projekte[name]
+        assert (p["we_gesamt"], p["verfahrensstand"]) == (we, stand), name
+        assert p["herkunft"] == "manuell_nachgetragen", name
+        assert p["quelle_url"].startswith("https://"), name
+        assert p["evidenz"] and len(p["evidenz"]) <= 200, name
+    # Ohepark und Meyers Mühle liegen beide an der Ohechaussee, bleiben aber zwei Projekte
+    assert "B-Plan 343 „Meyers Mühle“" in projekte
+    # Alle von Hand eingetragenen Projekte sind gekennzeichnet, auch die älteren
+    assert {p["herkunft"] for p in projekte.values()} == {"manuell_nachgetragen"}
+
+    with closing(database.connect(settings)) as conn:
+        df = build_projekte_df(database.list_projekte(conn), {})
+    df = add_herkunft_und_stand(add_lead_badge(df), demo_modus=False).set_index("projektbezeichnung")
+    assert df.loc["Liesel-Hünichen-Weg (ADLERSHORST)", "herkunft"] == HERKUNFT_ECHT
+    assert df.loc["Liesel-Hünichen-Weg (ADLERSHORST)", "lead"] != ""  # im Bau -> kurzfristiger Lead
+    assert HERKUNFT_MANUELL.endswith("manuell nachgetragen")
+
+
+def test_badge_fuer_manuelle_projekte_ausserhalb_der_echtquelle(settings):
+    from app import HERKUNFT_MANUELL, add_herkunft_und_stand, add_lead_badge, build_projekte_df
+    from radar.parser import ProjektExtraktion
+
+    with closing(database.connect(settings)) as conn:
+        conn.execute("INSERT INTO quellen (id, name, bundesland, system) VALUES ('norderstedt', 'x', 'SH', 'x')")
+        conn.commit()
+        radar_id, _ = database.upsert_projekt(conn, quelle_id="norderstedt", bundesland="SH", kommune="Norderstedt",
+                                              extraktion=ProjektExtraktion(projektbezeichnung="Vom Radar"))
+        hand_id, _ = database.upsert_projekt(conn, quelle_id="norderstedt", bundesland="SH", kommune="Norderstedt",
+                                             extraktion=ProjektExtraktion(projektbezeichnung="Von Hand"))
+        database.set_projekt_herkunft(conn, hand_id, database.HERKUNFT_MANUELL)
+        with pytest.raises(ValueError):
+            database.set_projekt_herkunft(conn, radar_id, "irgendwas")
+        df = build_projekte_df(database.list_projekte(conn), {})
+    df = add_herkunft_und_stand(add_lead_badge(df), demo_modus=False).set_index("projektbezeichnung")
+    assert df.loc["Vom Radar", "herkunft"] == ""
+    assert df.loc["Von Hand", "herkunft"] == HERKUNFT_MANUELL

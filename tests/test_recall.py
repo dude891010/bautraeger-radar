@@ -114,8 +114,7 @@ def test_manuell_nachgetragene_projekte_zaehlen_nicht(conn):
 
 def test_herkunft_spalte_wird_beachtet_wenn_vorhanden(conn):
     _projekt(conn, bezeichnung="Richtweg 28", strasse="Richtweg")
-    conn.execute("ALTER TABLE projekte ADD COLUMN herkunft TEXT NOT NULL DEFAULT 'radar'")
-    assert recall.messe_recall(conn, [_bekannt("Richtweg")]).gefunden
+    assert recall.messe_recall(conn, [_bekannt("Richtweg")]).gefunden  # Standard: 'radar'
     conn.execute("UPDATE projekte SET herkunft = 'manuell_nachgetragen'")
     assert recall.messe_recall(conn, [_bekannt("Richtweg")]).fehlend
 
@@ -192,3 +191,46 @@ def _echtes_ergebnis() -> recall.RecallErgebnis:
 def test_radar_findet_bekanntes_projekt(bekannt):
     ergebnis = _echtes_ergebnis()
     assert bekannt not in ergebnis.fehlend, f"{ergebnis.zusammenfassung()} - fehlt: {bekannt.name}"
+
+
+# -- zweite Zahl: geprüfte Ratsvorlage bereits geladen (19.11.2026) ---------------------------------------
+
+
+def test_liste_hat_neun_gepruefte_ratsvorlagen():
+    mit = {p.name: p.ratsvorlage for p in recall.lade_bekannte_projekte() if p.ratsvorlage}
+    assert len(mit) == 9
+    assert mit["Garstedter Tor (B-Plan 337)"] == "B 24/0295"
+    assert not any(p.ratsvorlage for p in recall.lade_bekannte_projekte() if p.nur_presse)
+
+
+def test_unterlagen_zaehlen_nur_geladene_gepruefte_vorlagen(conn, tmp_path):
+    from datetime import date
+
+    from radar.sources.base import Dokument, Sitzung
+
+    sitzung_id = database.upsert_sitzung(
+        conn, "norderstedt",
+        Sitzung(source_id="norderstedt", external_id="1", gremium="ASV", datum=date(2024, 9, 5), url="si.php"),
+    )
+    for nr, ext, geladen in [("B 24/0295", "v1", True), ("B 25/0499", "v2", False)]:
+        vorlage_id, _ = database.upsert_vorlage(conn, "norderstedt", sitzung_id, ext, nr, f"hash-{ext}")
+        dok_id = database.upsert_dokument(
+            conn, "norderstedt", sitzung_id, vorlage_id,
+            Dokument(source_id="norderstedt", external_id=f"d{ext}", titel="Vorlage", url="getfile.php",
+                     sitzung_external_id="1", vorlage_external_id=ext),
+        )
+        if geladen:
+            database.mark_dokument_heruntergeladen(conn, dok_id, "abc", str(tmp_path / "x.pdf"))
+
+    bekannte = [
+        recall.BekanntesProjekt(name="Garstedter Tor", suche=("GARTO",), ratsvorlage="B 24/0295"),
+        recall.BekanntesProjekt(name="Segeberger Ch.", suche=("REWE",), ratsvorlage="B 25/0499"),  # PDF fehlt
+        recall.BekanntesProjekt(name="Falkenkamp", suche=("Falkenkamp",), nur_presse=True),
+    ]
+    funde = recall.messe_unterlagen(conn, bekannte)
+    assert list(funde) == ["Garstedter Tor"]
+    assert "B 24/0295 (2024-09-05, ASV)" in funde["Garstedter Tor"]
+
+    text = recall.bericht(recall.messe_recall(conn, bekannte), funde)
+    assert "findet 0 von 3" in text and "Ratsunterlagen bereits geladen: 1 von 3" in text
+    text.encode("cp1252")

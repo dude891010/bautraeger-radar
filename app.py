@@ -172,14 +172,17 @@ STAND_LABEL = {
     "BAUGENEHMIGUNG": "Baugenehmigung erteilt",
     "UNKLAR": "unklar",
 }
-HERKUNFT_ECHT = "⭐ echtes Projekt"
+HERKUNFT_ECHT = "⭐ echtes Projekt · manuell nachgetragen"
+HERKUNFT_MANUELL = "✍️ manuell nachgetragen"
 HERKUNFT_DEMO = "Demo (erfunden)"
 
 
 def add_herkunft_und_stand(df: pd.DataFrame, *, demo_modus: bool) -> pd.DataFrame:
-    """Spalten `stand` (Klartext zu `verfahrensstand`) und `herkunft`: geprüfte Echtprojekte
-    (`demo_data.ECHTE_QUELLE_ID`) bekommen "⭐ echtes Projekt", im Demo-Modus alle übrigen
-    "Demo (erfunden)", sonst bleibt die Herkunft leer (echte Läufe brauchen keine Kennzeichnung)."""
+    """Spalten `stand` (Klartext zu `verfahrensstand`) und `herkunft` (Badge): geprüfte Echtprojekte
+    (`demo_data.ECHTE_QUELLE_ID`) bekommen "⭐ echtes Projekt · manuell nachgetragen", jedes andere von Hand
+    eingetragene Projekt (Datenbankfeld `herkunft = 'manuell_nachgetragen'`, Schema v8) "✍️ manuell
+    nachgetragen", im Demo-Modus alle übrigen "Demo (erfunden)". Vom Radar selbst gefundene Projekte bleiben im
+    echten Betrieb ohne Badge."""
     if df.empty:
         return df
     df = df.copy()
@@ -187,7 +190,11 @@ def add_herkunft_und_stand(df: pd.DataFrame, *, demo_modus: bool) -> pd.DataFram
     # Text statt Zahl, damit eine noch offene WE-Zahl als "WE offen" erscheint statt als leere Zelle
     df["we_anzeige"] = df["we_gesamt"].map(lambda v: "WE offen" if pd.isna(v) else str(int(v)))
     echt = df["quelle_id"] == demo_data.ECHTE_QUELLE_ID
+    manuell = (
+        df["herkunft"] == database.HERKUNFT_MANUELL if "herkunft" in df.columns else pd.Series(False, index=df.index)
+    )
     df["herkunft"] = HERKUNFT_DEMO if demo_modus else ""
+    df.loc[manuell, "herkunft"] = HERKUNFT_MANUELL
     df.loc[echt, "herkunft"] = HERKUNFT_ECHT
     return df
 
@@ -958,7 +965,7 @@ def _web_recherche_tab(
         disabled=spalten,
         column_config={
             "hinweis": st.column_config.TextColumn(
-                "Herkunft", help="Echtes, geprüftes Projekt oder erfundenes Beispiel"
+                "Herkunft", help="Vom Radar gefunden (leer), von Hand nachgetragen oder erfundenes Demo-Beispiel"
             ),
             "phase_label": st.column_config.TextColumn("Phase", width="medium"),
             "wohnform_label": st.column_config.TextColumn("Wohnform"),
@@ -1287,7 +1294,8 @@ def main() -> None:
                 disabled=nur_lesen,
                 column_config={
                     "herkunft": st.column_config.TextColumn(
-                        "Herkunft", help="Echtes, an der Quelle geprüftes Projekt oder erfundenes Beispiel"
+                        "Herkunft",
+                        help="Vom Radar gefunden (leer), von Hand nachgetragen (geprüft) oder Demo-Beispiel",
                     ),
                     "we_anzeige": st.column_config.TextColumn(
                         "WE", help="Wohneinheiten gesamt; 'WE offen' = noch keine Zahl"

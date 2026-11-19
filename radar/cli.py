@@ -124,9 +124,10 @@ def _recall(db: str | None, liste: str | None) -> int:
             return 2
         bekannte = recall.lade_bekannte_projekte(listen_pfad)
         ergebnis = recall.messe_recall(conn, bekannte)
+        unterlagen = recall.messe_unterlagen(conn, ergebnis.fehlend)
     finally:
         conn.close()
-    print(f"Datenbank: {pfad}\n{recall.bericht(ergebnis)}")
+    print(f"Datenbank: {pfad}\n{recall.bericht(ergebnis, unterlagen)}")
     return 0
 
 

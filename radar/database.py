@@ -213,7 +213,21 @@ _SCHEMA_V7 = """
 ALTER TABLE quellen ADD COLUMN erfasst_ab TEXT;
 """
 
-_MIGRATIONS: list[str] = [_SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5, _SCHEMA_V6, _SCHEMA_V7]
+# V8: Herkunft je Projekt (Hummel-Abgleich 11/2026): 'radar' = von einem Lauf gefunden (Standard, auch für alle
+# bestehenden Einträge), 'manuell_nachgetragen' = von Hand recherchiert. Die geprüften Echtprojekte (Quelle
+# echte_projekte) sind alle von Hand eingetragen worden und bekommen deshalb gleich 'manuell_nachgetragen' -
+# sonst zählte der Recall (radar/recall.py) sie als Fund des Radars. Nie von upsert_projekt() geschrieben.
+_SCHEMA_V8 = """
+ALTER TABLE projekte ADD COLUMN herkunft TEXT NOT NULL DEFAULT 'radar';
+UPDATE projekte SET herkunft = 'manuell_nachgetragen' WHERE quelle_id = 'echte_projekte';
+"""
+
+HERKUNFT_RADAR = "radar"
+HERKUNFT_MANUELL = "manuell_nachgetragen"
+
+_MIGRATIONS: list[str] = [
+    _SCHEMA_V1, _SCHEMA_V2, _SCHEMA_V3, _SCHEMA_V4, _SCHEMA_V5, _SCHEMA_V6, _SCHEMA_V7, _SCHEMA_V8,
+]
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -685,6 +699,13 @@ def set_projekt_status(
         (neuer_status, when.isoformat(), projekt_id),
     )
     _log_status(conn, projekt_id, row["status"], neuer_status, notiz, when)
+    conn.commit()
+
+
+def set_projekt_herkunft(conn: sqlite3.Connection, projekt_id: int, herkunft: str) -> None:
+    if herkunft not in (HERKUNFT_RADAR, HERKUNFT_MANUELL):
+        raise ValueError(f"unbekannte Herkunft: {herkunft!r}")
+    conn.execute("UPDATE projekte SET herkunft = ? WHERE id = ?", (herkunft, projekt_id))
     conn.commit()
 
 

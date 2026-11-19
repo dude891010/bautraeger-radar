@@ -215,16 +215,210 @@ _NORDERSTEDT_PROJEKTE: list[dict] = [
 ]
 
 
+_RATSINFO = "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/vo0050.php?__kvonr="
+
+# Phase 5 Hummel-Abgleich (19.11.2026): 8 Projekte aus Hummels Liste, die das Radar ohne KI-Auswertung nicht selbst
+# zeigt. Daten vom Nutzer recherchiert (docs/claude-code-gesamtauftrag_radar-norderstedt.md), von uns geprüft: alle
+# Quell-Links am 19.11.2026 erreichbar; für 7 Projekte stehen WE-Zahl und Verfahrensstand in den vom Radar selbst
+# geladenen Ratsunterlagen (`data/raw/norderstedt/`) - `evidenz` ist dort ein wörtliches Zitat aus der genannten
+# Vorlage/Anlage, `seite` deren Seite. Liesel-Hünichen-Weg steht nicht in den Ratsunterlagen, Beleg ist der noa4-
+# Artikel vom 06.08.2026. Abweichungen zur Hummel-Liste stehen in der Kurzfassung. Herkunft immer
+# 'manuell_nachgetragen' - nie als Fund des Radars zählen (radar/recall.py).
+_NACHGETRAGENE_PROJEKTE: list[dict] = [
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Garstedter Tor (B-Plan 337)",
+            adresse=Adresse(strasse="Kohfurth / Stettiner Straße", ort="Norderstedt"),
+            we_gesamt=250,
+            we_gefoerdert=True,
+            quote_gefoerdert=0.3,
+            antragsteller="GARTO GmbH & Co. KG (laut Stadtunterlagen); laut Presse Plambeck",
+            kurzfassung=(
+                "Garstedt, westlich Kohfurth / nördlich Stettiner Straße: ca. 250 WE, 30 % gefördert. B-Plan 337 am "
+                "18.02.2025 von der Stadtvertretung als Satzung beschlossen (Vorlage B 24/0500) - weiter als in der "
+                "Hummel-Liste (dort: Entwurf ausgelegt bis 22.10.2024). Ratsunterlagen: " + _RATSINFO + "19153"
+            ),
+            wohnform=Wohnform.UNKLAR,  # 30 % gefördert, 70 % freifinanziert - ob Miete oder Eigentum, offen
+            verfahrensstand=Verfahrensstand.SATZUNGSBESCHLUSS,
+            konfidenz=0.9,
+            evidenz="insgesamt ca. 250 Wohneinheiten in einem Woh- nungsmix aus 30% gefördertem und 70% freifina",
+            seite=21,
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_9358_1.PDF",
+        notiz="Ratsinfo: B 24/0295 (ASV 05.09.2024), B 24/0500 (Satzungsbeschluss StV 18.02.2025).",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="7 Eichen (B-Pläne 353/363)",
+            adresse=Adresse(strasse="Glashütter Damm", ort="Norderstedt"),
+            we_gesamt=500,
+            antragsteller=None,
+            kurzfassung=(
+                "Glashütte, zwischen Glashütter Damm und Schleswig-Holstein-Straße: rund 500 WE auf 17 ha. Rahmenplan "
+                "'Sieben Eichen' beschlossen, B-Plan 353 'Glashütter Damm zentral' im Verfahren (ASV 20.08.2026, "
+                "B 26/0280). Hummel nennt 300 WE - abgleichen. Ratsunterlagen: " + _RATSINFO + "18888"
+            ),
+            wohnform=Wohnform.UNKLAR,
+            verfahrensstand=Verfahrensstand.AUFSTELLUNGSBESCHLUSS,  # B-Plan-Verfahren läuft
+            konfidenz=0.85,
+            evidenz="Es sind insgesamt ca. 500 Wohneinheiten (WE)",
+            seite=4,
+        ),
+        quelle_url="https://www.noa4.de/7-eichen-anwohner-fuerchten-den-verkehrskollaps/",
+        notiz="Ratsinfo: B 24/0248 (ASV 04.07.2024), B 26/0280 (ASV 20.08.2026).",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Ohepark – B-Plan 322 „An der Ohechaussee“",
+            adresse=Adresse(strasse="Ohechaussee / Robert-Schumann-Straße", ort="Norderstedt"),
+            we_gesamt=200,
+            we_gefoerdert=True,
+            quote_gefoerdert=0.5,
+            antragsteller="Projektentwickler (nicht namentlich genannt)",
+            kurzfassung=(
+                "Garstedt: etwa 200 WE in neun Gebäuden, mind. 50 % gefördert, Kita. Entwurfs- und "
+                "Veröffentlichungsbeschluss im ASV am 20.08.2026 (B 26/0215/1). Die neueste Vorlage B 26/0271 "
+                "(02.07.2026) nennt 193 Wohneinheiten. Ratsunterlagen: " + _RATSINFO + "20298"
+            ),
+            wohnform=Wohnform.UNKLAR,
+            verfahrensstand=Verfahrensstand.AUSLEGUNG,
+            konfidenz=0.9,
+            evidenz="Der Städtebauliche Entwurf mit ca. 200 Wohneinheiten sieht nun eine Bebauung mit neun Gebäude vor",
+            seite=2,
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_9563_1.PDF",
+        notiz="Ratsinfo: B 24/0315 (ASV 19.09.2024), B 26/0271 (02.07.2026), B 26/0215/1 (20.08.2026).",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Rahmenplan Harkshörner Weg",
+            adresse=Adresse(strasse="Harkshörner Weg", ort="Norderstedt"),
+            we_gesamt=500,
+            we_gefoerdert=True,
+            antragsteller=None,
+            kurzfassung=(
+                "Harksheide, Harkshörner Weg / Ulzburger Straße: rund 500 WE, davon ca. 450 im nördlichen "
+                "Teilquartier. "
+                "Rahmenplan von der Stadtvertretung am 30.06.2026 beschlossen (B 26/0165), B-Pläne folgen. "
+                "Ratsunterlagen: " + _RATSINFO + "20128"
+            ),
+            wohnform=Wohnform.UNKLAR,
+            verfahrensstand=Verfahrensstand.VORBERATUNG,  # Rahmenplan, noch kein B-Plan
+            konfidenz=0.9,
+            evidenz="Im gesamten Plangebiet können ca. 500 Wohneinheiten realisiert werden.",
+            seite=33,
+        ),
+        quelle_url="https://www.norderstedt.de/media/custom/3224_10531_1.PDF",
+        notiz="Ratsinfo: B 26/0165 (Rahmenplan, Stadtvertretung 30.06.2026).",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Segeberger Chaussee 121–125a (REWE + Wohnen)",
+            adresse=Adresse(strasse="Segeberger Chaussee", hausnummer="121–125a", ort="Norderstedt"),
+            we_gesamt=35,
+            we_gefoerdert=True,
+            quote_gefoerdert=0.5,
+            antragsteller="Investor (nicht namentlich genannt)",
+            kurzfassung=(
+                "Harksheide: REWE-Markt und Drogerie im Erdgeschoss, 35 Wohnungen darüber, mind. 50 % sozial "
+                "gefördert. "
+                "Grundsatzbeschluss im ASV (B 25/0499, 06./20.11.2025), Überarbeitung im März 2026 besprochen. "
+                "Hummel nennt 91 WE - abgleichen. Ratsunterlagen: " + _RATSINFO + "19745"
+            ),
+            wohnform=Wohnform.UNKLAR,
+            verfahrensstand=Verfahrensstand.VORBERATUNG,
+            konfidenz=0.9,
+            evidenz="Insgesamt 35 Wohnungen in den Obergeschossen: o Mindestens 50 % sozial gefördert",
+            seite=2,
+        ),
+        quelle_url="https://www.noa4.de/neues-quartier-an-der-segeberger-chaussee-rewe-markt-mit-wohnungen/",
+        notiz="Ratsinfo: B 25/0499 (ASV 06.11./20.11.2025).",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Postgelände Falkenbergstraße (B-Plan 365)",
+            adresse=Adresse(strasse="Falkenbergstraße", hausnummer="17", ort="Norderstedt"),
+            we_gesamt=100,
+            we_gefoerdert=True,
+            quote_gefoerdert=1.0,
+            antragsteller="ADLERSHORST Baugenossenschaft eG (laut Hummel)",
+            kurzfassung=(
+                "Harksheide, ehemaliges Postgelände: ca. 100 Wohnungen in 5 Gebäuden, Ziel 100 % öffentlich gefördert. "
+                "Grundsatzbeschluss ASV 02.07.2026 (B 26/0269), Aufstellungsbeschluss B-Plan 365 am 17.09.2026 "
+                "(B 26/0360). Ratsunterlagen: " + _RATSINFO + "20339"
+            ),
+            wohnform=Wohnform.GEFOERDERT,
+            verfahrensstand=Verfahrensstand.AUFSTELLUNGSBESCHLUSS,
+            konfidenz=0.9,
+            evidenz="Die Planung sieht eine Wohnbebauung mit ca. 100 Wohnungen vor, wovon nach jetzigem Ziel 100 % "
+            "öffentlich gefördert",
+            seite=2,
+        ),
+        quelle_url="https://www.noa4.de/100-neue-wohnungen-auf-dem-postgelaende/",
+        notiz="Ratsinfo: B 26/0269 (ASV 02.07.2026), B 26/0360 (Aufstellungsbeschluss 17.09.2026).",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Hermann-Klingenberg-Ring („Norderstedter Modell“)",
+            adresse=Adresse(strasse="Hermann-Klingenberg-Ring", ort="Norderstedt"),
+            we_gesamt=40,
+            we_gefoerdert=True,
+            antragsteller="Stadt Norderstedt",
+            kurzfassung=(
+                "Friedrichsgabe, B-Plan-Gebiet 300: Neubau nach dem 'Norderstedter Modell', voraussichtlich "
+                "40 Wohnungen "
+                "(50-100 m²). Beschluss Hauptausschuss 30.06.2025 (B 25/0246); ZURÜCKGESTELLT: im Herbst 2026 empfahl "
+                "der Hauptausschuss wegen der Haushaltslage einen Stopp. Ratsunterlagen: " + _RATSINFO + "19473"
+            ),
+            wohnform=Wohnform.GEFOERDERT,
+            verfahrensstand=Verfahrensstand.VORBERATUNG,
+            konfidenz=0.85,
+            evidenz="Es entstehen voraussichtlich 40 Wohnungen in drei Wohnungstypen in einer Größe von 50 m² "
+            "bis 100 m².",
+            seite=1,
+        ),
+        quelle_url="https://www.noa4.de/norderstedter-modell-vorerst-auf-eis-gelegt/",
+        notiz="Zurückgestellt (Haushaltslage) - Entscheidung der Stadtvertretung abwarten.",
+    ),
+    dict(
+        extraktion=dict(
+            projektbezeichnung="Liesel-Hünichen-Weg (ADLERSHORST)",
+            adresse=Adresse(strasse="Liesel-Hünichen-Weg", ort="Norderstedt"),
+            we_gesamt=69,
+            we_miete=69,
+            we_gefoerdert_anzahl=69,
+            we_gefoerdert=True,
+            quote_gefoerdert=1.0,
+            ausfuehrungszeitraum=(
+                "Spatenstich erfolgt (noa4, 06.08.2026); Vermietung ab Q2 2027, Fertigstellung Q4 2027"
+            ),
+            antragsteller="ADLERSHORST Baugenossenschaft eG",
+            kurzfassung=(
+                "Harksheide: 69 öffentlich geförderte Wohnungen (1. und 2. Förderweg), 2-4 Zimmer, 58-91 m², "
+                "Tiefgarage mit 65 Stellplätzen; im Bau. Nicht in den Ratsunterlagen, nur über die Presse auffindbar."
+            ),
+            wohnform=Wohnform.GEFOERDERT,
+            verfahrensstand=Verfahrensstand.BAUGENEHMIGUNG,  # "im Bau" gibt es nicht
+            konfidenz=0.9,
+            evidenz="den Bau von 69 öffentlich geförderten Wohnungen im Liesel-Hünichen-Weg in Harksheide offiziell "
+            "gestartet",
+        ),
+        quelle_url="https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/",
+        notiz="Kurzfristiger Lead: Vermietung ab Q2 2027 - Küchen jetzt anfragen.",
+    ),
+]
+
+
 def seed_norderstedt_projekte(conn: sqlite3.Connection) -> None:
-    """Die 5 geprüften Norderstedter Projekte schreiben (idempotent über `upsert_projekt()`: gleiche
-    Adresse = gleicher Datensatz). Quell-URL und Notiz nur setzen, wenn noch leer - im Dashboard gepflegte
-    Notizen bleiben unangetastet."""
+    """Die geprüften Norderstedter Projekte schreiben - die 5 vom 30.10.2026 und die 8 aus dem Hummel-Abgleich
+    (idempotent über `upsert_projekt()`: gleiche Adresse = gleicher Datensatz). Quell-URL und Notiz nur setzen,
+    wenn noch leer - im Dashboard gepflegte Notizen bleiben unangetastet. Herkunft immer 'manuell_nachgetragen'."""
     conn.execute(
         "INSERT OR IGNORE INTO quellen (id, name, bundesland, system) VALUES (?, ?, ?, ?)",
         (ECHTE_QUELLE_ID, "Geprüfte Echtprojekte (Projektseiten/Fachpresse)", "SH", "unknown"),
     )
     conn.commit()
-    for eintrag in _NORDERSTEDT_PROJEKTE:
+    for eintrag in _NORDERSTEDT_PROJEKTE + _NACHGETRAGENE_PROJEKTE:
         projekt_id, _ = database.upsert_projekt(
             conn,
             quelle_id=ECHTE_QUELLE_ID,
@@ -237,6 +431,7 @@ def seed_norderstedt_projekte(conn: sqlite3.Connection) -> None:
             database.set_projekt_quelle_url(conn, projekt_id, eintrag["quelle_url"])
         if not zeile["notizen"]:
             database.set_projekt_notizen(conn, projekt_id, eintrag["notiz"])
+        database.set_projekt_herkunft(conn, projekt_id, database.HERKUNFT_MANUELL)
 
 
 def seed_echte_projekte(conn: sqlite3.Connection) -> None:
@@ -248,13 +443,14 @@ def seed_echte_projekte(conn: sqlite3.Connection) -> None:
     )
     conn.commit()
     for eintrag in _ECHTE_PROJEKTE:
-        database.upsert_projekt(
+        projekt_id, _ = database.upsert_projekt(
             conn,
             quelle_id=ECHTE_QUELLE_ID,
             bundesland="SH",
             kommune="Norderstedt",
             extraktion=ProjektExtraktion(**eintrag),
         )
+        database.set_projekt_herkunft(conn, projekt_id, database.HERKUNFT_MANUELL)
 
 # (id, name, bundesland, system) - system nur zur Anzeige im Quellen-Tab, keine echte Adapterwahl.
 _QUELLEN: list[tuple[str, str, str, str]] = [
@@ -668,8 +864,10 @@ def ensure_demo_seeded(settings: Settings) -> Settings:
             seed(conn)
         if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_id = ?", (ECHTE_QUELLE_ID,)).fetchone()[0] == 0:
             seed_echte_projekte(conn)  # ältere Demo-Datenbanken bekommen sie nachträglich
-        if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_url IS NOT NULL").fetchone()[0] == 0:
-            seed_norderstedt_projekte(conn)  # die 5 geprüften Norderstedter Projekte (30.10.2026), ebenso
+        soll = len(_NORDERSTEDT_PROJEKTE) + len(_NACHGETRAGENE_PROJEKTE)
+        if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_url IS NOT NULL").fetchone()[0] < soll:
+            # die geprüften Norderstedter Projekte (30.10. und 19.11.2026); ältere Demo-DBs bekommen neue nachträglich
+            seed_norderstedt_projekte(conn)
         # Eigene Prüfung: ältere Demo-Datenbanken (vor der Web-Recherche angelegt) haben Projekte,
         # aber noch keine Web-Funde - ein erneutes seed() würde dort bearbeitete Status zurücksetzen.
         if conn.execute("SELECT COUNT(*) FROM web_funde").fetchone()[0] == 0:
