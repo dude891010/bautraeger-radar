@@ -26,7 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "settings.yaml"
 
 BUNDESLAENDER = {"SH", "HH", "NI", "HB", "MV", "BE"}
-SYSTEMS = {"sessionnet", "allris", "oparl", "hamburg_transparenz", "bv_hh", "unknown"}
+SYSTEMS = {"sessionnet", "allris", "oparl", "hamburg_transparenz", "bv_hh", "pressemitteilungen", "unknown"}
 STATUSES = {"verified", "candidate", "blocked"}
 TIERS = {"A", "B", "C"}
 UNKNOWN_POLICIES = {"flag", "drop"}

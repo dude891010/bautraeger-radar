@@ -452,6 +452,7 @@ def run_full(
     conn: sqlite3.Connection | None = None,
     client: anthropic.Anthropic | None = None,
     zeitraum: tuple[date, date | None] | None = None,
+    quellen: list[str] | None = None,
 ) -> list[SourceRunResult]:
     """Vollständiger Lauf: Scraper -> Parser -> Datenbank für alle aktivierten Quellen (Tier A
     zuerst). Ein gemeinsames `LLMBudget` gilt über den ganzen Lauf. `conn`/`client` lassen sich für
@@ -461,7 +462,7 @@ def run_full(
     Läuft bereits ein anderer Lauf, wird sofort `LaufLaeuftBereits` geworfen (siehe `lauf_sperre`)."""
     settings = settings or load_settings()
     with lauf_sperre(settings):
-        return _run_full_gesperrt(settings, conn, client, zeitraum)
+        return _run_full_gesperrt(settings, conn, client, zeitraum, quellen)
 
 
 def _erfasst_ab_darf_gesetzt_werden(
@@ -481,6 +482,7 @@ def _run_full_gesperrt(
     conn: sqlite3.Connection | None,
     client: anthropic.Anthropic | None,
     zeitraum: tuple[date, date | None] | None = None,
+    quellen: list[str] | None = None,
 ) -> list[SourceRunResult]:
     own_conn = conn is None
     conn = conn or database.connect(settings)
@@ -508,6 +510,11 @@ def _run_full_gesperrt(
     cache = ResultCache(settings.resolve_path(settings.llm.cache_dir))
 
     sources = enabled_sources(load_sources(settings), settings)
+    if quellen:
+        unbekannt = set(quellen) - {s.id for s in sources}
+        if unbekannt:
+            raise ValueError(f"Keine aktive Quelle: {', '.join(sorted(unbekannt))}")
+        sources = [s for s in sources if s.id in quellen]
 
     results = []
     try:

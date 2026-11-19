@@ -6,6 +6,7 @@ from radar.sources.base import SourceAdapter
 from radar.sources.bv_hh import BvHhAdapter
 from radar.sources.hamburg_transparenz import HamburgTransparenzAdapter
 from radar.sources.oparl import OParlAdapter
+from radar.sources.pressemitteilungen import PressemitteilungenAdapter
 from radar.sources.sessionnet import SessionNetAdapter
 
 ADAPTERS: dict[str, type[SourceAdapter]] = {
@@ -14,6 +15,7 @@ ADAPTERS: dict[str, type[SourceAdapter]] = {
     "oparl": OParlAdapter,
     "hamburg_transparenz": HamburgTransparenzAdapter,
     "bv_hh": BvHhAdapter,
+    "pressemitteilungen": PressemitteilungenAdapter,
 }
 
 

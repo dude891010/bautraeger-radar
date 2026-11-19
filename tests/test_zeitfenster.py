@@ -295,3 +295,29 @@ def test_cli_scrape_von_bis(monkeypatch):
     assert gesehen["zeitraum"] == (date(2025, 1, 1), date(2025, 12, 31))
     with pytest.raises(SystemExit):
         main(["scrape", "--bis", "2025-12-31"])
+
+
+def test_cli_scrape_nur_eine_quelle(monkeypatch):
+    from radar.cli import main
+
+    gesehen = {}
+    monkeypatch.setattr("radar.cli.run_full", lambda **kw: gesehen.update(kw) or [])
+    assert main(["scrape", "--quelle", "norderstedt_presse"]) == 0
+    assert gesehen == {"quellen": ["norderstedt_presse"]}
+
+
+def test_run_full_filtert_quellen_und_lehnt_unbekannte_ab(monkeypatch, tmp_path, source):
+    monkeypatch.setenv("SCRAPER_CONTACT", "test@example.com")
+    settings = _settings(tmp_path)
+    andere = Source(
+        id="andere", name="Andere", bundesland="SH", system="sessionnet", base_url="https://example.com/",
+        status="verified", enabled=True, tier="A",
+    )
+    gelaufen = []
+    monkeypatch.setattr("radar.scraper.load_sources", lambda s: [source, andere])
+    monkeypatch.setattr("radar.scraper.HttpClient", lambda src, s: object())
+    monkeypatch.setattr("radar.scraper.get_adapter", lambda src, http: gelaufen.append(src.id) or _Adapter())
+    run_full(settings, client=FakeAnthropicClient([]), quellen=["andere"])
+    assert gelaufen == ["andere"]
+    with pytest.raises(ValueError):
+        run_full(settings, client=FakeAnthropicClient([]), quellen=["gibtsnicht"])

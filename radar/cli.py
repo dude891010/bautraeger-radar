@@ -151,6 +151,10 @@ def main(argv: list[str] | None = None) -> int:
     scrape_parser.add_argument(
         "--bis", metavar="JJJJ-MM-TT", type=date.fromisoformat, help="Ende des Zeitraums (Standard: heute + 2 Monate)"
     )
+    scrape_parser.add_argument(
+        "--quelle", action="append", metavar="ID",
+        help="Nur diese Quelle(n) aus config/sources.yaml, z. B. --quelle norderstedt_presse (mehrfach möglich)",
+    )
     subparsers.add_parser("scheduler", help="Dauerprozess: Lauf nach Zeitplan (config/settings.yaml)")
     subparsers.add_parser("test-email", help="SMTP-Konfiguration mit Beispieldaten testen (radar/notifier.py)")
     app_parser = subparsers.add_parser("app", help="Dashboard starten (Streamlit)")
@@ -194,8 +198,13 @@ def main(argv: list[str] | None = None) -> int:
         try:
             if args.bis and not args.von:
                 parser.error("--bis braucht auch --von")
-            results = run_full(zeitraum=(args.von, args.bis)) if args.von else run_full()
-        except LaufLaeuftBereits as exc:
+            optionen = {}
+            if args.von:
+                optionen["zeitraum"] = (args.von, args.bis)
+            if args.quelle:
+                optionen["quellen"] = args.quelle
+            results = run_full(**optionen)
+        except (LaufLaeuftBereits, ValueError) as exc:  # ValueError: unbekannte --quelle
             logging.getLogger(__name__).error("Lauf nicht gestartet: %s", exc)
             return 2
         if args.notify:

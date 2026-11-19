@@ -3,7 +3,7 @@
 Erkennt Wohnbauprojekte (Miet- und geförderter Wohnungsbau) in den öffentlichen Sitzungsunterlagen
 von Kommunen in Schleswig-Holstein, Hamburg, Niedersachsen, Bremen, Mecklenburg-Vorpommern und
 selektiv Berlin. MVP-Referenzquelle: Norderstedt (Ausschuss für Stadtentwicklung und Verkehr,
-Hauptausschuss, Stadtvertretung).
+Hauptausschuss, Stadtvertretung) und die Pressemitteilungen der Stadt.
 Vollständige Spezifikation und Regeln: [CLAUDE.md](CLAUDE.md). Weitere Quellen: [docs/QUELLENKATALOG.md](docs/QUELLENKATALOG.md).
 
 ## Einrichtung
@@ -97,7 +97,7 @@ Reine Eigentumsprojekte zählen ab 12 WE – in der Web-Recherche und in den Rat
 | `config/settings.yaml` | Globale Einstellungen: Regionen/Tiers, Filter, Scraper, LLM |
 | `config/sources.yaml` | Quellenregister: eine Zeile pro Ratsinformationssystem |
 | `config/web_recherche.yaml` | Web-Recherche: Umkreis, Orte mit Koordinaten, Suchbegriffe, Kostenbremse |
-| `radar/sources/` | Adapter je Systemtyp (SessionNet, ALLRIS, OParl, Transparenzportal Hamburg, bv-hh.de) |
+| `radar/sources/` | Adapter je Systemtyp (SessionNet, ALLRIS, OParl, Transparenzportal Hamburg, bv-hh.de, Pressemitteilungs-Listen) |
 | `radar/` | `config`, `committees`, `scraper`, `parser`, `database`, `notifier` (E-Mail-Benachrichtigung), `web_recherche` (Phase 3/4 per Such-API) |
 | `app.py` | Streamlit-Dashboard (`streamlit run app.py`) |
 | `tests/` | Tests, `tests/fixtures/` für gespeicherte HTML-Antworten, `tests/gold/` für den LLM-Goldstandard |

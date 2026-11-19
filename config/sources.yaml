@@ -45,6 +45,33 @@ sources:
       Sitzungen erscheinen als Text "Die Sitzung des ... fällt aus." ohne Link. Fingerprint:
       <meta name="sessionnet" content="V:050504.L:5"/> im <head>.
 
+  - id: norderstedt_presse
+    name: "Stadt Norderstedt – Pressemitteilungen"
+    bundesland: SH
+    system: pressemitteilungen         # radar/sources/pressemitteilungen.py, Konzept docs/KONZEPT_PRESSEQUELLEN.md
+    base_url: "https://www.norderstedt.de/"
+    status: verified                   # Listenseite am 20.11.2026 live geprüft, Fixture tests/fixtures/norderstedt_presse/
+    enabled: true
+    tier: A
+    committees:
+      - "^Pressemitteilung$"
+    options:
+      list_page: "Aktuelles-und-Service/Aktuelles/Pressestelle-/"
+      # Nur Meldungen mit Wohnbau-Titel laden (von ~740 rund 30). Wortgrenzen nötig: ohne sie trifft "Wohn" auch
+      # "gewohnt" (Abfallentsorgung "früher als gewohnt").
+      titel_muster:
+        - '\bWohn(raum|ungen|ung|ungsbau|bau|quartier|gebiet|anlage|einheiten|projekt)'
+        - '\bB-Plan'
+        - '\bBebauungsplan'
+        - '\bRahmenplan'
+        - '\bQuartier'
+        - 'Baugebiet'
+        - '\b(Spatenstich|Richtfest|Grundstein)'
+    notes: >
+      Eine Seite mit allen Pressemitteilungen als PDF (/media/custom/3224_<ID>_1.PDF?<Zeitstempel>), Titel als
+      Linktext. robots.txt erlaubt das (gesperrt nur /cache/, /output/, Suche, Weiterleitungen). Datum = Zeitstempel
+      im Link (Hochlade-/Änderungszeit, Näherung). Jede Meldung ist eine "Sitzung" mit einem Dokument.
+
   - id: uplengen
     name: "Gemeinde Uplengen"
     bundesland: NI

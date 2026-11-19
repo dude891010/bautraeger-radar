@@ -884,7 +884,21 @@ Erwähnungen und kam auf 17 von 18, darunter Presse-Projekte. Stand: **0 von 18 
 geladen** (20.11.2026 ergänzt: B-Plan 319 -> B 25/0432 "ca. 26 zusätzliche Wohnungen", Grüne Heyde/SonnenHeyde ->
 B 25/0448 Rahmenplan "über 1.200 Wohneinheiten", Richtweg -> B 26/0024 = B-Plan 305 "Richtweg" mit Massenstudie
 "Garstedter Dreieck", BF1 ca. 63 / BF2 ca. 77 WE). Ohne geprüfte Vorlage: Glashütter Kirchenweg (keine WE-Zahl),
-Berliner Allee 4-12 (privat, nie im Rat), Bahnhofstr./Schweriner Str. (unklar, Rückfrage Hummel), 3 Presse-Projekte. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
+Berliner Allee 4-12 (privat, nie im Rat), Bahnhofstr./Schweriner Str. (unklar, Rückfrage Hummel), 3 Presse-Projekte.
+**Phase 6 (20.11.2026): Konzept `docs/KONZEPT_PRESSEQUELLEN.md`, Quelle A umgesetzt.** Neuer Adapter-Typ
+`pressemitteilungen` (`radar/sources/pressemitteilungen.py`), Quelle `norderstedt_presse` (`config/sources.yaml`,
+verified + enabled): die Seite "Pressestelle" listet alle ~740 Pressemitteilungen als PDF-Link
+`/media/custom/3224_<ID>_1.PDF?<Unix-Zeitstempel>`, Titel als Linktext. Je Meldung eine `Sitzung` (Gremium
+"Pressemitteilung", Datum aus dem Zeitstempel = vermutlich Hochladezeit, Näherung) mit einem `Dokument`
+(`vorlage_external_id` "pm-<ID>", `vorlage_nr` "PM <ID>") - keine Schemaänderung. Nur Titel nach `titel_muster`
+(Regex in einfachen YAML-Anführungszeichen, sonst wird `` zum Steuerzeichen; Wortgrenzen nötig, "Wohn" traf
+"gewohnt") werden gelistet: 24 von 736, ab 2024 17. Fail loud ohne einen einzigen PDF-Link. Neu `scrape --quelle ID`
+(`run_full(quellen=...)`, unbekannte ID -> Exit 2). Erster Lauf 20.11.2026: 17 PDFs, 0 Fehler, 35 s; Vorfilter
+verwarf korrekt 2 Schulbau-Meldungen (Campus Glashütte), 15 warten auf die KI. Neuer echter Hinweis: PM 14991
+(13.11.2026) - Mehrfamilienhaus Friedrich-Ebert-Straße/Friedrichsgaber Weg, Garstedt, teils gefördert, Infoabend
+25.11.2026, noch ohne WE-Zahl. Bekannte Eigenheit: Pressemitteilungs-"Sitzungen" haben nie eine Niederschrift und
+gelten für `aelteste_offene_sitzung()` als offen - das Fenster dieser Quelle reicht deshalb immer 6 Monate zurück
+(billig: eine Listenseite, PDFs im Cache). 9 neue Tests, 491 insgesamt. Quelle B (noa4.de) noch offen. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
