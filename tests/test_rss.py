@@ -230,3 +230,77 @@ def test_wochenlauf_hoert_am_fensterbeginn_auf(quelle):
     http = _FakeHttp({"category/lokal/feed/": SEITE_1, "category/lokal/feed/?paged=2": SEITE_2})
     RssAdapter(quelle, http).list_sessions(date(2026, 10, 28), date(2026, 12, 31))
     assert http.abrufe == ["category/lokal/feed/", "category/lokal/feed/?paged=2"]  # nicht alle 150 Seiten
+
+
+# -- Schritt 4: KI-freie Bewertung als Web-Fund (20.11.2026) ----------------------------------------------
+
+
+def test_spatenstich_artikel_wird_ki_frei_web_fund(quelle):
+    from radar.web_recherche import Phase, bewerte_presseartikel, load_web_config
+
+    assert quelle.options["web_fund_bewertung"] is True
+    http = _FakeHttp({"category/lokal/feed/": _feed(WOHNBAU_ITEM), LIESEL_URL: ARTIKEL_LIESEL})
+    adapter = RssAdapter(quelle, http)
+    (dok,) = adapter.list_documents(adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))[0])
+    fund, grund = bewerte_presseartikel(dok.titel, dok.url, dok.text, load_web_config(load_settings()), quelle="noa4")
+    assert grund is None
+    assert (fund.phase, fund.ort, fund.we_anzahl) == (Phase.BAUBEGINN, "Norderstedt", 69)
+    assert len(fund.auszug) <= 300 and "Liesel-Hünichen-Weg" in fund.auszug
+    assert fund.suchanfrage == "Quelle noa4"
+
+
+def test_fruehphasen_artikel_wird_kein_web_fund(quelle):
+    from radar.web_recherche import bewerte_presseartikel, load_web_config
+
+    url = "https://www.noa4.de/norderstedter-modell-vorerst-auf-eis-gelegt/"
+    item = (
+        WOHNBAU_ITEM.replace(LIESEL_URL, url).replace("?p=14000", "?p=14100")
+        .replace("Spatenstich für 69 geförderte Wohnungen in Norderstedt", "Norderstedter Modell: 40 Wohnungen auf Eis")
+    )
+    adapter = RssAdapter(quelle, _FakeHttp({"category/lokal/feed/": _feed(item), url: ARTIKEL_MODELL}))
+    (dok,) = adapter.list_documents(adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))[0])
+    fund, grund = bewerte_presseartikel(dok.titel, dok.url, dok.text, load_web_config(load_settings()), quelle="noa4")
+    assert fund is None and "Frühphase" in grund
+
+
+def test_artikel_ausserhalb_des_umkreises_wird_kein_web_fund():
+    from radar.web_recherche import bewerte_presseartikel, load_web_config
+
+    fund, grund = bewerte_presseartikel(
+        "Spatenstich für 80 Wohnungen in Flensburg", "https://example.org/a",
+        "Spatenstich für 80 Wohnungen in Flensburg\n\nIn Flensburg wurde der Bau gestartet.",
+        load_web_config(load_settings()), quelle="test",
+    )
+    assert fund is None and "Umkreis" in grund
+
+
+def test_scraper_speichert_web_fund_aus_presseartikel(monkeypatch, tmp_path, quelle):
+    from dataclasses import replace
+
+    from radar import database
+    from radar.config import BetriebConfig, DatabaseConfig
+    from radar.scraper import run_full
+    from tests.conftest import FakeAnthropicClient
+
+    monkeypatch.setenv("SCRAPER_CONTACT", "test@example.com")
+    basis = load_settings()
+    settings = replace(
+        basis,
+        database=DatabaseConfig(path=str(tmp_path / "radar.db")),
+        llm=replace(basis.llm, cache_dir=str(tmp_path / "cache")),
+        betrieb=BetriebConfig(live_api_aufrufe=False),
+    )
+    http = _FakeHttp({"category/lokal/feed/": _feed(WOHNBAU_ITEM), LIESEL_URL: ARTIKEL_LIESEL})
+    monkeypatch.setattr("radar.scraper.load_sources", lambda s: [quelle])
+    monkeypatch.setattr("radar.scraper.HttpClient", lambda src, s: http)
+    (ergebnis,) = run_full(settings, client=FakeAnthropicClient([]), zeitraum=(date(2026, 8, 1), date(2026, 8, 31)))
+    assert ergebnis.web_funde == 1 and ergebnis.ok
+    conn = database.connect(settings)
+    try:
+        (fund,) = database.list_web_funde(conn)
+        assert (fund["phase"], fund["we_anzahl"], fund["ort"]) == ("BAUBEGINN", 69, "Norderstedt")
+        # zweiter Lauf: dieselbe URL -> kein Duplikat
+        run_full(settings, client=FakeAnthropicClient([]), zeitraum=(date(2026, 8, 1), date(2026, 8, 31)))
+        assert len(database.list_web_funde(conn)) == 1
+    finally:
+        conn.close()

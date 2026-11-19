@@ -69,6 +69,7 @@ class SourceRunResult:
     neue_treffer: list[NeuerTreffer] = field(default_factory=list)  # nur echte Neuanlagen, für radar/notifier.py
     llm_anfragen: int = 0  # tatsächlich gesendete API-Anfragen dieser Quelle (inkl. Retries)
     ohne_llm: int = 0  # Vorlagen, die wegen Budget/Notbremse nicht analysiert wurden (nächster Lauf versucht es)
+    web_funde: int = 0  # KI-frei als Web-Fund erkannte Presseartikel (Option web_fund_bewertung, Schritt 4 noa4)
     fehler: list[str] = field(default_factory=list)
     # Bewusst übersprungene Dokumente (zu groß) - kein Fehler, die Quelle gilt trotzdem als erfolgreich.
     warnungen: list[str] = field(default_factory=list)
@@ -277,6 +278,34 @@ def run(settings: Settings | None = None) -> list[SourceRunResult]:
 # -- Vollständiger Lauf: Scraper -> Parser -> Datenbank (Schritt 4) -------------------------------
 
 
+def _web_config_fuer(source: Source, settings: Settings):
+    """Web-Recherche-Konfiguration, wenn die Quelle Presseartikel KI-frei als Web-Fund bewerten soll
+    (`options.web_fund_bewertung`), sonst `None`. Kein Netzzugriff, keine Such-API."""
+    if not source.options.get("web_fund_bewertung"):
+        return None
+    from radar.web_recherche import load_web_config  # erst hier: wird nur von Presse-Quellen gebraucht
+
+    return load_web_config(settings)
+
+
+def _als_web_fund(conn, web_config, source: Source, sitzung: Sitzung, dokument: Dokument, result) -> None:
+    """Schritt 4 noa4: einen Presseartikel ohne KI wie ein Suchergebnis der Web-Recherche bewerten (Spatenstich,
+    Richtfest, Baugenehmigung ... mit Ort im Umkreis) und als Web-Fund speichern - sichtbar im Tab "Web-Recherche"
+    und im Recall, auch solange die KI-Auswertung aus ist. Ein Fehler hier stoppt nie die Quelle."""
+    from radar.web_recherche import bewerte_presseartikel
+
+    try:
+        fund, _ = bewerte_presseartikel(
+            dokument.titel, dokument.url, dokument.text or "", web_config,
+            quelle=source.name, veroeffentlicht=sitzung.datum.isoformat(),
+        )
+        if fund is not None:
+            database.upsert_web_fund(conn, fund)
+            result.web_funde += 1
+    except Exception as exc:  # noqa: BLE001 - Bewertung ist ein Zusatz, nie ein Grund für einen Quellen-Abbruch
+        result.warnungen.append(f"Web-Fund-Bewertung {dokument.external_id}: {exc}")
+
+
 def _collect_and_persist(
     adapter: SourceAdapter,
     http: HttpClient,
@@ -298,6 +327,7 @@ def _collect_and_persist(
     sessions: list[Sitzung] = adapter.list_sessions(start, end)
     result.sitzungen = len(sessions)
     committee_patterns = settings.committee_patterns_for(source)
+    web_config = _web_config_fuer(source, settings)
 
     vorlagen_ids: set[str] = set()
     for sitzung in sessions:
@@ -326,6 +356,8 @@ def _collect_and_persist(
                     # radar/sources/bv_hh.py) -> kein Download, `url` wird nicht abgerufen.
                     geladen.append((dokument, Textinhalt(text=dokument.text)))
                     result.text_dokumente += 1
+                    if web_config is not None:
+                        _als_web_fund(conn, web_config, source, sitzung, dokument, result)
                     continue
                 try:
                     pfad = http.download_pdf(dokument.url, dokument.external_id)
@@ -539,7 +571,7 @@ def _run_full_gesperrt(
             logger.info(
                 "Quelle '%s': %d Sitzungen, %d relevant, %d Vorlagen (%d bereits analysiert), "
                 "%d Dokumente, %d Downloads, %d ohne Download (Text), %d Treffer, %d LLM-Anfragen, %d Fehler, "
-                "%d PDFs übersprungen (zu groß)",
+                "%d PDFs übersprungen (zu groß), %d Web-Funde ohne KI",
                 result.source_id,
                 result.sitzungen,
                 result.relevante_sitzungen,
@@ -552,6 +584,7 @@ def _run_full_gesperrt(
                 result.llm_anfragen,
                 len(result.fehler),
                 len(result.warnungen),
+                result.web_funde,
             )
             if result.ohne_llm:
                 logger.warning(

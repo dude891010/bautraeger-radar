@@ -645,6 +645,39 @@ def pruefe_ergebnis(
     ), None
 
 
+MAX_AUSZUG_PRESSE = 300  # Presseartikel aus eigenen Quellen: kürzerer Auszug als bei Suchergebnissen (Urheberrecht)
+
+
+def bewerte_presseartikel(
+    titel: str,
+    url: str,
+    text: str,
+    config: WebRechercheConfig,
+    *,
+    quelle: str,
+    veroeffentlicht: str | None = None,
+    heute: date | None = None,
+) -> tuple[WebFund | None, str | None]:
+    """Presseartikel aus einer eigenen Quelle (radar/sources/rss.py, Schritt 4 noa4) KI-frei bewerten - mit
+    denselben Regeln wie die Web-Recherche (`pruefe_ergebnis`: Ort, Wohnbau-Begriff, Phase 3/4, kein kleines
+    ETW-Projekt), aber ohne Such-API. Ort = erster Ort aus der Ortsliste im Umkreis (nächster zuerst), dessen
+    Erkennungswort im Text steht; keiner -> kein Fund. `(Fund, None)` oder `(None, Grund)`."""
+    inhalt = text[len(titel):].strip() if text.startswith(titel) else text
+    for ort, entfernung in orte_im_radius(config):
+        if re.search(rf"\b{re.escape(ort.erkennungs_wort)}\b", f"{titel}\n{inhalt}", re.IGNORECASE):
+            auftrag = Suchauftrag(
+                ort=ort, entfernung_km=entfernung, phase=Phase.BAUBEGINN, anfrage=f"Quelle {quelle}"
+            )
+            fund, grund = pruefe_ergebnis(
+                Suchergebnis(titel=titel, url=url, inhalt=inhalt, veroeffentlicht=veroeffentlicht), auftrag, config,
+                heute,
+            )
+            if fund is not None:
+                fund.auszug = inhalt[:MAX_AUSZUG_PRESSE]
+            return fund, grund
+    return None, "kein Ort im Umkreis genannt"
+
+
 def bewerte_ergebnis(
     ergebnis: Suchergebnis, auftrag: Suchauftrag, config: WebRechercheConfig, heute: date | None = None
 ) -> WebFund | None:

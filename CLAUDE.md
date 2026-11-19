@@ -885,13 +885,14 @@ geladen** (seit 20.11.2026 13 von 18 mit Presse, siehe Phase 6) (20.11.2026 erg�
 B 25/0448 Rahmenplan "über 1.200 Wohneinheiten", Richtweg -> B 26/0024 = B-Plan 305 "Richtweg" mit Massenstudie
 "Garstedter Dreieck", BF1 ca. 63 / BF2 ca. 77 WE). Ohne geprüfte Vorlage: Glashütter Kirchenweg (keine WE-Zahl),
 Berliner Allee 4-12 (privat, nie im Rat), Bahnhofstr./Schweriner Str. (unklar, Rückfrage Hummel), 3 Presse-Projekte.
+Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 **Phase 6 (20.11.2026): Konzept `docs/KONZEPT_PRESSEQUELLEN.md`, Quelle A umgesetzt.** Neuer Adapter-Typ
 `pressemitteilungen` (`radar/sources/pressemitteilungen.py`), Quelle `norderstedt_presse` (`config/sources.yaml`,
 verified + enabled): die Seite "Pressestelle" listet alle ~740 Pressemitteilungen als PDF-Link
 `/media/custom/3224_<ID>_1.PDF?<Unix-Zeitstempel>`, Titel als Linktext. Je Meldung eine `Sitzung` (Gremium
 "Pressemitteilung", Datum aus dem Zeitstempel = vermutlich Hochladezeit, Näherung) mit einem `Dokument`
 (`vorlage_external_id` "pm-<ID>", `vorlage_nr` "PM <ID>") - keine Schemaänderung. Nur Titel nach `titel_muster`
-(Regex in einfachen YAML-Anführungszeichen, sonst wird `` zum Steuerzeichen; Wortgrenzen nötig, "Wohn" traf
+(Regex in einfachen YAML-Anführungszeichen, sonst wird `\b` zum Steuerzeichen; Wortgrenzen nötig, "Wohn" traf
 "gewohnt") werden gelistet: 24 von 736, ab 2024 17. Fail loud ohne einen einzigen PDF-Link. Neu `scrape --quelle ID`
 (`run_full(quellen=...)`, unbekannte ID -> Exit 2). Erster Lauf 20.11.2026: 17 PDFs, 0 Fehler, 35 s; Vorfilter
 verwarf korrekt 2 Schulbau-Meldungen (Campus Glashütte), 15 warten auf die KI. Neuer echter Hinweis: PM 14991
@@ -922,7 +923,17 @@ Richtweg, Grüne Heyde, Harkshörner Weg. Etwa 6 Fehltreffer aus Polizeimeldunge
 "Wohnung") -> Einzahl "Wohnung" aus `titel_muster` beider Presse-Quellen genommen (Pressemitteilungen unverändert
 24/17). Recall: Fixture-Feld `presseartikel` (Liesel-Hünichen-Weg -> "Artikel 13879"), `messe_unterlagen()` zählt
 Presseartikel ohne Datei (`typ = 'presseartikel'`); Ausgabe heißt jetzt "Unterlagen bereits geladen": **13 von 18**.
-3 neue Tests, 508 insgesamt. **Offen:** Schritt 4 KI-freier Web-Fund für Spatenstich/Baubeginn (optional). Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
+3 neue Tests, 508 insgesamt. Schritt 4 ✅ (20.11.2026): Option `web_fund_bewertung` (noa4: an). Für jedes
+Text-Dokument einer solchen Quelle ruft `scraper._als_web_fund()` `web_recherche.bewerte_presseartikel()` auf - dieselben
+KI-freien Regeln wie die Web-Recherche (`pruefe_ergebnis`: Ort im 50-km-Umkreis aus `config/web_recherche.yaml`,
+Wohnbau-Begriff, Phase 3/4, nur angekündigter Baubeginn zählt nicht), ohne Such-API. Treffer -> `web_funde` (Dedup über
+URL), Auszug auf `MAX_AUSZUG_PRESSE` = 300 Zeichen gekürzt (Urheberrecht; Suchergebnisse 600). Fehler der Bewertung
+sind nur eine Warnung. Zähler `SourceRunResult.web_funde` ("Web-Funde ohne KI" in der Zusammenfassung). Echter Lauf:
+Liesel-Hünichen-Weg als BAUBEGINN, 69 WE -> **Recall erstmals 1 von 18** (ohne KI, ohne Guthaben). "Norderstedter Modell
+auf Eis" korrekt verworfen (Frühphase). **Achtung, Backslash-Falle:** beim Einfügen von Code per Python-Heredoc wurden
+Backslash-b und Backslash-n mehrfach zu Steuerzeichen bzw. echten Zeilenumbrüchen - danach Dateien auf das Zeichen
+0x08 prüfen (`grep -c` mit `$'\x08'`) bzw. `ruff check` laufen lassen. 4 neue Tests, 512 insgesamt. noa4.de damit
+vollständig (Schritte 1-4).
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

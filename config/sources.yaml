@@ -89,6 +89,7 @@ sources:
       # der erste Lauf (Backfill) einmal alle (~100 Seiten x 2 s). Die Sitemap ist dafür nicht nötig.
       max_seiten: 150
       artikel_selektor: 'article.post-detail .the_content'   # Schritt 2: Volltext je passendem Artikel
+      web_fund_bewertung: true          # Schritt 4: Spatenstich/Richtfest/Baugenehmigung KI-frei als Web-Fund
       ort_muster:
         - '\bNorderstedt'
       titel_muster:                    # wie norderstedt_presse; einfache Anführungszeichen, sonst wird \b ein Steuerzeichen

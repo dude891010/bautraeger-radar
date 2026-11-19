@@ -42,7 +42,7 @@ Informationsveranstaltung am 25. November“ (PM vom 13.11.2026) und die Auslegu
 | 1 | RSS-Feed „Lokal“ lesen, Vorfilter auf Titel/Anriss, Text = Titel + Anriss | ✅ 20.11.2026 (Quelle `noa4`) |
 | 2 | Artikelseite laden, Volltext herauslösen | ✅ 20.11.2026 (`artikel_selektor`) |
 | 3 | Ältere Artikel nachladen – **statt Sitemap durch tiefes Blättern im Feed** (Seite ~100 = Anfang 2025, dann 404; die Sitemap hat keine Titel/Anrisse für den Vorfilter) | ✅ 20.11.2026 (`max_seiten: 150`) |
-| 4 | KI-freier Web-Fund für Spatenstich/Baubeginn | offen, optional (~2 h) |
+| 4 | KI-freier Web-Fund für Spatenstich/Baubeginn | ✅ 20.11.2026 (`web_fund_bewertung`) – Liesel-Hünichen-Weg als erster echter Fund |
 
 **Rechtlich/höflich (geprüft 20.11.2026):**
 - robots.txt sperrt nur Admin-Bereich und Suche; Artikel und Feeds sind erlaubt.
