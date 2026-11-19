@@ -1,0 +1,1253 @@
+		<!doctype html>
+		<html lang="de">
+				<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+			<link rel="profile" href="https://gmpg.org/xfn/11">
+			<script data-cfasync="false" data-no-defer="1" data-no-minify="1" data-no-optimize="1">var ewww_webp_supported=!1;function check_webp_feature(A,e){var w;e=void 0!==e?e:function(){},ewww_webp_supported?e(ewww_webp_supported):((w=new Image).onload=function(){ewww_webp_supported=0<w.width&&0<w.height,e&&e(ewww_webp_supported)},w.onerror=function(){e&&e(!1)},w.src="data:image/webp;base64,"+{alpha:"UklGRkoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAARBxAR/Q9ERP8DAABWUDggGAAAABQBAJ0BKgEAAQAAAP4AAA3AAP7mtQAAAA=="}[A])}check_webp_feature("alpha");</script><script data-cfasync="false" data-no-defer="1" data-no-minify="1" data-no-optimize="1">var Arrive=function(c,w){"use strict";if(c.MutationObserver&&"undefined"!=typeof HTMLElement){var r,a=0,u=(r=HTMLElement.prototype.matches||HTMLElement.prototype.webkitMatchesSelector||HTMLElement.prototype.mozMatchesSelector||HTMLElement.prototype.msMatchesSelector,{matchesSelector:function(e,t){return e instanceof HTMLElement&&r.call(e,t)},addMethod:function(e,t,r){var a=e[t];e[t]=function(){return r.length==arguments.length?r.apply(this,arguments):"function"==typeof a?a.apply(this,arguments):void 0}},callCallbacks:function(e,t){t&&t.options.onceOnly&&1==t.firedElems.length&&(e=[e[0]]);for(var r,a=0;r=e[a];a++)r&&r.callback&&r.callback.call(r.elem,r.elem);t&&t.options.onceOnly&&1==t.firedElems.length&&t.me.unbindEventWithSelectorAndCallback.call(t.target,t.selector,t.callback)},checkChildNodesRecursively:function(e,t,r,a){for(var i,n=0;i=e[n];n++)r(i,t,a)&&a.push({callback:t.callback,elem:i}),0<i.childNodes.length&&u.checkChildNodesRecursively(i.childNodes,t,r,a)},mergeArrays:function(e,t){var r,a={};for(r in e)e.hasOwnProperty(r)&&(a[r]=e[r]);for(r in t)t.hasOwnProperty(r)&&(a[r]=t[r]);return a},toElementsArray:function(e){return e=void 0!==e&&("number"!=typeof e.length||e===c)?[e]:e}}),e=(l.prototype.addEvent=function(e,t,r,a){a={target:e,selector:t,options:r,callback:a,firedElems:[]};return this._beforeAdding&&this._beforeAdding(a),this._eventsBucket.push(a),a},l.prototype.removeEvent=function(e){for(var t,r=this._eventsBucket.length-1;t=this._eventsBucket[r];r--)e(t)&&(this._beforeRemoving&&this._beforeRemoving(t),(t=this._eventsBucket.splice(r,1))&&t.length&&(t[0].callback=null))},l.prototype.beforeAdding=function(e){this._beforeAdding=e},l.prototype.beforeRemoving=function(e){this._beforeRemoving=e},l),t=function(i,n){var o=new e,l=this,s={fireOnAttributesModification:!1};return o.beforeAdding(function(t){var e=t.target;e!==c.document&&e!==c||(e=document.getElementsByTagName("html")[0]);var r=new MutationObserver(function(e){n.call(this,e,t)}),a=i(t.options);r.observe(e,a),t.observer=r,t.me=l}),o.beforeRemoving(function(e){e.observer.disconnect()}),this.bindEvent=function(e,t,r){t=u.mergeArrays(s,t);for(var a=u.toElementsArray(this),i=0;i<a.length;i++)o.addEvent(a[i],e,t,r)},this.unbindEvent=function(){var r=u.toElementsArray(this);o.removeEvent(function(e){for(var t=0;t<r.length;t++)if(this===w||e.target===r[t])return!0;return!1})},this.unbindEventWithSelectorOrCallback=function(r){var a=u.toElementsArray(this),i=r,e="function"==typeof r?function(e){for(var t=0;t<a.length;t++)if((this===w||e.target===a[t])&&e.callback===i)return!0;return!1}:function(e){for(var t=0;t<a.length;t++)if((this===w||e.target===a[t])&&e.selector===r)return!0;return!1};o.removeEvent(e)},this.unbindEventWithSelectorAndCallback=function(r,a){var i=u.toElementsArray(this);o.removeEvent(function(e){for(var t=0;t<i.length;t++)if((this===w||e.target===i[t])&&e.selector===r&&e.callback===a)return!0;return!1})},this},i=new function(){var s={fireOnAttributesModification:!1,onceOnly:!1,existing:!1};function n(e,t,r){return!(!u.matchesSelector(e,t.selector)||(e._id===w&&(e._id=a++),-1!=t.firedElems.indexOf(e._id)))&&(t.firedElems.push(e._id),!0)}var c=(i=new t(function(e){var t={attributes:!1,childList:!0,subtree:!0};return e.fireOnAttributesModification&&(t.attributes=!0),t},function(e,i){e.forEach(function(e){var t=e.addedNodes,r=e.target,a=[];null!==t&&0<t.length?u.checkChildNodesRecursively(t,i,n,a):"attributes"===e.type&&n(r,i)&&a.push({callback:i.callback,elem:r}),u.callCallbacks(a,i)})})).bindEvent;return i.bindEvent=function(e,t,r){t=void 0===r?(r=t,s):u.mergeArrays(s,t);var a=u.toElementsArray(this);if(t.existing){for(var i=[],n=0;n<a.length;n++)for(var o=a[n].querySelectorAll(e),l=0;l<o.length;l++)i.push({callback:r,elem:o[l]});if(t.onceOnly&&i.length)return r.call(i[0].elem,i[0].elem);setTimeout(u.callCallbacks,1,i)}c.call(this,e,t,r)},i},o=new function(){var a={};function i(e,t){return u.matchesSelector(e,t.selector)}var n=(o=new t(function(){return{childList:!0,subtree:!0}},function(e,r){e.forEach(function(e){var t=e.removedNodes,e=[];null!==t&&0<t.length&&u.checkChildNodesRecursively(t,r,i,e),u.callCallbacks(e,r)})})).bindEvent;return o.bindEvent=function(e,t,r){t=void 0===r?(r=t,a):u.mergeArrays(a,t),n.call(this,e,t,r)},o};d(HTMLElement.prototype),d(NodeList.prototype),d(HTMLCollection.prototype),d(HTMLDocument.prototype),d(Window.prototype);var n={};return s(i,n,"unbindAllArrive"),s(o,n,"unbindAllLeave"),n}function l(){this._eventsBucket=[],this._beforeAdding=null,this._beforeRemoving=null}function s(e,t,r){u.addMethod(t,r,e.unbindEvent),u.addMethod(t,r,e.unbindEventWithSelectorOrCallback),u.addMethod(t,r,e.unbindEventWithSelectorAndCallback)}function d(e){e.arrive=i.bindEvent,s(i,e,"unbindArrive"),e.leave=o.bindEvent,s(o,e,"unbindLeave")}}(window,void 0),ewww_webp_supported=!1;function check_webp_feature(e,t){var r;ewww_webp_supported?t(ewww_webp_supported):((r=new Image).onload=function(){ewww_webp_supported=0<r.width&&0<r.height,t(ewww_webp_supported)},r.onerror=function(){t(!1)},r.src="data:image/webp;base64,"+{alpha:"UklGRkoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAARBxAR/Q9ERP8DAABWUDggGAAAABQBAJ0BKgEAAQAAAP4AAA3AAP7mtQAAAA==",animation:"UklGRlIAAABXRUJQVlA4WAoAAAASAAAAAAAAAAAAQU5JTQYAAAD/////AABBTk1GJgAAAAAAAAAAAAAAAAAAAGQAAABWUDhMDQAAAC8AAAAQBxAREYiI/gcA"}[e])}function ewwwLoadImages(e){if(e){for(var t=document.querySelectorAll(".batch-image img, .image-wrapper a, .ngg-pro-masonry-item a, .ngg-galleria-offscreen-seo-wrapper a"),r=0,a=t.length;r<a;r++)ewwwAttr(t[r],"data-src",t[r].getAttribute("data-webp")),ewwwAttr(t[r],"data-thumbnail",t[r].getAttribute("data-webp-thumbnail"));for(var i=document.querySelectorAll("div.woocommerce-product-gallery__image"),r=0,a=i.length;r<a;r++)ewwwAttr(i[r],"data-thumb",i[r].getAttribute("data-webp-thumb"))}for(var n=document.querySelectorAll("video"),r=0,a=n.length;r<a;r++)ewwwAttr(n[r],"poster",e?n[r].getAttribute("data-poster-webp"):n[r].getAttribute("data-poster-image"));for(var o,l=document.querySelectorAll("img.ewww_webp_lazy_load"),r=0,a=l.length;r<a;r++)e&&(ewwwAttr(l[r],"data-lazy-srcset",l[r].getAttribute("data-lazy-srcset-webp")),ewwwAttr(l[r],"data-srcset",l[r].getAttribute("data-srcset-webp")),ewwwAttr(l[r],"data-lazy-src",l[r].getAttribute("data-lazy-src-webp")),ewwwAttr(l[r],"data-src",l[r].getAttribute("data-src-webp")),ewwwAttr(l[r],"data-orig-file",l[r].getAttribute("data-webp-orig-file")),ewwwAttr(l[r],"data-medium-file",l[r].getAttribute("data-webp-medium-file")),ewwwAttr(l[r],"data-large-file",l[r].getAttribute("data-webp-large-file")),null!=(o=l[r].getAttribute("srcset"))&&!1!==o&&o.includes("R0lGOD")&&ewwwAttr(l[r],"src",l[r].getAttribute("data-lazy-src-webp"))),l[r].className=l[r].className.replace(/\bewww_webp_lazy_load\b/,"");for(var s=document.querySelectorAll(".ewww_webp"),r=0,a=s.length;r<a;r++)e?(ewwwAttr(s[r],"srcset",s[r].getAttribute("data-srcset-webp")),ewwwAttr(s[r],"src",s[r].getAttribute("data-src-webp")),ewwwAttr(s[r],"data-orig-file",s[r].getAttribute("data-webp-orig-file")),ewwwAttr(s[r],"data-medium-file",s[r].getAttribute("data-webp-medium-file")),ewwwAttr(s[r],"data-large-file",s[r].getAttribute("data-webp-large-file")),ewwwAttr(s[r],"data-large_image",s[r].getAttribute("data-webp-large_image")),ewwwAttr(s[r],"data-src",s[r].getAttribute("data-webp-src"))):(ewwwAttr(s[r],"srcset",s[r].getAttribute("data-srcset-img")),ewwwAttr(s[r],"src",s[r].getAttribute("data-src-img"))),s[r].className=s[r].className.replace(/\bewww_webp\b/,"ewww_webp_loaded");window.jQuery&&jQuery.fn.isotope&&jQuery.fn.imagesLoaded&&(jQuery(".fusion-posts-container-infinite").imagesLoaded(function(){jQuery(".fusion-posts-container-infinite").hasClass("isotope")&&jQuery(".fusion-posts-container-infinite").isotope()}),jQuery(".fusion-portfolio:not(.fusion-recent-works) .fusion-portfolio-wrapper").imagesLoaded(function(){jQuery(".fusion-portfolio:not(.fusion-recent-works) .fusion-portfolio-wrapper").isotope()}))}function ewwwWebPInit(e){ewwwLoadImages(e),ewwwNggLoadGalleries(e),document.arrive(".ewww_webp",function(){ewwwLoadImages(e)}),document.arrive(".ewww_webp_lazy_load",function(){ewwwLoadImages(e)}),document.arrive("videos",function(){ewwwLoadImages(e)}),"loading"==document.readyState?document.addEventListener("DOMContentLoaded",ewwwJSONParserInit):("undefined"!=typeof galleries&&ewwwNggParseGalleries(e),ewwwWooParseVariations(e))}function ewwwAttr(e,t,r){null!=r&&!1!==r&&e.setAttribute(t,r)}function ewwwJSONParserInit(){"undefined"!=typeof galleries&&check_webp_feature("alpha",ewwwNggParseGalleries),check_webp_feature("alpha",ewwwWooParseVariations)}function ewwwWooParseVariations(e){if(e)for(var t=document.querySelectorAll("form.variations_form"),r=0,a=t.length;r<a;r++){var i=t[r].getAttribute("data-product_variations"),n=!1;try{for(var o in i=JSON.parse(i))void 0!==i[o]&&void 0!==i[o].image&&(void 0!==i[o].image.src_webp&&(i[o].image.src=i[o].image.src_webp,n=!0),void 0!==i[o].image.srcset_webp&&(i[o].image.srcset=i[o].image.srcset_webp,n=!0),void 0!==i[o].image.full_src_webp&&(i[o].image.full_src=i[o].image.full_src_webp,n=!0),void 0!==i[o].image.gallery_thumbnail_src_webp&&(i[o].image.gallery_thumbnail_src=i[o].image.gallery_thumbnail_src_webp,n=!0),void 0!==i[o].image.thumb_src_webp&&(i[o].image.thumb_src=i[o].image.thumb_src_webp,n=!0));n&&ewwwAttr(t[r],"data-product_variations",JSON.stringify(i))}catch(e){}}}function ewwwNggParseGalleries(e){if(e)for(var t in galleries){var r=galleries[t];galleries[t].images_list=ewwwNggParseImageList(r.images_list)}}function ewwwNggLoadGalleries(e){e&&document.addEventListener("ngg.galleria.themeadded",function(e,t){window.ngg_galleria._create_backup=window.ngg_galleria.create,window.ngg_galleria.create=function(e,t){var r=$(e).data("id");return galleries["gallery_"+r].images_list=ewwwNggParseImageList(galleries["gallery_"+r].images_list),window.ngg_galleria._create_backup(e,t)}})}function ewwwNggParseImageList(e){for(var t in e){var r=e[t];if(void 0!==r["image-webp"]&&(e[t].image=r["image-webp"],delete e[t]["image-webp"]),void 0!==r["thumb-webp"]&&(e[t].thumb=r["thumb-webp"],delete e[t]["thumb-webp"]),void 0!==r.full_image_webp&&(e[t].full_image=r.full_image_webp,delete e[t].full_image_webp),void 0!==r.srcsets)for(var a in r.srcsets)nggSrcset=r.srcsets[a],void 0!==r.srcsets[a+"-webp"]&&(e[t].srcsets[a]=r.srcsets[a+"-webp"],delete e[t].srcsets[a+"-webp"]);if(void 0!==r.full_srcsets)for(var i in r.full_srcsets)nggFSrcset=r.full_srcsets[i],void 0!==r.full_srcsets[i+"-webp"]&&(e[t].full_srcsets[i]=r.full_srcsets[i+"-webp"],delete e[t].full_srcsets[i+"-webp"])}return e}check_webp_feature("alpha",ewwwWebPInit);</script><title>Spatenstich für 69 geförderte Wohnungen in Norderstedt</title>
+<meta name='robots' content='max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+<link rel="canonical" href="https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/">
+<meta name="description" content="Die Fertigstellung ist für das vierte Quartal 2027 geplant.">
+<meta property="og:title" content="Spatenstich für 69 geförderte Wohnungen in Norderstedt">
+<meta property="og:type" content="article">
+<meta property="og:description" content="Die Fertigstellung ist für das vierte Quartal 2027 geplant.">
+<meta property="og:url" content="https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="noa4">
+<meta property="article:published_time" content="2026-08-06T16:19:06+02:00">
+<meta property="article:modified_time" content="2026-08-06T16:43:40+02:00">
+<meta property="og:updated_time" content="2026-08-06T16:43:40+02:00">
+<meta property="article:section" content="Lokal">
+<meta property="article:tag" content="Harksheide">
+<meta property="article:tag" content="Wohnraum">
+<meta property="article:tag" content="Wohnungen">
+<meta name="twitter:card" content="summary_large_image">
+<link rel='dns-prefetch' href='//code.responsivevoice.org' />
+<link rel='dns-prefetch' href='//www.googletagmanager.com' />
+<link rel="alternate" type="application/rss+xml" title="noa4 &raquo; Feed" href="https://www.noa4.de/feed/" />
+<link rel="alternate" type="application/rss+xml" title="noa4 &raquo; Kommentar-Feed" href="https://www.noa4.de/comments/feed/" />
+<link rel="alternate" type="text/calendar" title="noa4 &raquo; iCal Feed" href="https://www.noa4.de/events/?ical=1" />
+<style>[consent-id]:not(.rcb-content-blocker):not([consent-transaction-complete]):not([consent-visual-use-parent^="children:"]):not([consent-confirm]){opacity:0!important;}
+.rcb-content-blocker+.rcb-content-blocker-children-fallback~*{display:none!important;}</style><link rel="preload" href="https://www.noa4.de/wp-content/uploads/01cc768f9a/dist/2051010294.js?ver=cfdeb40e786de82f627323f9550f905f" as="script" fetchpriority="low" />
+<link rel="preload" href="https://www.noa4.de/wp-content/uploads/01cc768f9a/dist/595673853.js?ver=b913731c20c7a80acf28845878f56874" as="script" fetchpriority="low" />
+<link rel="preload" href="https://www.noa4.de/wp-content/uploads/01cc768f9a/dist/1999545375.js?ver=6dc2a9d865513c2ba28f1998a3c479f5" as="script" fetchpriority="low" />
+<script defer data-cfasync="false" src="https://www.noa4.de/wp-content/uploads/01cc768f9a/dist/2051010294.js?ver=cfdeb40e786de82f627323f9550f905f"></script>
+<script type="application/json" data-skip-lazy-load="js-extra" data-skip-moving="true" data-no-defer nitro-exclude data-alt-type="application/ld+json" data-dont-merge data-wpmeteor-nooptimize="true" data-cfasync="false" id="a972be7d1c047419a9911556eeab6ed9c1-js-extra">{"slug":"real-cookie-banner","textDomain":"real-cookie-banner","version":"5.4.3","restUrl":"https:\/\/www.noa4.de\/wp-json\/real-cookie-banner\/v1\/","restNamespace":"real-cookie-banner\/v1","restPathObfuscateOffset":"196b5104732f9c67","restRoot":"https:\/\/www.noa4.de\/wp-json\/","restQuery":{"_v":"5.4.3","_locale":"user"},"restNonce":"2faafea6bc","restRecreateNonceEndpoint":"https:\/\/www.noa4.de\/wp-admin\/admin-ajax.php?action=rest-nonce","publicUrl":"https:\/\/www.noa4.de\/wp-content\/plugins\/real-cookie-banner\/public\/","chunkFolder":"dist","chunksLanguageFolder":"https:\/\/www.noa4.de\/wp-content\/languages\/mo-cache\/real-cookie-banner\/","chunks":{"chunk-config-tab-blocker.lite.js":["de_DE-83d48f038e1cf6148175589160cda67e","de_DE-05b3d538a5372bef4cd060dd12ee2b3b","de_DE-24de88ac89ca0a1363889bd3fd6e1c50","de_DE-93ec68381a9f458fbce3acbccd434479"],"chunk-config-tab-blocker.pro.js":["de_DE-ddf5ae983675e7b6eec2afc2d53654a2","de_DE-1a53216be97c3c5a19848ebfc800bec6","de_DE-e516a6866b9a31db231ab92dedaa8b29","de_DE-1aac2e7f59d941d7ed1061d1018d2957"],"chunk-config-tab-consent.lite.js":["de_DE-3823d7521a3fc2857511061e0d660408"],"chunk-config-tab-consent.pro.js":["de_DE-9cb9ecf8c1e8ce14036b5f3a5e19f098"],"chunk-config-tab-cookies.lite.js":["de_DE-1a51b37d0ef409906245c7ed80d76040","de_DE-05b3d538a5372bef4cd060dd12ee2b3b","de_DE-24de88ac89ca0a1363889bd3fd6e1c50"],"chunk-config-tab-cookies.pro.js":["de_DE-572ee75deed92e7a74abba4b86604687","de_DE-1a53216be97c3c5a19848ebfc800bec6","de_DE-e516a6866b9a31db231ab92dedaa8b29"],"chunk-config-tab-dashboard.lite.js":["de_DE-f843c51245ecd2b389746275b3da66b6"],"chunk-config-tab-dashboard.pro.js":["de_DE-ae5ae8f925f0409361cfe395645ac077"],"chunk-config-tab-import.lite.js":["de_DE-66df94240f04843e5a208823e466a850"],"chunk-config-tab-import.pro.js":["de_DE-e5fee6b51986d4ff7a051d6f6a7b076a"],"chunk-config-tab-licensing.lite.js":["de_DE-e01f803e4093b19d6787901b9591b5a6"],"chunk-config-tab-licensing.pro.js":["de_DE-4918ea9704f47c2055904e4104d4ffba"],"chunk-config-tab-scanner.lite.js":["de_DE-b10b39f1099ef599835c729334e38429"],"chunk-config-tab-scanner.pro.js":["de_DE-752a1502ab4f0bebfa2ad50c68ef571f"],"chunk-config-tab-settings.lite.js":["de_DE-37978e0b06b4eb18b16164a2d9c93a2c"],"chunk-config-tab-settings.pro.js":["de_DE-e59d3dcc762e276255c8989fbd1f80e3"],"chunk-config-tab-tcf.lite.js":["de_DE-4f658bdbf0aa370053460bc9e3cd1f69","de_DE-05b3d538a5372bef4cd060dd12ee2b3b","de_DE-93ec68381a9f458fbce3acbccd434479"],"chunk-config-tab-tcf.pro.js":["de_DE-e1e83d5b8a28f1f91f63b9de2a8b181a","de_DE-1a53216be97c3c5a19848ebfc800bec6","de_DE-1aac2e7f59d941d7ed1061d1018d2957"]},"others":{"customizeValuesBanner":"{\"layout\":{\"type\":\"dialog\",\"maxHeightEnabled\":true,\"maxHeight\":740,\"dialogMaxWidth\":530,\"dialogPosition\":\"middleCenter\",\"dialogMargin\":[0,0,0,0],\"bannerPosition\":\"bottom\",\"bannerMaxWidth\":1024,\"dialogBorderRadius\":3,\"borderRadius\":5,\"animationIn\":\"slideInUp\",\"animationInDuration\":500,\"animationInOnlyMobile\":true,\"animationOut\":\"none\",\"animationOutDuration\":500,\"animationOutOnlyMobile\":true,\"overlay\":true,\"overlayBg\":\"#000000\",\"overlayBgAlpha\":50,\"overlayBlur\":2},\"decision\":{\"acceptAll\":\"button\",\"acceptEssentials\":\"button\",\"showCloseIcon\":false,\"acceptIndividual\":\"link\",\"buttonOrder\":\"all,essential,save,individual\",\"showGroups\":false,\"groupsFirstView\":false,\"saveButton\":\"always\"},\"design\":{\"bg\":\"#ffffff\",\"textAlign\":\"center\",\"linkTextDecoration\":\"underline\",\"borderWidth\":0,\"borderColor\":\"#ffffff\",\"fontSize\":13,\"fontColor\":\"#2b2b2b\",\"fontInheritFamily\":true,\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"fontWeight\":\"normal\",\"boxShadowEnabled\":true,\"boxShadowOffsetX\":0,\"boxShadowOffsetY\":5,\"boxShadowBlurRadius\":13,\"boxShadowSpreadRadius\":0,\"boxShadowColor\":\"#000000\",\"boxShadowColorAlpha\":20},\"headerDesign\":{\"inheritBg\":true,\"bg\":\"#f4f4f4\",\"inheritTextAlign\":true,\"textAlign\":\"center\",\"padding\":[17,20,15,20],\"logo\":\"\",\"logoRetina\":\"\",\"logoMaxHeight\":40,\"logoPosition\":\"left\",\"logoMargin\":[5,15,5,15],\"fontSize\":20,\"fontColor\":\"#2b2b2b\",\"fontInheritFamily\":true,\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"fontWeight\":\"normal\",\"borderWidth\":1,\"borderColor\":\"#efefef\"},\"bodyDesign\":{\"padding\":[15,20,5,20],\"descriptionInheritFontSize\":true,\"descriptionFontSize\":13,\"dottedGroupsInheritFontSize\":true,\"dottedGroupsFontSize\":13,\"dottedGroupsBulletColor\":\"#15779b\",\"teachingsInheritTextAlign\":true,\"teachingsTextAlign\":\"center\",\"teachingsSeparatorActive\":true,\"teachingsSeparatorWidth\":50,\"teachingsSeparatorHeight\":1,\"teachingsSeparatorColor\":\"#15779b\",\"teachingsInheritFontSize\":false,\"teachingsFontSize\":12,\"teachingsInheritFontColor\":false,\"teachingsFontColor\":\"#757575\",\"accordionMargin\":[10,0,5,0],\"accordionPadding\":[5,10,5,10],\"accordionArrowType\":\"outlined\",\"accordionArrowColor\":\"#15779b\",\"accordionBg\":\"#ffffff\",\"accordionActiveBg\":\"#f9f9f9\",\"accordionHoverBg\":\"#efefef\",\"accordionBorderWidth\":1,\"accordionBorderColor\":\"#efefef\",\"accordionTitleFontSize\":12,\"accordionTitleFontColor\":\"#2b2b2b\",\"accordionTitleFontWeight\":\"normal\",\"accordionDescriptionMargin\":[5,0,0,0],\"accordionDescriptionFontSize\":12,\"accordionDescriptionFontColor\":\"#757575\",\"accordionDescriptionFontWeight\":\"normal\",\"acceptAllOneRowLayout\":false,\"acceptAllPadding\":[10,10,10,10],\"acceptAllBg\":\"#15779b\",\"acceptAllTextAlign\":\"center\",\"acceptAllFontSize\":18,\"acceptAllFontColor\":\"#ffffff\",\"acceptAllFontWeight\":\"normal\",\"acceptAllBorderWidth\":0,\"acceptAllBorderColor\":\"#000000\",\"acceptAllHoverBg\":\"#11607d\",\"acceptAllHoverFontColor\":\"#ffffff\",\"acceptAllHoverBorderColor\":\"#000000\",\"acceptEssentialsUseAcceptAll\":true,\"acceptEssentialsButtonType\":\"\",\"acceptEssentialsPadding\":[10,10,10,10],\"acceptEssentialsBg\":\"#efefef\",\"acceptEssentialsTextAlign\":\"center\",\"acceptEssentialsFontSize\":18,\"acceptEssentialsFontColor\":\"#0a0a0a\",\"acceptEssentialsFontWeight\":\"normal\",\"acceptEssentialsBorderWidth\":0,\"acceptEssentialsBorderColor\":\"#000000\",\"acceptEssentialsHoverBg\":\"#e8e8e8\",\"acceptEssentialsHoverFontColor\":\"#000000\",\"acceptEssentialsHoverBorderColor\":\"#000000\",\"acceptIndividualPadding\":[5,5,5,5],\"acceptIndividualBg\":\"#ffffff\",\"acceptIndividualTextAlign\":\"center\",\"acceptIndividualFontSize\":16,\"acceptIndividualFontColor\":\"#15779b\",\"acceptIndividualFontWeight\":\"normal\",\"acceptIndividualBorderWidth\":0,\"acceptIndividualBorderColor\":\"#000000\",\"acceptIndividualHoverBg\":\"#ffffff\",\"acceptIndividualHoverFontColor\":\"#11607d\",\"acceptIndividualHoverBorderColor\":\"#000000\"},\"footerDesign\":{\"poweredByLink\":true,\"inheritBg\":false,\"bg\":\"#fcfcfc\",\"inheritTextAlign\":true,\"textAlign\":\"center\",\"padding\":[10,20,15,20],\"fontSize\":14,\"fontColor\":\"#757474\",\"fontInheritFamily\":true,\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"fontWeight\":\"normal\",\"hoverFontColor\":\"#2b2b2b\",\"borderWidth\":1,\"borderColor\":\"#efefef\",\"languageSwitcher\":\"flags\"},\"texts\":{\"headline\":\"Privatsph\\u00e4re-Einstellungen\",\"description\":\"Wir verwenden Cookies und \\u00e4hnliche Technologien auf unserer Website und verarbeiten personenbezogene Daten von dir (z.B. IP-Adresse), um z.B. Inhalte und Anzeigen zu personalisieren, Medien von Drittanbietern einzubinden oder Zugriffe auf unsere Website zu analysieren. Die Datenverarbeitung kann auch erst in Folge gesetzter Cookies stattfinden. Wir teilen diese Daten mit Dritten, die wir in den Privatsph\\u00e4re-Einstellungen benennen.<br \\\/><br \\\/>Die Datenverarbeitung kann mit deiner Einwilligung oder auf Basis eines berechtigten Interesses erfolgen, dem du in den Privatsph\\u00e4re-Einstellungen widersprechen kannst. Du hast das Recht, nicht einzuwilligen und deine Einwilligung zu einem sp\\u00e4teren Zeitpunkt zu \\u00e4ndern oder zu widerrufen. Weitere Informationen zur Verwendung deiner Daten findest du in unserer {{privacyPolicy}}Datenschutzerkl\\u00e4rung{{\\\/privacyPolicy}}.\",\"acceptAll\":\"Alle akzeptieren\",\"acceptEssentials\":\"Weiter ohne Einwilligung\",\"acceptIndividual\":\"Privatsph\\u00e4re-Einstellungen individuell festlegen\",\"poweredBy\":\"1\",\"dataProcessingInUnsafeCountries\":\"Einige Services verarbeiten personenbezogene Daten in unsicheren Drittl\\u00e4ndern. Mit deiner Einwilligung stimmst du auch der Datenverarbeitung gekennzeichneter Services gem\\u00e4\\u00df {{legalBasis}} zu, mit Risiken wie unzureichenden Rechtsmitteln, unbefugtem Zugriff durch Beh\\u00f6rden ohne Information oder Widerspruchsm\\u00f6glichkeit, unbefugter Weitergabe an Dritte und unzureichenden Datensicherheitsma\\u00dfnahmen.\",\"ageNoticeBanner\":\"Du bist unter {{minAge}} Jahre alt? Dann kannst du nicht in optionale Services einwilligen. Du kannst deine Eltern oder Erziehungsberechtigten bitten, mit dir in diese Services einzuwilligen.\",\"ageNoticeBlocker\":\"Du bist unter {{minAge}} Jahre alt? Leider darfst du in diesen Service nicht selbst einwilligen, um diese Inhalte zu sehen. Bitte deine Eltern oder Erziehungsberechtigten, in den Service mit dir einzuwilligen!\",\"listServicesNotice\":\"Wenn du alle Services akzeptierst, erlaubst du, dass {{services}} geladen werden. Diese sind nach ihrem Zweck in Gruppen {{serviceGroups}} unterteilt (Zugeh\\u00f6rigkeit durch hochgestellte Zahlen gekennzeichnet).\",\"listServicesLegitimateInterestNotice\":\"Au\\u00dferdem werden {{services}} auf der Grundlage eines berechtigten Interesses geladen.\",\"consentForwardingExternalHosts\":\"Deine Einwilligung gilt auch auf {{websites}}.\",\"blockerHeadline\":\"{{name}} aufgrund von Privatsph\\u00e4re-Einstellungen blockiert\",\"blockerLinkShowMissing\":\"Zeige alle Services, in die du noch einwilligen musst\",\"blockerLoadButton\":\"Services akzeptieren und Inhalte laden\",\"blockerAcceptInfo\":\"Wenn du die blockierten Inhalte l\\u00e4dst, werden deine Datenschutzeinstellungen angepasst. Inhalte aus diesem Service werden in Zukunft nicht mehr blockiert.\",\"stickyHistory\":\"Historie der Privatsph\\u00e4re-Einstellungen\",\"stickyRevoke\":\"Einwilligungen widerrufen\",\"stickyRevokeSuccessMessage\":\"Du hast die Einwilligung f\\u00fcr Services mit dessen Cookies und Verarbeitung personenbezogener Daten erfolgreich widerrufen. Die Seite wird jetzt neu geladen!\",\"stickyChange\":\"Privatsph\\u00e4re-Einstellungen \\u00e4ndern\"},\"individualLayout\":{\"inheritDialogMaxWidth\":false,\"dialogMaxWidth\":970,\"inheritBannerMaxWidth\":true,\"bannerMaxWidth\":1980,\"descriptionTextAlign\":\"left\"},\"group\":{\"checkboxBg\":\"#f0f0f0\",\"checkboxBorderWidth\":1,\"checkboxBorderColor\":\"#d2d2d2\",\"checkboxActiveColor\":\"#ffffff\",\"checkboxActiveBg\":\"#15779b\",\"checkboxActiveBorderColor\":\"#11607d\",\"groupInheritBg\":true,\"groupBg\":\"#f4f4f4\",\"groupPadding\":[15,15,15,15],\"groupSpacing\":10,\"groupBorderRadius\":5,\"groupBorderWidth\":1,\"groupBorderColor\":\"#f4f4f4\",\"headlineFontSize\":16,\"headlineFontWeight\":\"normal\",\"headlineFontColor\":\"#2b2b2b\",\"descriptionFontSize\":14,\"descriptionFontColor\":\"#757575\",\"linkColor\":\"#757575\",\"linkHoverColor\":\"#2b2b2b\",\"detailsHideLessRelevant\":true},\"saveButton\":{\"useAcceptAll\":true,\"type\":\"button\",\"padding\":[10,10,10,10],\"bg\":\"#efefef\",\"textAlign\":\"center\",\"fontSize\":18,\"fontColor\":\"#0a0a0a\",\"fontWeight\":\"normal\",\"borderWidth\":0,\"borderColor\":\"#000000\",\"hoverBg\":\"#e8e8e8\",\"hoverFontColor\":\"#000000\",\"hoverBorderColor\":\"#000000\"},\"individualTexts\":{\"headline\":\"Individuelle Privatsph\\u00e4re-Einstellungen\",\"description\":\"Wir verwenden Cookies und \\u00e4hnliche Technologien auf unserer Website und verarbeiten personenbezogene Daten von dir (z.B. IP-Adresse), um z.B. Inhalte und Anzeigen zu personalisieren, Medien von Drittanbietern einzubinden oder Zugriffe auf unsere Website zu analysieren. Die Datenverarbeitung kann auch erst in Folge gesetzter Cookies stattfinden. Wir teilen diese Daten mit Dritten, die wir in den Privatsph\\u00e4re-Einstellungen benennen.<br \\\/><br \\\/>Die Datenverarbeitung kann mit deiner Einwilligung oder auf Basis eines berechtigten Interesses erfolgen, dem du in den Privatsph\\u00e4re-Einstellungen widersprechen kannst. Du hast das Recht, nicht einzuwilligen und deine Einwilligung zu einem sp\\u00e4teren Zeitpunkt zu \\u00e4ndern oder zu widerrufen. Weitere Informationen zur Verwendung deiner Daten findest du in unserer {{privacyPolicy}}Datenschutzerkl\\u00e4rung{{\\\/privacyPolicy}}.<br \\\/><br \\\/>Im Folgenden findest du eine \\u00dcbersicht \\u00fcber alle Services, die von dieser Website genutzt werden. Du kannst dir detaillierte Informationen zu jedem Service ansehen und ihm einzeln zustimmen oder von deinem Widerspruchsrecht Gebrauch machen.\",\"save\":\"Individuelle Auswahlen speichern\",\"showMore\":\"Service-Informationen anzeigen\",\"hideMore\":\"Service-Informationen ausblenden\",\"postamble\":\"\"},\"mobile\":{\"enabled\":true,\"maxHeight\":400,\"hideHeader\":false,\"alignment\":\"bottom\",\"scalePercent\":90,\"scalePercentVertical\":-50},\"sticky\":{\"enabled\":false,\"animationsEnabled\":true,\"alignment\":\"left\",\"bubbleBorderRadius\":50,\"icon\":\"fingerprint\",\"iconCustom\":\"\",\"iconCustomRetina\":\"\",\"iconSize\":30,\"iconColor\":\"#ffffff\",\"bubbleMargin\":[10,20,20,20],\"bubblePadding\":15,\"bubbleBg\":\"#15779b\",\"bubbleBorderWidth\":0,\"bubbleBorderColor\":\"#10556f\",\"boxShadowEnabled\":true,\"boxShadowOffsetX\":0,\"boxShadowOffsetY\":2,\"boxShadowBlurRadius\":5,\"boxShadowSpreadRadius\":1,\"boxShadowColor\":\"#105b77\",\"boxShadowColorAlpha\":40,\"bubbleHoverBg\":\"#ffffff\",\"bubbleHoverBorderColor\":\"#000000\",\"hoverIconColor\":\"#000000\",\"hoverIconCustom\":\"\",\"hoverIconCustomRetina\":\"\",\"menuFontSize\":16,\"menuBorderRadius\":5,\"menuItemSpacing\":10,\"menuItemPadding\":[5,10,5,10]},\"customCss\":{\"css\":\"\",\"antiAdBlocker\":\"y\"}}","animateCss":":root{--animate-duration:1s;--animate-delay:1s;--animate-repeat:1}.animate__animated{animation-duration:var(--animate-duration);animation-fill-mode:both}@media (prefers-reduced-motion:reduce){.animate__animated{animation-duration:1ms!important;transition-duration:1ms!important;animation-iteration-count:1!important}.animate__animated[class*=Out]{opacity:0}}@keyframes slideInUp{from{transform:translate3d(0,100%,0);visibility:visible;}to{transform:translate3d(0,0,0);}}.animate__slideInUp{animation-name:slideInUp;}","isPro":false,"showProHints":false,"proUrl":"https:\/\/devowl.io\/de\/go\/real-cookie-banner?source=rcb-lite","showLiteNotice":true,"frontend":{"groups":"[{\"id\":2,\"name\":\"Essenziell\",\"slug\":\"essenziell\",\"description\":\"Essenzielle Services sind f\\u00fcr die grundlegende Funktionalit\\u00e4t der Website erforderlich. Sie enthalten nur technisch notwendige Services. Diesen Services kann nicht widersprochen werden.\",\"isEssential\":true,\"isDefault\":true,\"items\":[{\"id\":11,\"name\":\"Real Cookie Banner\",\"purpose\":\"Real Cookie Banner bittet Website-Besucher um die Einwilligung zum Setzen von Cookies und zur Verarbeitung personenbezogener Daten. Dazu wird jedem Website-Besucher eine UUID (pseudonyme Identifikation des Nutzers) zugewiesen, die bis zum Ablauf des Cookies zur Speicherung der Einwilligung g\\u00fcltig ist. Cookies werden dazu verwendet, um zu testen, ob Cookies gesetzt werden k\\u00f6nnen, um Referenz auf die dokumentierte Einwilligung zu speichern, um zu speichern, in welche Services aus welchen Service-Gruppen der Besucher eingewilligt hat, und, falls Einwilligung nach dem Transparency & Consent Framework (TCF) eingeholt werden, um die Einwilligungen in TCF Partner, Zwecke, besondere Zwecke, Funktionen und besondere Funktionen zu speichern. Im Rahmen der Darlegungspflicht nach DSGVO wird die erhobene Einwilligung vollumf\\u00e4nglich dokumentiert. Dazu z\\u00e4hlt neben den Services und Service-Gruppen, in welche der Besucher eingewilligt hat, und falls Einwilligung nach dem TCF Standard eingeholt werden, in welche TCF Partner, Zwecke und Funktionen der Besucher eingewilligt hat, alle Einstellungen des Cookie Banners zum Zeitpunkt der Einwilligung als auch die technischen Umst\\u00e4nde (z.B. Gr\\u00f6\\u00dfe des Sichtbereichs bei der Einwilligung) und die Nutzerinteraktionen (z.B. Klick auf Buttons), die zur Einwilligung gef\\u00fchrt haben. Die Einwilligung wird pro Sprache einmal erhoben.\",\"providerContact\":{\"phone\":\"\",\"email\":\"\",\"link\":\"\"},\"isProviderCurrentWebsite\":true,\"provider\":\"\",\"uniqueName\":\"\",\"isEmbeddingOnlyExternalResources\":false,\"legalBasis\":\"legal-requirement\",\"dataProcessingInCountries\":[],\"dataProcessingInCountriesSpecialTreatments\":[],\"technicalDefinitions\":[{\"type\":\"http\",\"name\":\"real_cookie_banner*\",\"host\":\".noa4.de\",\"duration\":365,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Eindeutiger Identifikator f\\u00fcr die Einwilligung, aber nicht f\\u00fcr den Website-Besucher. Revisionshash f\\u00fcr die Einstellungen des Cookie-Banners (Texte, Farben, Funktionen, Servicegruppen, Dienste, Content Blocker usw.). IDs f\\u00fcr eingewilligte Services und Service-Gruppen.\"},{\"type\":\"http\",\"name\":\"real_cookie_banner*-tcf\",\"host\":\".noa4.de\",\"duration\":365,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Im Rahmen von TCF gesammelte Einwilligungen, die im TC-String-Format gespeichert werden, einschlie\\u00dflich TCF-Vendoren, -Zwecke, -Sonderzwecke, -Funktionen und -Sonderfunktionen.\"},{\"type\":\"http\",\"name\":\"real_cookie_banner*-gcm\",\"host\":\".noa4.de\",\"duration\":365,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Die im Google Consent Mode gesammelten Einwilligungen in die verschiedenen Einwilligungstypen (Zwecke) werden f\\u00fcr alle mit dem Google Consent Mode kompatiblen Services gespeichert.\"},{\"type\":\"http\",\"name\":\"real_cookie_banner-test\",\"host\":\".noa4.de\",\"duration\":365,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Cookie, der gesetzt wurde, um die Funktionalit\\u00e4t von HTTP-Cookies zu testen. Wird sofort nach dem Test gel\\u00f6scht.\"},{\"type\":\"local\",\"name\":\"real_cookie_banner*\",\"host\":\"http:\\\/\\\/beta.noa4.de\",\"duration\":1,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Eindeutiger Identifikator f\\u00fcr die Einwilligung, aber nicht f\\u00fcr den Website-Besucher. Revisionshash f\\u00fcr die Einstellungen des Cookie-Banners (Texte, Farben, Funktionen, Service-Gruppen, Services, Content Blocker usw.). IDs f\\u00fcr eingewilligte Services und Service-Gruppen. Wird nur solange gespeichert, bis die Einwilligung auf dem Website-Server dokumentiert ist.\"},{\"type\":\"local\",\"name\":\"real_cookie_banner*-tcf\",\"host\":\"http:\\\/\\\/beta.noa4.de\",\"duration\":1,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Im Rahmen von TCF gesammelte Einwilligungen werden im TC-String-Format gespeichert, einschlie\\u00dflich TCF Vendoren, Zwecke, besondere Zwecke, Funktionen und besondere Funktionen. Wird nur solange gespeichert, bis die Einwilligung auf dem Website-Server dokumentiert ist.\"},{\"type\":\"local\",\"name\":\"real_cookie_banner*-gcm\",\"host\":\"http:\\\/\\\/beta.noa4.de\",\"duration\":1,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Im Rahmen des Google Consent Mode erfasste Einwilligungen werden f\\u00fcr alle mit dem Google Consent Mode kompatiblen Services in Einwilligungstypen (Zwecke) gespeichert. Wird nur solange gespeichert, bis die Einwilligung auf dem Website-Server dokumentiert ist.\"},{\"type\":\"local\",\"name\":\"real_cookie_banner-consent-queue*\",\"host\":\"http:\\\/\\\/beta.noa4.de\",\"duration\":1,\"durationUnit\":\"d\",\"isSessionDuration\":false,\"purpose\":\"Lokale Zwischenspeicherung (Caching) der Auswahl im Cookie-Banner, bis der Server die Einwilligung dokumentiert; Dokumentation periodisch oder bei Seitenwechseln versucht, wenn der Server nicht verf\\u00fcgbar oder \\u00fcberlastet ist.\"}],\"codeDynamics\":[],\"providerPrivacyPolicyUrl\":\"\",\"providerLegalNoticeUrl\":\"\",\"tagManagerOptInEventName\":\"\",\"tagManagerOptOutEventName\":\"\",\"googleConsentModeConsentTypes\":[],\"executePriority\":10,\"codeOptIn\":\"\",\"executeCodeOptInWhenNoTagManagerConsentIsGiven\":false,\"codeOptOut\":\"\",\"executeCodeOptOutWhenNoTagManagerConsentIsGiven\":false,\"deleteTechnicalDefinitionsAfterOptOut\":false,\"codeOnPageLoad\":\"\",\"presetId\":\"real-cookie-banner\"}]}]","links":[{"id":9,"label":"Datenschutzerkl\u00e4rung","pageType":"privacyPolicy","isExternalUrl":false,"pageId":3,"url":"https:\/\/www.noa4.de\/datenschutzerklaerung\/","hideCookieBanner":true,"isTargetBlank":true},{"id":14,"label":"Cookie-Richtlinie","pageType":"cookiePolicy","isExternalUrl":false,"pageId":12,"url":"https:\/\/www.noa4.de\/cookie-richtlinie\/","hideCookieBanner":true,"isTargetBlank":true}],"websiteOperator":{"address":"on air new media GmbH | Heidbergstr. 101 - 111 | 22846 Norderstedt","country":"DE","contactEmail":"","contactPhone":"(040) 52104 - 432","contactFormUrl":false},"blocker":[],"languageSwitcher":[],"predefinedDataProcessingInSafeCountriesLists":{"GDPR":["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IS","IT","LI","LV","LT","LU","MT","NL","NO","PL","PT","RO","SK","SI","ES","SE"],"DSG":["CH"],"GDPR+DSG":[],"ADEQUACY_EU":["AD","AR","CA","FO","GG","IL","IM","JP","JE","NZ","KR","CH","GB","UY","US"],"ADEQUACY_CH":["DE","AD","AR","AT","BE","BG","CA","CY","HR","DK","ES","EE","FI","FR","GI","GR","GG","HU","IM","FO","IE","IS","IL","IT","JE","LV","LI","LT","LU","MT","MC","NO","NZ","NL","PL","PT","CZ","RO","GB","SK","SI","SE","UY","US"]},"decisionCookieName":"real_cookie_banner-v:3_blog:1_path:87a3ed3","revisionHash":"c121f9fc84267c14a8f56fa112c65394","territorialLegalBasis":["gdpr-eprivacy"],"setCookiesViaManager":"none","isRespectDoNotTrack":false,"failedConsentDocumentationHandling":"essentials","isAcceptAllForBots":true,"isDataProcessingInUnsafeCountries":false,"isAgeNotice":true,"ageNoticeAgeLimit":16,"isListServicesNotice":true,"isBannerLessConsent":false,"isTcf":false,"isGcm":false,"isGcmListPurposes":false,"hasLazyData":false},"anonymousContentUrl":"https:\/\/www.noa4.de\/wp-content\/uploads\/01cc768f9a\/dist\/","anonymousHash":"01cc768f9a","hasDynamicPreDecisions":false,"isLicensed":true,"isDevLicense":false,"multilingualSkipHTMLForTag":"","isCurrentlyInTranslationEditorPreview":false,"defaultLanguage":"","currentLanguage":"","activeLanguages":[],"context":"","iso3166OneAlpha2":{"AF":"Afghanistan","AL":"Albanien","DZ":"Algerien","AS":"Amerikanisch-Samoa","AD":"Andorra","AO":"Angola","AI":"Anguilla","AQ":"Antarktis","AG":"Antigua und Barbuda","AR":"Argentinien","AM":"Armenien","AW":"Aruba","AZ":"Aserbaidschan","AU":"Australien","BS":"Bahamas","BH":"Bahrain","BD":"Bangladesch","BB":"Barbados","BY":"Belarus","BE":"Belgien","BZ":"Belize","BJ":"Benin","BM":"Bermuda","BT":"Bhutan","BO":"Bolivien","BA":"Bosnien und Herzegowina","BW":"Botswana","BV":"Bouvetinsel","BR":"Brasilien","IO":"Britisches Territorium im Indischen Ozean","BN":"Brunei Darussalam","BG":"Bulgarien","BF":"Burkina Faso","BI":"Burundi","CL":"Chile","CN":"China","CK":"Cookinseln","CR":"Costa Rica","CW":"Cura\u00e7ao","DE":"Deutschland","LA":"Die Laotische Demokratische Volksrepublik","DM":"Dominica","DO":"Dominikanische Republik","DJ":"Dschibuti","DK":"D\u00e4nemark","EC":"Ecuador","SV":"El Salvador","ER":"Eritrea","EE":"Estland","FK":"Falklandinseln (Malwinen)","FJ":"Fidschi","FI":"Finnland","FR":"Frankreich","GF":"Franz\u00f6sisch-Guayana","PF":"Franz\u00f6sisch-Polynesien","TF":"Franz\u00f6sische S\u00fcd- und Antarktisgebiete","FO":"F\u00e4r\u00f6er Inseln","FM":"F\u00f6derierte Staaten von Mikronesien","GA":"Gabun","GM":"Gambia","GE":"Georgien","GH":"Ghana","GI":"Gibraltar","GD":"Grenada","GR":"Griechenland","GL":"Gr\u00f6nland","GP":"Guadeloupe","GU":"Guam","GT":"Guatemala","GG":"Guernsey","GN":"Guinea","GW":"Guinea-Bissau","GY":"Guyana","HT":"Haiti","HM":"Heard und die McDonaldinseln","VA":"Heiliger Stuhl (Staat Vatikanstadt)","HN":"Honduras","HK":"Hong Kong","IN":"Indien","ID":"Indonesien","IQ":"Irak","IE":"Irland","IR":"Islamische Republik Iran","IS":"Island","IM":"Isle of Man","IL":"Israel","IT":"Italien","JM":"Jamaika","JP":"Japan","YE":"Jemen","JE":"Jersey","JO":"Jordanien","VG":"Jungferninseln, Britisch","VI":"Jungferninseln, U.S.","KY":"Kaimaninseln","KH":"Kambodscha","CM":"Kamerun","CA":"Kanada","CV":"Kap Verde","BQ":"Karibischen Niederlande","KZ":"Kasachstan","QA":"Katar","KE":"Kenia","KG":"Kirgisistan","KI":"Kiribati","UM":"Kleinere Inselbesitzungen der Vereinigten Staaten","CC":"Kokosinseln","CO":"Kolumbien","KM":"Komoren","CG":"Kongo","CD":"Kongo, Demokratische Republik","KR":"Korea","XK":"Kosovo","HR":"Kroatien","CU":"Kuba","KW":"Kuwait","LS":"Lesotho","LV":"Lettland","LB":"Libanon","LR":"Liberia","LY":"Libysch-Arabische Dschamahirija","LI":"Liechtenstein","LT":"Litauen","LU":"Luxemburg","MO":"Macao","MG":"Madagaskar","MW":"Malawi","MY":"Malaysia","MV":"Malediven","ML":"Mali","MT":"Malta","MA":"Marokko","MH":"Marshallinseln","MQ":"Martinique","MR":"Mauretanien","MU":"Mauritius","YT":"Mayotte","MK":"Mazedonien","MX":"Mexiko","MD":"Moldawien","MC":"Monaco","MN":"Mongolei","ME":"Montenegro","MS":"Montserrat","MZ":"Mosambik","MM":"Myanmar","NA":"Namibia","NR":"Nauru","NP":"Nepal","NC":"Neukaledonien","NZ":"Neuseeland","NI":"Nicaragua","NL":"Niederlande","AN":"Niederl\u00e4ndische Antillen","NE":"Niger","NG":"Nigeria","NU":"Niue","KP":"Nordkorea","NF":"Norfolkinsel","NO":"Norwegen","MP":"N\u00f6rdliche Marianen","OM":"Oman","PK":"Pakistan","PW":"Palau","PS":"Pal\u00e4stinensisches Gebiet, besetzt","PA":"Panama","PG":"Papua-Neuguinea","PY":"Paraguay","PE":"Peru","PH":"Philippinen","PN":"Pitcairn","PL":"Polen","PT":"Portugal","PR":"Puerto Rico","CI":"Republik C\u00f4te d'Ivoire","RW":"Ruanda","RO":"Rum\u00e4nien","RU":"Russische F\u00f6deration","RE":"R\u00e9union","BL":"Saint Barth\u00e9l\u00e9my","PM":"Saint Pierre und Miquelo","SB":"Salomonen","ZM":"Sambia","WS":"Samoa","SM":"San Marino","SH":"Sankt Helena","MF":"Sankt Martin","SA":"Saudi-Arabien","SE":"Schweden","CH":"Schweiz","SN":"Senegal","RS":"Serbien","SC":"Seychellen","SL":"Sierra Leone","ZW":"Simbabwe","SG":"Singapur","SX":"Sint Maarten","SK":"Slowakei","SI":"Slowenien","SO":"Somalia","ES":"Spanien","LK":"Sri Lanka","KN":"St. Kitts und Nevis","LC":"St. Lucia","VC":"St. Vincent und Grenadinen","SD":"Sudan","SR":"Surinam","SJ":"Svalbard und Jan Mayen","SZ":"Swasiland","SY":"Syrische Arabische Republik","ST":"S\u00e3o Tom\u00e9 und Pr\u00edncipe","ZA":"S\u00fcdafrika","GS":"S\u00fcdgeorgien und die S\u00fcdlichen Sandwichinseln","SS":"S\u00fcdsudan","TJ":"Tadschikistan","TW":"Taiwan","TZ":"Tansania","TH":"Thailand","TL":"Timor-Leste","TG":"Togo","TK":"Tokelau","TO":"Tonga","TT":"Trinidad und Tobago","TD":"Tschad","CZ":"Tschechische Republik","TN":"Tunesien","TM":"Turkmenistan","TC":"Turks- und Caicosinseln","TV":"Tuvalu","TR":"T\u00fcrkei","UG":"Uganda","UA":"Ukraine","HU":"Ungarn","UY":"Uruguay","UZ":"Usbekistan","VU":"Vanuatu","VE":"Venezuela","AE":"Vereinigte Arabische Emirate","US":"Vereinigte Staaten","GB":"Vereinigtes K\u00f6nigreich","VN":"Vietnam","WF":"Wallis und Futuna","CX":"Weihnachtsinsel","EH":"Westsahara","CF":"Zentralafrikanische Republik","CY":"Zypern","EG":"\u00c4gypten","GQ":"\u00c4quatorialguinea","ET":"\u00c4thiopien","AX":"\u00c5land Inseln","AT":"\u00d6sterreich"},"visualParentSelectors":{".et_pb_video_box":1,".et_pb_video_slider:has(>.et_pb_slider_carousel %s)":"self",".ast-oembed-container":1,".wpb_video_wrapper":1,".gdlr-core-pbf-background-wrap":1},"isPreventPreDecision":false,"isInvalidateImplicitUserConsent":false,"dependantVisibilityContainers":["[role=\"tabpanel\"]",".eael-tab-content-item",".wpcs_content_inner",".op3-contenttoggleitem-content",".op3-popoverlay-content",".pum-overlay","[data-elementor-type=\"popup\"]",".wp-block-ub-content-toggle-accordion-content-wrap",".w-popup-wrap",".oxy-lightbox_inner[data-inner-content=true]",".oxy-pro-accordion_body",".oxy-tab-content",".kt-accordion-panel",".vc_tta-panel-body",".mfp-hide","div[id^=\"tve_thrive_lightbox_\"]",".brxe-xpromodalnestable",".evcal_eventcard",".divioverlay",".et_pb_toggle_content"],"disableDeduplicateExceptions":[".et_pb_video_slider"],"bannerDesignVersion":12,"bannerI18n":{"showMore":"Mehr anzeigen","hideMore":"Verstecken","showLessRelevantDetails":"Weitere Details anzeigen (%s)","hideLessRelevantDetails":"Weitere Details ausblenden (%s)","other":"Anderes","legalBasis":{"label":"Verwendung auf gesetzlicher Grundlage von","consentPersonalData":"Einwilligung zur Verarbeitung personenbezogener Daten","consentStorage":"Einwilligung zur Speicherung oder zum Zugriff auf Informationen auf der Endeinrichtung des Nutzers","legitimateInterestPersonalData":"Berechtigtes Interesse zur Verarbeitung personenbezogener Daten","legitimateInterestStorage":"Bereitstellung eines ausdr\u00fccklich gew\u00fcnschten digitalen Dienstes zur Speicherung oder zum Zugriff auf Informationen auf der Endeinrichtung des Nutzers","legalRequirementPersonalData":"Erf\u00fcllung einer rechtlichen Verpflichtung zur Verarbeitung personenbezogener Daten"},"territorialLegalBasisArticles":{"gdpr-eprivacy":{"dataProcessingInUnsafeCountries":"Art. 49 Abs. 1 lit. a DSGVO"},"dsg-switzerland":{"dataProcessingInUnsafeCountries":"Art. 17 Abs. 1 lit. a DSG (Schweiz)"}},"legitimateInterest":"Berechtigtes Interesse","consent":"Einwilligung","crawlerLinkAlert":"Wir haben erkannt, dass du ein Crawler\/Bot bist. Nur nat\u00fcrliche Personen d\u00fcrfen in Cookies und die Verarbeitung von personenbezogenen Daten einwilligen. Daher hat der Link f\u00fcr dich keine Funktion.","technicalCookieDefinitions":"Technische Cookie-Definitionen","technicalCookieName":"Technischer Cookie Name","usesCookies":"Verwendete Cookies","cookieRefresh":"Cookie-Erneuerung","usesNonCookieAccess":"Verwendet Cookie-\u00e4hnliche Informationen (LocalStorage, SessionStorage, IndexDB, etc.)","host":"Host","duration":"Dauer","noExpiration":"Kein Ablauf","type":"Typ","purpose":"Zweck","purposes":"Zwecke","description":"Beschreibung","optOut":"Opt-out","optOutDesc":"Cookies kann gesetzt werden, um Widerspruch des beschriebenen Verhaltens zu speichern.","notUsedForTcfPurposes":"Wird nicht f\u00fcr TCF-Zwecke verwendet","headerTitlePrivacyPolicyHistory":"Privatsph\u00e4re-Einstellungen: Historie","skipToConsentChoices":"Zu Einwilligungsoptionen springen","historyLabel":"Einwilligungen anzeigen vom","historyItemLoadError":"Das Lesen der Zustimmung ist fehlgeschlagen. Bitte versuche es sp\u00e4ter noch einmal!","historySelectNone":"Noch nicht eingewilligt","provider":"Anbieter","providerContactPhone":"Telefon","providerContactEmail":"E-Mail","providerContactLink":"Kontaktformular","providerPrivacyPolicyUrl":"Datenschutzerkl\u00e4rung","providerLegalNoticeUrl":"Impressum","nonStandard":"Nicht standardisierte Datenverarbeitung","nonStandardDesc":"Einige Services setzen Cookies und\/oder verarbeiten personenbezogene Daten, ohne die Standards f\u00fcr die Mitteilung der Einwilligung einzuhalten. Diese Services werden in mehrere Gruppen eingeteilt. Sogenannte \"essenzielle Services\" werden auf Basis eines berechtigten Interesses genutzt und k\u00f6nnen nicht abgew\u00e4hlt werden (ein Widerspruch muss ggf. per E-Mail oder Brief gem\u00e4\u00df der Datenschutzerkl\u00e4rung erfolgen), w\u00e4hrend alle anderen Services nur nach einer Einwilligung genutzt werden.","dataProcessingInThirdCountries":"Datenverarbeitung in Drittl\u00e4ndern","safetyMechanisms":{"label":"Sicherheitsmechanismen f\u00fcr die Daten\u00fcbermittlung","standardContractualClauses":"Standardvertragsklauseln","adequacyDecision":"Angemessenheitsbeschluss","eu":"EU","switzerland":"Schweiz","bindingCorporateRules":"Verbindliche interne Datenschutzvorschriften","contractualGuaranteeSccSubprocessors":"Vertragliche Garantie f\u00fcr Standardvertragsklauseln mit Unterauftragsverarbeitern"},"durationUnit":{"n1":{"s":"Sekunde","m":"Minute","h":"Stunde","d":"Tag","mo":"Monat","y":"Jahr"},"nx":{"s":"Sekunden","m":"Minuten","h":"Stunden","d":"Tage","mo":"Monate","y":"Jahre"}},"close":"Schlie\u00dfen","closeWithoutSaving":"Schlie\u00dfen ohne Speichern","yes":"Ja","no":"Nein","unknown":"Unbekannt","none":"Nichts","noLicense":"Keine Lizenz aktiviert - kein Produktionseinsatz!","devLicense":"Produktlizenz nicht f\u00fcr den Produktionseinsatz!","devLicenseLearnMore":"Mehr erfahren","devLicenseLink":"https:\/\/devowl.io\/de\/wissensdatenbank\/lizenz-installations-typ\/","andSeparator":" und ","deprecated":{"appropriateSafeguard":"Geeignete Garantien","dataProcessingInUnsafeCountries":"Datenverarbeitung in unsicheren Drittl\u00e4ndern","legalRequirement":"Erf\u00fcllung einer rechtlichen Verpflichtung"}},"pageRequestUuid4":"a31310c32-27ec-46ce-b648-50e7e56daa76","pageByIdUrl":"https:\/\/www.noa4.de?page_id","pluginUrl":"https:\/\/devowl.io\/wordpress-real-cookie-banner\/"}}</script><script data-skip-lazy-load="js-extra" data-skip-moving="true" data-no-defer nitro-exclude data-alt-type="application/ld+json" data-dont-merge data-wpmeteor-nooptimize="true" data-cfasync="false" id="a972be7d1c047419a9911556eeab6ed9c2-js-extra">
+(()=>{var x=function (a,b){return-1<["codeOptIn","codeOptOut","codeOnPageLoad","contactEmail"].indexOf(a)&&"string"==typeof b&&b.startsWith("base64-encoded:")?window.atob(b.substr(15)):b},t=(e,t)=>new Proxy(e,{get:(e,n)=>{let r=Reflect.get(e,n);return n===t&&"string"==typeof r&&(r=JSON.parse(r,x),Reflect.set(e,n,r)),r}}),n=JSON.parse(document.getElementById("a972be7d1c047419a9911556eeab6ed9c1-js-extra").innerHTML,x);window.Proxy?n.others.frontend=t(n.others.frontend,"groups"):n.others.frontend.groups=JSON.parse(n.others.frontend.groups,x);window.Proxy?n.others=t(n.others,"customizeValuesBanner"):n.others.customizeValuesBanner=JSON.parse(n.others.customizeValuesBanner,x);;window.realCookieBanner=n;window[Math.random().toString(36)]=n;
+})();
+</script><script>
+((a,b)=>{a[b]||(a[b]={unblockSync:()=>undefined},["consentSync"].forEach(c=>a[b][c]=()=>({cookie:null,consentGiven:!1,cookieOptIn:!0})),["consent","consentAll","unblock"].forEach(c=>a[b][c]=(...d)=>new Promise(e=>a.addEventListener(b,()=>{a[b][c](...d).then(e)},{once:!0}))))})(window,"consentApi");
+//# sourceURL=real-cookie-banner-banner-js-before
+</script>
+<script defer data-cfasync="false" src="https://www.noa4.de/wp-content/uploads/01cc768f9a/dist/595673853.js?ver=b913731c20c7a80acf28845878f56874"></script>
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://www.noa4.de/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.noa4.de%2Fspatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt%2F" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://www.noa4.de/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.noa4.de%2Fspatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt%2F&#038;format=xml" />
+<style id="wp-img-auto-sizes-contain-inline-css">
+img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
+/*# sourceURL=wp-img-auto-sizes-contain-inline-css */
+</style>
+<style id="wp-emoji-styles-inline-css">
+
+	img.wp-smiley, img.emoji {
+		display: inline !important;
+		border: none !important;
+		box-shadow: none !important;
+		height: 1em !important;
+		width: 1em !important;
+		margin: 0 0.07em !important;
+		vertical-align: -0.1em !important;
+		background: none !important;
+		padding: 0 !important;
+	}
+/*# sourceURL=wp-emoji-styles-inline-css */
+</style>
+<style id="wp-block-library-inline-css">
+:root{--wp-block-synced-color:#7a00df;--wp-block-synced-color--rgb:122,0,223;--wp-bound-block-color:var(--wp-block-synced-color);--wp-editor-canvas-background:#ddd;--wp-admin-theme-color:#007cba;--wp-admin-theme-color--rgb:0,124,186;--wp-admin-theme-color-darker-10:#006ba1;--wp-admin-theme-color-darker-10--rgb:0,107,160.5;--wp-admin-theme-color-darker-20:#005a87;--wp-admin-theme-color-darker-20--rgb:0,90,135;--wp-admin-border-width-focus:2px}@media (min-resolution:192dpi){:root{--wp-admin-border-width-focus:1.5px}}.wp-element-button{cursor:pointer}:root .has-very-light-gray-background-color{background-color:#eee}:root .has-very-dark-gray-background-color{background-color:#313131}:root .has-very-light-gray-color{color:#eee}:root .has-very-dark-gray-color{color:#313131}:root .has-vivid-green-cyan-to-vivid-cyan-blue-gradient-background{background:linear-gradient(135deg,#00d084,#0693e3)}:root .has-purple-crush-gradient-background{background:linear-gradient(135deg,#34e2e4,#4721fb 50%,#ab1dfe)}:root .has-hazy-dawn-gradient-background{background:linear-gradient(135deg,#faaca8,#dad0ec)}:root .has-subdued-olive-gradient-background{background:linear-gradient(135deg,#fafae1,#67a671)}:root .has-atomic-cream-gradient-background{background:linear-gradient(135deg,#fdd79a,#004a59)}:root .has-nightshade-gradient-background{background:linear-gradient(135deg,#330968,#31cdcf)}:root .has-midnight-gradient-background{background:linear-gradient(135deg,#020381,#2874fc)}:root{--wp--preset--font-size--normal:16px;--wp--preset--font-size--huge:42px}.has-regular-font-size{font-size:1em}.has-larger-font-size{font-size:2.625em}.has-normal-font-size{font-size:var(--wp--preset--font-size--normal)}.has-huge-font-size{font-size:var(--wp--preset--font-size--huge)}:root .has-text-align-center{text-align:center}:root .has-text-align-left{text-align:left}:root .has-text-align-right{text-align:right}.has-fit-text{white-space:nowrap!important}#end-resizable-editor-section{display:none}.aligncenter{clear:both}.items-justified-left{justify-content:flex-start}.items-justified-center{justify-content:center}.items-justified-right{justify-content:flex-end}.items-justified-space-between{justify-content:space-between}.screen-reader-text{word-wrap:normal!important;border:0;clip-path:inset(50%);height:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;width:1px;word-break:normal!important}.screen-reader-text:focus{background-color:#ddd;clip-path:none;color:#444;display:block;font-size:1em;height:auto;left:5px;line-height:normal;padding:15px 23px 14px;text-decoration:none;top:5px;width:auto;z-index:100000}html :where(.has-border-color){border-style:solid}html :where([style^=border-color],[style*=";border-color"],[style*="; border-color"]){border-style:solid}html :where([style^=border-top-color],[style*=";border-top-color"],[style*="; border-top-color"]){border-top-style:solid}html :where([style^=border-right-color],[style*=";border-right-color"],[style*="; border-right-color"]){border-right-style:solid}html :where([style^=border-bottom-color],[style*=";border-bottom-color"],[style*="; border-bottom-color"]){border-bottom-style:solid}html :where([style^=border-left-color],[style*=";border-left-color"],[style*="; border-left-color"]){border-left-style:solid}html :where([style^=border-width],[style*=";border-width"],[style*="; border-width"]){border-style:solid}html :where([style^=border-top-width],[style*=";border-top-width"],[style*="; border-top-width"]){border-top-style:solid}html :where([style^=border-right-width],[style*=";border-right-width"],[style*="; border-right-width"]){border-right-style:solid}html :where([style^=border-bottom-width],[style*=";border-bottom-width"],[style*="; border-bottom-width"]){border-bottom-style:solid}html :where([style^=border-left-width],[style*=";border-left-width"],[style*="; border-left-width"]){border-left-style:solid}html :where(img[class*=wp-image-]){height:auto;max-width:100%}:where(figure){margin:0 0 1em}html :where(.is-position-sticky){--wp-admin--admin-bar--position-offset:var(--wp-admin--admin-bar--height,0px)}@media screen and (max-width:600px){html :where(.is-position-sticky){--wp-admin--admin-bar--position-offset:0px}}
+
+/*# sourceURL=/wp-includes/css/dist/block-library/common.min.css */
+</style>
+<style id="wp-block-paragraph-inline-css">
+.is-small-text{font-size:.875em}.is-regular-text{font-size:1em}.is-large-text{font-size:2.25em}.is-larger-text{font-size:3em}.has-drop-cap:not(:focus):first-letter{float:left;font-size:8.4em;font-style:normal;font-weight:100;line-height:.68;margin:.05em .1em 0 0;text-transform:uppercase}body.rtl .has-drop-cap:not(:focus):first-letter{float:none;margin-left:.1em}p.has-drop-cap.has-background{overflow:hidden}:root :where(p.has-background){padding:1.25em 2.375em}:where(p.has-text-color:not(.has-link-color)) a{color:inherit}p.has-text-align-left[style*="writing-mode:vertical-lr"],p.has-text-align-right[style*="writing-mode:vertical-rl"]{rotate:180deg}
+/*# sourceURL=https://www.noa4.de/wp-includes/blocks/paragraph/style.min.css */
+</style>
+
+<style id="classic-theme-styles-inline-css">
+/*! This file is auto-generated */
+.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
+/*# sourceURL=/wp-includes/css/classic-themes.min.css */
+</style>
+
+<link rel='stylesheet' id='rvtts-button-css' href='https://www.noa4.de/wp-content/plugins/responsivevoice-text-to-speech/build/button.css?ver=2.3.0' media='all' />
+<style id="global-styles-inline-css">
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgb(6,147,227) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgb(252,185,0) 0%,rgb(255,105,0) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgb(255,105,0) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 16px;--wp--preset--font-size--medium: 28px;--wp--preset--font-size--large: 32px;--wp--preset--font-size--x-large: 42px;--wp--preset--font-size--larger: 38px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgb(255, 255, 255), 6px 6px rgb(0, 0, 0);--wp--preset--shadow--crisp: 6px 6px 0px rgb(0, 0, 0);}.wp-block-button{--wp--preset--dimension--25: 25%;--wp--preset--dimension--50: 50%;--wp--preset--dimension--75: 75%;--wp--preset--dimension--100: 100%;}:where(body) { margin: 0; }:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}body{padding-top: 0px;padding-right: 0px;padding-bottom: 0px;padding-left: 0px;}:root :where(.wp-element-button, .wp-block-button__link){background-color: #32373c;border-width: 0;color: #fff;font-family: inherit;font-size: inherit;font-style: inherit;font-weight: inherit;letter-spacing: inherit;line-height: inherit;padding-top: calc(0.667em + 2px);padding-right: calc(1.333em + 2px);padding-bottom: calc(0.667em + 2px);padding-left: calc(1.333em + 2px);text-decoration: none;text-transform: inherit;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}.has-larger-font-size{font-size: var(--wp--preset--font-size--larger) !important;}
+/*# sourceURL=global-styles-inline-css */
+</style>
+
+<link rel='stylesheet' id='contact-form-7-css' href='https://www.noa4.de/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=6.2.5' media='all' />
+<link rel='stylesheet' id='srs-player-css-css' href='https://www.noa4.de/wp-content/plugins/srs-player/public/css/srs-player-public.css?ver=1.0.18' media='all' />
+<style id="fe-events-inline-css">
+
+.fee-form{max-width:36rem}.fee-form p{margin:0 0 1rem}.fee-form label{display:block;margin-bottom:.25rem}
+.fee-sched .fee-row{display:flex;flex-wrap:wrap;gap:0 1rem}.fee-sched .fee-row>p{flex:1 1 9rem}
+.fee-sched fieldset{border:1px solid #ddd;padding:.6rem .9rem .3rem;margin:0 0 1rem}.fee-sched legend{padding:0 .3rem;font-weight:600}
+.fee-sched .fee-check{display:inline-flex;align-items:center;gap:.3rem;margin:0 .9rem .5rem 0}
+.fee-sched .fee-radio{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:0 0 .6rem}
+.fee-sched .fee-radio select{width:auto}
+.fee-sched small{display:block;color:#666;margin-top:.25rem}
+.fee-sched [hidden]{display:none!important}
+.fee-import ol{margin:0 0 1.25rem 1.25rem}.fee-import li{margin:0 0 .35rem}
+.fee-cols{margin:1.5rem 0}.fee-cols summary{cursor:pointer;font-weight:600;margin-bottom:.5rem}
+.fee-table-wrap{overflow-x:auto;margin:0 0 1rem}
+.fee-preview td ul{margin:.25rem 0 0 1rem;padding:0;font-size:.9em}.fee-preview td ul li{margin:0}
+.fee-preview .fee-st{font-weight:600;white-space:nowrap}
+.fee-st-ok .fee-st,.fee-st-warn .fee-st{color:#1a7f37}.fee-st-warn ul{color:#8a5a00}
+.fee-st-error{background:#fcf0f1}.fee-st-error .fee-st,.fee-st-error ul{color:#b32d2e}
+.fee-st-dup{color:#777}
+.fee-form input[type=date],.fee-form input[type=time],
+.fee-form input[type=text],.fee-form input[type=url],.fee-form input[type=datetime-local],.fee-form textarea,.fee-form select{width:100%;padding:.5rem;box-sizing:border-box}
+.fee-hp{position:absolute;left:-9999px;height:0;overflow:hidden}
+.fee-err{color:#b32d2e;font-size:.9em;margin:.25rem 0 0}
+.fee-notice{padding:.6rem .8rem;border-left:4px solid #2271b1;background:#f0f6fc;margin:0 0 1rem}
+.fee-notice.is-error{border-color:#b32d2e;background:#fcf0f1}
+.fee-table{width:100%;border-collapse:collapse}.fee-table th,.fee-table td{padding:.5rem;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}
+.fee-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid #ddd;border-left:1px solid #ddd;margin:0 0 1.5rem;width:100%;box-sizing:border-box}
+.fee-cal *{box-sizing:border-box}
+.fee-cal .fee-wd{padding:.4rem .3rem;font-weight:700;font-size:.85em;text-align:center;background:#f5f5f5;border-right:1px solid #ddd;border-bottom:1px solid #ddd}
+.fee-cal .fee-cell{min-width:0;min-height:6rem;padding:.3rem;font-size:.82em;line-height:1.3;border-right:1px solid #ddd;border-bottom:1px solid #ddd;overflow:hidden}
+.fee-cal .fee-day{display:block;font-weight:600;margin:0 0 .25rem}.fee-cal .fee-day-long{display:none}
+.fee-cal .fee-today{background:#fff8e1}.fee-cal .fee-out{background:#f7f7f7}
+.fee-cal ul{list-style:none;margin:0;padding:0}
+.fee-cal li{margin:0 0 .3rem;padding:0;min-width:0}
+.fee-cal li a{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;hyphens:auto;text-decoration:none}
+.fee-cal .fee-time{font-weight:600}
+.fee-cal .fee-extra{display:none}.fee-cal .fee-more{color:#666}
+@media (max-width:600px){
+.fee-cal{display:block;border:0}
+.fee-cal .fee-cell{min-height:0;padding:.6rem 0;font-size:1em;border:0;border-bottom:1px solid #ddd;display:flex;gap:1rem}
+.fee-cal .fee-wd,.fee-cal .fee-cell.fee-out,.fee-cal .fee-cell.fee-empty{display:none}
+.fee-cal .fee-day{flex:0 0 4.2rem;margin:0}.fee-cal .fee-day-long{display:inline}
+.fee-cal .fee-today{background:none}.fee-cal .fee-today .fee-day{color:#b26a00}
+.fee-cal ul{flex:1;min-width:0}
+.fee-cal li a{-webkit-line-clamp:3}
+.fee-cal .fee-extra{display:list-item}.fee-cal .fee-more{display:none}
+}
+.fee-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.fee-meta{padding:.6rem .8rem;border-left:4px solid #2271b1;background:#f0f6fc;margin:0 0 1rem}
+.fee-single{--fee-accent:#334aff}
+.fee-single-date{font-size:1.1em;margin:0 0 1.75rem}
+.fee-addcal{position:relative;display:inline-block;margin:1.75rem 0}
+.fee-addcal summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:.6rem;padding:.65rem 1rem;border:1px solid var(--fee-accent);border-radius:3px;color:var(--fee-accent);font-weight:600;line-height:1.2;background:#fff}
+.fee-addcal summary::-webkit-details-marker{display:none}
+.fee-addcal summary svg{flex:none}
+.fee-addcal[open] .fee-chev{transform:rotate(180deg)}
+.fee-addcal ul{position:absolute;z-index:20;left:0;top:100%;min-width:100%;margin:.3rem 0 0;padding:.3rem 0;list-style:none;background:#fff;border:1px solid #ddd;border-radius:3px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.fee-addcal li{margin:0}.fee-addcal li a{display:block;padding:.5rem 1rem;white-space:nowrap;text-decoration:none;color:#222}
+.fee-addcal li a:hover{background:#f3f4ff;color:var(--fee-accent)}
+.fee-details{display:flex;flex-wrap:wrap;gap:1.25rem 3.5rem;border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;padding:2rem 0 1.5rem;margin:0 0 1.75rem}
+.fee-details>div{min-width:9rem;max-width:20rem}
+.fee-details h3{font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 .9rem;padding:0;border:0}
+.fee-details dl{margin:0}.fee-details dt{font-weight:700;margin:0 0 .3rem}.fee-details dd{margin:0 0 .9rem;padding:0}
+.fee-details address{font-style:normal;margin:0 0 .5rem;line-height:1.7}
+.fee-details a{color:var(--fee-accent)}.fee-details .fee-url{overflow-wrap:anywhere}
+.fee-pn{display:flex;justify-content:space-between;gap:1.5rem;margin:0 0 1rem}
+.fee-pn a{color:#444;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem}
+.fee-pn a:hover{color:var(--fee-accent)}
+.fee-pn .fee-next{margin-left:auto;text-align:right}
+
+/*# sourceURL=fe-events-inline-css */
+</style>
+<link rel='stylesheet' id='cream-magazine-style-css' href='https://www.noa4.de/wp-content/themes/cream-magazine/style.css?ver=2.1.12' media='all' />
+<link rel='stylesheet' id='cream-magazine-main-css' href='https://www.noa4.de/wp-content/themes/cream-magazine/assets/dist/css/main.css?ver=2.1.12' media='all' />
+<link rel='stylesheet' id='tablepress-default-css' href='https://www.noa4.de/wp-content/plugins/tablepress/css/build/default.css?ver=3.4.1' media='all' />
+<link rel='stylesheet' id='universal-google-adsense-and-ads-manager-css' href='https://www.noa4.de/wp-content/plugins/universal-google-adsense-and-ads-manager/public/assets/build/css/ugaam-public.css?ver=1.1.8' media='all' />
+<!--n2css--><!--n2js--><script id="jquery-core-js" src="https://www.noa4.de/wp-includes/js/jquery/jquery.min.js?ver=3.7.1"></script>
+<script id="jquery-migrate-js" src="https://www.noa4.de/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"></script>
+<script id="srs-player-sdk-js" src="https://www.noa4.de/wp-content/plugins/srs-player/public/js/srs.sdk.js?ver=1.0.18"></script>
+<script id="srs-player-flv-js" src="https://www.noa4.de/wp-content/plugins/srs-player/public/js/mpegts-1.7.3.min.js?ver=1.0.18"></script>
+<script id="srs-player-hls-js" src="https://www.noa4.de/wp-content/plugins/srs-player/public/js/hls-1.4.14.min.js?ver=1.0.18"></script>
+<script id="srs-player-adapter-js" src="https://www.noa4.de/wp-content/plugins/srs-player/public/js/adapter-7.4.0.min.js?ver=1.0.18"></script>
+<script id="srs-player-main-js" src="https://www.noa4.de/wp-content/plugins/srs-player/public/js/srs.player.js?ver=1.0.18"></script>
+
+<!-- Google Tag (gtac.js) durch Site-Kit hinzugefügt -->
+<!-- Von Site Kit hinzugefügtes Google-Analytics-Snippet -->
+<script id="google_gtagjs-js" src="https://www.googletagmanager.com/gtag/js?id=GT-P3F7Q2LZ" async></script>
+<script id="google_gtagjs-js-after">
+window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}
+gtag("set","linker",{"domains":["www.noa4.de"]});
+gtag("js", new Date());
+gtag("set", "developer_id.dZTNiMT", true);
+gtag("config", "GT-P3F7Q2LZ", {"googlesitekit_post_type":"post"});
+ window._googlesitekit = window._googlesitekit || {}; window._googlesitekit.throttledEvents = []; window._googlesitekit.gtagEvent = (name, data) => { var key = JSON.stringify( { name, data } ); if ( !! window._googlesitekit.throttledEvents[ key ] ) { return; } window._googlesitekit.throttledEvents[ key ] = true; setTimeout( () => { delete window._googlesitekit.throttledEvents[ key ]; }, 5 ); gtag( "event", name, { ...data, event_source: "site-kit", ...( data && data.user_data ? {"developer_id.dZjRkOT":true} : {} ) } ); }; 
+//# sourceURL=google_gtagjs-js-after
+</script>
+<link rel="https://api.w.org/" href="https://www.noa4.de/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://www.noa4.de/wp-json/wp/v2/posts/13879" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.noa4.de/xmlrpc.php?rsd" />
+
+<!-- This site is using AdRotate v5.19.4 to display their advertisements - https://ajdg.solutions/ -->
+<!-- AdRotate CSS -->
+<style type="text/css" media="screen">
+	.g { margin:0px; padding:0px; overflow:hidden; line-height:1; zoom:1; }
+	.g img { height:auto; }
+	.g-col { position:relative; float:left; }
+	.g-col:first-child { margin-left: 0; }
+	.g-col:last-child { margin-right: 0; }
+	@media only screen and (max-width: 480px) {
+		.g-col, .g-dyn, .g-single { width:100%; margin-left:0; margin-right:0; }
+	}
+</style>
+<!-- /AdRotate CSS -->
+
+<style type="text/css">
+			body {
+				--aiovg-color-primary: #3b82f6;
+			}
+
+			.aiovg-player {
+				display: block;
+				position: relative;
+				border-radius: 3px;
+				padding-bottom: 56.25%;
+				width: 100%;
+				height: 0;
+				overflow: hidden;
+			}
+
+			.aiovg-player iframe,
+			.aiovg-player .video-js,
+			.aiovg-player .plyr {
+				--plyr-color-main: #3b82f6;
+				position: absolute;
+				inset: 0;
+				margin: 0;
+				padding: 0;
+				width: 100%;
+				height: 100%;
+			}
+		</style><style>
+		#category-posts-2-internal ul {padding: 0;}
+#category-posts-2-internal .cat-post-item img {max-width: initial; max-height: initial; margin: initial;}
+#category-posts-2-internal .cat-post-author {margin-bottom: 0;}
+#category-posts-2-internal .cat-post-thumbnail {margin: 5px 10px 5px 0;}
+#category-posts-2-internal .cat-post-item:before {content: ""; clear: both;}
+#category-posts-2-internal .cat-post-excerpt-more {display: inline-block;}
+#category-posts-2-internal .cat-post-item {list-style: none; margin: 3px 0 10px; padding: 3px 0;}
+#category-posts-2-internal .cat-post-current .cat-post-title {font-weight: bold; text-transform: uppercase;}
+#category-posts-2-internal [class*=cat-post-tax] {font-size: 0.85em;}
+#category-posts-2-internal [class*=cat-post-tax] * {display:inline-block;}
+#category-posts-2-internal .cat-post-item a:after {content: ""; display: table;	clear: both;}
+#category-posts-2-internal .cat-post-item .cat-post-title {overflow: hidden;text-overflow: ellipsis;white-space: initial;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;padding-bottom: 0 !important;}
+#category-posts-2-internal .cpwp-wrap-text p {display: inline;}
+#category-posts-2-internal .cat-post-item .cpwp-wrap-text {overflow: hidden;text-overflow: ellipsis;white-space: initial;display: -webkit-box;-webkit-line-clamp: 3;-webkit-box-orient: vertical;padding-bottom: 0 !important;}
+#category-posts-2-internal p.cpwp-excerpt-text {min-width: 120px;}
+#category-posts-2-internal .cat-post-item a:after {content: ""; clear: both;}
+#category-posts-2-internal .cat-post-thumbnail {display:block; float:left; margin:5px 10px 5px 0;}
+#category-posts-2-internal .cat-post-crop {overflow:hidden;display:block;}
+#category-posts-2-internal p {margin:5px 0 0 0}
+#category-posts-2-internal li > div {margin:5px 0 0 0; clear:both;}
+#category-posts-2-internal .dashicons {vertical-align:middle;}
+#category-posts-3-internal ul {padding: 0;}
+#category-posts-3-internal .cat-post-item img {max-width: initial; max-height: initial; margin: initial;}
+#category-posts-3-internal .cat-post-author {margin-bottom: 0;}
+#category-posts-3-internal .cat-post-thumbnail {margin: 5px 10px 5px 0;}
+#category-posts-3-internal .cat-post-item:before {content: ""; clear: both;}
+#category-posts-3-internal .cat-post-excerpt-more {display: inline-block;}
+#category-posts-3-internal .cat-post-item {list-style: none; margin: 3px 0 10px; padding: 3px 0;}
+#category-posts-3-internal .cat-post-current .cat-post-title {font-weight: bold; text-transform: uppercase;}
+#category-posts-3-internal [class*=cat-post-tax] {font-size: 0.85em;}
+#category-posts-3-internal [class*=cat-post-tax] * {display:inline-block;}
+#category-posts-3-internal .cat-post-item a:after {content: ""; display: table;	clear: both;}
+#category-posts-3-internal .cat-post-item .cat-post-title {overflow: hidden;text-overflow: ellipsis;white-space: initial;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;padding-bottom: 0 !important;}
+#category-posts-3-internal .cpwp-wrap-text p {display: inline;}
+#category-posts-3-internal .cat-post-item .cpwp-wrap-text {overflow: hidden;text-overflow: ellipsis;white-space: initial;display: -webkit-box;-webkit-line-clamp: 3;-webkit-box-orient: vertical;padding-bottom: 0 !important;}
+#category-posts-3-internal p.cpwp-excerpt-text {min-width: 120px;}
+#category-posts-3-internal .cat-post-item a:after {content: ""; clear: both;}
+#category-posts-3-internal .cat-post-thumbnail {display:block; float:left; margin:5px 10px 5px 0;}
+#category-posts-3-internal .cat-post-crop {overflow:hidden;display:block;}
+#category-posts-3-internal p {margin:5px 0 0 0}
+#category-posts-3-internal li > div {margin:5px 0 0 0; clear:both;}
+#category-posts-3-internal .dashicons {vertical-align:middle;}
+</style>
+		<meta name="generator" content="Site Kit by Google 1.192.0" />			<style>
+							</style>
+			<meta name="tec-api-version" content="v1"><meta name="tec-api-origin" content="https://www.noa4.de"><link rel="alternate" href="https://www.noa4.de/wp-json/tribe/events/v1/" /><meta name="generator" content="ResponsiveVoice Text To Speech">
+<style>a:hover{text-decoration:none !important;}button,input[type="button"],input[type="reset"],input[type="submit"],.primary-navigation > ul > li.home-btn,.cm_header_lay_three .primary-navigation > ul > li.home-btn,.news_ticker_wrap .ticker_head,#toTop,.section-title h2::after,.sidebar-widget-area .widget .widget-title h2::after,.footer-widget-container .widget .widget-title h2::after,#comments div#respond h3#reply-title::after,#comments h2.comments-title:after,.post_tags a,.owl-carousel .owl-nav button.owl-prev,.owl-carousel .owl-nav button.owl-next,.cm_author_widget .author-detail-link a,.error_foot form input[type="submit"],.widget_search form input[type="submit"],.header-search-container input[type="submit"],.trending_widget_carousel .owl-dots button.owl-dot,.pagination .page-numbers.current,.post-navigation .nav-links .nav-previous a,.post-navigation .nav-links .nav-next a,#comments form input[type="submit"],footer .widget.widget_search form input[type="submit"]:hover,.widget_product_search .woocommerce-product-search button[type="submit"],.woocommerce ul.products li.product .button,.woocommerce .woocommerce-pagination ul.page-numbers li span.current,.woocommerce .product div.summary .cart button.single_add_to_cart_button,.woocommerce .product div.woocommerce-tabs div.panel #reviews #review_form_wrapper .comment-form p.form-submit .submit,.woocommerce .product section.related > h2::after,.woocommerce .cart .button:hover,.woocommerce .cart .button:focus,.woocommerce .cart input.button:hover,.woocommerce .cart input.button:focus,.woocommerce #respond input#submit:hover,.woocommerce #respond input#submit:focus,.woocommerce button.button:hover,.woocommerce button.button:focus,.woocommerce input.button:hover,.woocommerce input.button:focus,.woocommerce #respond input#submit.alt:hover,.woocommerce a.button.alt:hover,.woocommerce button.button.alt:hover,.woocommerce input.button.alt:hover,.woocommerce a.remove:hover,.woocommerce-account .woocommerce-MyAccount-navigation ul li.is-active a,.woocommerce a.button:hover,.woocommerce a.button:focus,.widget_product_tag_cloud .tagcloud a:hover,.widget_product_tag_cloud .tagcloud a:focus,.woocommerce .widget_price_filter .price_slider_wrapper .ui-slider .ui-slider-handle,.error_page_top_portion,.primary-navigation ul li a span.menu-item-description{background-color:#95c11f}a:hover,.post_title h2 a:hover,.post_title h2 a:focus,.post_meta li a:hover,.post_meta li a:focus,ul.social-icons li a[href*=".com"]:hover::before,.ticker_carousel .owl-nav button.owl-prev i,.ticker_carousel .owl-nav button.owl-next i,.news_ticker_wrap .ticker_items .item a:hover,.news_ticker_wrap .ticker_items .item a:focus,.cm_banner .post_title h2 a:hover,.cm_banner .post_meta li a:hover,.cm_middle_post_widget_one .post_title h2 a:hover,.cm_middle_post_widget_one .post_meta li a:hover,.cm_middle_post_widget_three .post_thumb .post-holder a:hover,.cm_middle_post_widget_three .post_thumb .post-holder a:focus,.cm_middle_post_widget_six .middle_widget_six_carousel .item .card .card_content a:hover,.cm_middle_post_widget_six .middle_widget_six_carousel .item .card .card_content a:focus,.cm_post_widget_twelve .card .post-holder a:hover,.cm_post_widget_twelve .card .post-holder a:focus,.cm_post_widget_seven .card .card_content a:hover,.cm_post_widget_seven .card .card_content a:focus,.copyright_section a:hover,.footer_nav ul li a:hover,.breadcrumb ul li:last-child span,.pagination .page-numbers:hover,#comments ol.comment-list li article footer.comment-meta .comment-metadata span.edit-link a:hover,#comments ol.comment-list li article .reply a:hover,.social-share ul li a:hover,ul.social-icons li a:hover,ul.social-icons li a:focus,.woocommerce ul.products li.product a:hover,.woocommerce ul.products li.product .price,.woocommerce .woocommerce-pagination ul.page-numbers li a.page-numbers:hover,.woocommerce div.product p.price,.woocommerce div.product span.price,.video_section .video_details .post_title h2 a:hover,.primary-navigation.dark li a:hover,footer .footer_inner a:hover,.footer-widget-container ul.post_meta li:hover span,.footer-widget-container ul.post_meta li:hover a,ul.post_meta li a:hover,.cm-post-widget-two .big-card .post-holder .post_title h2 a:hover,.cm-post-widget-two .big-card .post_meta li a:hover,.copyright_section .copyrights a,.breadcrumb ul li a:hover,.breadcrumb ul li a:hover span{color:#95c11f}.ticker_carousel .owl-nav button.owl-prev,.ticker_carousel .owl-nav button.owl-next,.error_foot form input[type="submit"],.widget_search form input[type="submit"],.pagination .page-numbers:hover,#comments form input[type="submit"],.social-share ul li a:hover,.header-search-container .search-form-entry,.widget_product_search .woocommerce-product-search button[type="submit"],.woocommerce .woocommerce-pagination ul.page-numbers li span.current,.woocommerce .woocommerce-pagination ul.page-numbers li a.page-numbers:hover,.woocommerce a.remove:hover,.ticker_carousel .owl-nav button.owl-prev:hover,.ticker_carousel .owl-nav button.owl-next:hover,footer .widget.widget_search form input[type="submit"]:hover,.trending_widget_carousel .owl-dots button.owl-dot,.the_content blockquote,.widget_tag_cloud .tagcloud a:hover{border-color:#95c11f}.ticker_carousel.owl-carousel .owl-nav button:hover svg{color:#95c11f;fill:#95c11f;}header .mask{background-color:rgba(0,0,0,0.2);}.site-description{color:#000000;}body{font-family:Arial,sans-serif;font-weight:inherit;}h1,h2,h3,h4,h5,h6,.site-title{font-family:Arial,sans-serif;font-weight:inherit;}.entry_cats ul.post-categories li a{color:#dd3333;}.entry_cats ul.post-categories li a:hover,.cm_middle_post_widget_six .middle_widget_six_carousel .item .card .card_content .entry_cats ul.post-categories li a:hover{background-color:#010101;color:#fff;}.the_content a{color:#ffffff;}.the_content a:hover{color:#010101;}.post-display-grid .card_content .cm-post-excerpt{margin-top:15px;}</style><noscript><style>.lazyload[data-src]{display:none !important;}</style></noscript><style>.lazyload{background-image:none !important;}.lazyload:before{background-image:none !important;}</style><style id="custom-background-css">
+body.custom-background { background-color: #3a3a3a; }
+</style>
+<link rel="icon" href="https://www.noa4.de/wp-content/uploads/2025/03/cropped-vier-32x32.jpg" sizes="32x32" />
+<link rel="icon" href="https://www.noa4.de/wp-content/uploads/2025/03/cropped-vier-192x192.jpg" sizes="192x192" />
+<link rel="apple-touch-icon" href="https://www.noa4.de/wp-content/uploads/2025/03/cropped-vier-180x180.jpg" />
+<meta name="msapplication-TileImage" content="https://www.noa4.de/wp-content/uploads/2025/03/cropped-vier-270x270.jpg" />
+<style id="wp-custom-css">
+#menu-hauptmenue {
+	background: #95c11f;
+}
+#menu-item-52 a:link {
+	color: #fff;
+}
+#menu-item-52 a:hover {
+	color: #000;
+}
+#menu-item-53 a:link {
+	color: #fff;
+}
+#menu-item-53 a:hover {
+	color: #000;
+}
+#menu-item-51 a:link {
+	color: #fff;
+}
+#menu-item-51 a:hover {
+	color: #000;
+}
+#menu-item-54 a:link {
+	color: #fff;
+}
+#menu-item-54 a:hover {
+	color: #000;
+}
+#menu-item-237 a:link {
+	color: #fff;
+}
+#menu-item-237 a:hover {
+	color: #000;
+}
+#menu-item-98 a:link {
+	color: #fff;
+}
+#menu-item-98 a:hover {
+	color: #000;
+}
+#menu-item-111 a:link {
+	color: #fff;
+}
+#menu-item-111 a:hover {
+	color: #000;
+}
+
+#menu-item-1681 a:link {
+	color: #fff;
+}
+#menu-item-1681 a:hover {
+	color: #000;
+}
+.home-btn a:link {
+	color: #fff;
+}
+.home-btn a:hover {
+	color: #000;
+}
+.search_box a:link{
+	 color:red;
+}
+.the_content a:link, a:visited {
+	color: #000;
+}
+.the_content a:hover {
+	text-decoration: underline;
+}
+h1, h2 {
+	font-weight: bold;
+}
+.advertisement-area{
+	width: 728px;
+	height: 90px;
+}
+.image wp-image-805  attachment-medium size-medium {
+		width: 728px;
+	height: 90px;
+}
+.ugaam-ad-wrapper-outer ugaam-home-ad-wrapper is-center-align {
+	visibility: hidden;
+}
+.Buttons {
+	color: #95c11f;
+}
+#menu-item-1350 a:link {
+	color: #fff;
+}
+#menu-item-1350 a:hover {
+	color: #000;
+}
+ins.adsbygoogle {
+	background: transparent !important;
+}
+
+.atw-inline-block.atw-text-4xl.atw-font-normal.atw-my-1\.5.atw-px-6.atw-py-1\.5.atw-rounded-lg {
+  color: #000000;
+  background-color: green;
+}
+
+</style>
+		</head>
+				<body data-rsssl=1 class="wp-singular post-template-default single single-post postid-13879 single-format-standard custom-background wp-custom-logo wp-embed-responsive wp-theme-cream-magazine tribe-no-js cm-mobile-content-sidebar right-sidebar boxed">
+			<div id="a31310c32-27ec-46ce-b648-50e7e56daa76" consent-skip-blocker="1" class="" data-bg="background-color: rgba(0, 0, 0, 0.500);" style="background-color: rgba(0, 0, 0, 0.500);  position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;pointer-events:all;display:none;filter:none;max-width:100vw;max-height:100vh;transform:translateZ(0);" ></div>			<a class="skip-link screen-reader-text" href="#content">Zum Inhalt springen</a>
+				<div class="page-wrapper">
+		<header class="general-header cm-header-style-one">
+		<div class="cm-container">
+		<div class="logo-container">
+			<div class="row align-items-center">
+				<div class="cm-col-lg-4 cm-col-12">
+							<div class="logo">
+			<a href="https://www.noa4.de/" class="custom-logo-link" rel="home"><img width="1920" height="524" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB4AAAAIMAQMAAAAuJiOBAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAJFJREFUGBntwTEBAAAAwiD7p14MH2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANwE7VsAAVvKC0EAAAAASUVORK5CYII=" class="custom-logo lazyload ewww_webp_lazy_load" alt="Logo noa4" decoding="async" fetchpriority="high" data-src="https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile.png" data-srcset="https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile.png 1920w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-300x82.png 300w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-1024x279.png 1024w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-768x210.png 768w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-1536x419.png 1536w" data-max-width="1920" data-sizes="auto" data-eio-rwidth="1920" data-eio-rheight="524" data-src-webp="https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile.png.webp" data-srcset-webp="https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile.png.webp 1920w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-300x82.png.webp 300w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-1024x279.png.webp 1024w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-768x210.png.webp 768w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-1536x419.png.webp 1536w" /><noscript><img width="1920" height="524" src="https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile.png" class="custom-logo" alt="Logo noa4" decoding="async" fetchpriority="high" srcset="https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile.png 1920w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-300x82.png 300w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-1024x279.png 1024w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-768x210.png 768w, https://www.noa4.de/wp-content/uploads/2025/04/cropped-Logo-Website-mit-Unterzeile-1536x419.png 1536w" sizes="(max-width: 1920px) 100vw, 1920px" data-eio="l" /></noscript></a>		</div><!-- .logo -->
+						</div><!-- .col -->
+									<div class="cm-col-lg-8 cm-col-12">
+						<div class="advertisement-area">
+							<div id="adrotate_widgets-3" class="widget adrotate_widgets"><div class="g g-2"><div class="g-single a-5"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8108671996499582"
+     crossorigin="anonymous"></script>
+<!-- Rectangle Leaderboard -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-8108671996499582"
+     data-ad-slot="4848653913"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script></div></div></div>						</div><!-- .advertisement-area -->
+					</div><!-- .col -->
+							</div><!-- .row -->
+		</div><!-- .logo-container -->
+		<nav class="main-navigation">
+			<div id="main-nav" class="primary-navigation">
+				<ul id="menu-hauptmenue" class=""><li class="home-btn"><a href="https://www.noa4.de/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M575.8 255.5c0 18-15 32.1-32 32.1l-32 0 .7 160.2c0 2.7-.2 5.4-.5 8.1l0 16.2c0 22.1-17.9 40-40 40l-16 0c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1L416 512l-24 0c-22.1 0-40-17.9-40-40l0-24 0-64c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32 14.3-32 32l0 64 0 24c0 22.1-17.9 40-40 40l-24 0-31.9 0c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2l-16 0c-22.1 0-40-17.9-40-40l0-112c0-.9 0-1.9 .1-2.8l0-69.7-32 0c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z"/></svg></a></li><li id="menu-item-52" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-52"><a href="https://www.noa4.de/category/lokal/">Lokal</a></li>
+<li id="menu-item-53" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-53"><a href="https://www.noa4.de/category/politik/">Politik</a></li>
+<li id="menu-item-51" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-51"><a href="https://www.noa4.de/category/kultur/">Kultur</a></li>
+<li id="menu-item-54" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-54"><a href="https://www.noa4.de/category/sport/">Sport</a></li>
+<li id="menu-item-237" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-237"><a href="https://www.noa4.de/category/region/">Region</a></li>
+<li id="menu-item-98" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-98"><a href="https://www.noa4.de/livestream-norderstedt/">Livestream Norderstedt</a></li>
+<li id="menu-item-111" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-111"><a href="https://www.noa4.de/livestream-hamburg/">Livestream Hamburg</a></li>
+<li id="menu-item-1681" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1681"><a href="https://www.noa4.de/mediathek/">Mediathek</a></li>
+</ul>			</div><!-- .primary-navigation -->
+			<div class="header-search-container">
+				<div class="search-form-entry">
+					<form role="search" class="cm-search-form" method="get" action="https://www.noa4.de/"><input type="search" name="s" placeholder="Suchen …" value="" ><button type="submit" class="cm-submit-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></button></form>				</div><!-- .search-form-entry -->
+			</div><!-- .search-container -->
+		</nav><!-- .main-navigation -->
+	</div><!-- .cm-container -->
+</header><!-- .general-header -->
+<div id="content" class="site-content">
+	<div class="cm-container">
+	<div class="inner-page-wrapper">
+		<div id="primary" class="content-area">
+			<main id="main" class="site-main">
+				<div class="cm_post_page_lay_wrap">
+								<div class="breadcrumb  default-breadcrumb">
+				<nav role="navigation" aria-label="Navigationspfad" class="breadcrumb-trail breadcrumbs" itemprop="breadcrumb"><ul class="trail-items" itemscope itemtype="http://schema.org/BreadcrumbList"><meta name="numberOfItems" content="3" /><meta name="itemListOrder" content="Ascending" /><li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem" class="trail-item trail-begin"><a href="https://www.noa4.de/" rel="home" itemprop="item"><span itemprop="name">Start</span></a><meta itemprop="position" content="1" /></li><li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem" class="trail-item"><a href="https://www.noa4.de/category/lokal/" itemprop="item"><span itemprop="name">Lokal</span></a><meta itemprop="position" content="2" /></li><li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem" class="trail-item trail-end"><a href="https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt" itemprop="item"><span itemprop="name">Spatenstich für 69 geförderte Wohnungen in Norderstedt</span></a><meta itemprop="position" content="3" /></li></ul></nav>			</div>
+								<div class="single-container">
+						<div class="row">  
+							<div class="cm-col-lg-8 cm-col-12 sticky_portion cm-order-1-mobile-tablet">
+								<div class="content-entry">
+	<article id="post-13879" class="post-detail post-13879 post type-post status-publish format-standard hentry category-lokal tag-harksheide tag-wohnraum tag-wohnungen">
+		<div class="the_title">
+			<h1>Spatenstich für 69 geförderte Wohnungen in Norderstedt</h1>
+		</div><!-- .the_title -->
+					<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-08-06T16:19:06+02:00">06.08.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+							<div class="the_content">
+			<div class="g g-3"><div class="g-single a-5"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8108671996499582"
+     crossorigin="anonymous"></script>
+<!-- Rectangle Leaderboard -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-8108671996499582"
+     data-ad-slot="4848653913"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script></div></div>
+<p class="wp-block-paragraph"><strong><em>Norderstedt &#8211;</em></strong> Mit einem symbolischen Spatenstich haben die Baugenossenschaft ADLERSHORST und Norderstedts Oberbürgermeisterin Katrin Schmieder den Bau von 69 öffentlich geförderten Wohnungen im Liesel-Hünichen-Weg in Harksheide offiziell gestartet. Das Bauprojekt umfasst Zwei- bis Vierzimmerwohnungen mit Wohnflächen zwischen 58 und 91 Quadratmetern. Ergänzend entstehen 65 Stellplätze in einer Tiefgarage.</p>
+
+
+
+<p class="wp-block-paragraph">Für den Neubau investiert ADLERSHORST rund 21 Millionen Euro inklusive Grundstück. Mit dem Projekt wächst der Wohnungsbestand der Genossenschaft in Norderstedt von 2.198 auf 2.267 Wohnungen. „Menschen suchen bezahlbaren Wohnraum und haben auch einen Anspruch auf geförderten Wohnungsbau. Es ist verwaltungsseitig und politisch unser Wille, bestmöglichst viele geförderte Wohnungen anbieten zu können. Wir sehen ja, was Wohnungen heute kosten. Schnell liegt die Kaltmiete bei 20 Euro pro Quadratmeter. Das können immer weniger Menschen bezahlen“, sagte Norderstedts Oberbürgermeisterin Katrin Schmieder.</p>
+
+
+
+<p class="wp-block-paragraph">Die Wohnungen entstehen im ersten und zweiten Förderweg. Die Fertigstellung ist für das vierte Quartal 2027 geplant. Bereits im zweiten Quartal 2027 soll die Vermietung beginnen. Zunächst werden die Wohnungen an Mitglieder der Genossenschaft vergeben. Anschließend können sich auch weitere Interessenten bewerben, die mit Anmietung einer Wohnung Mitglied der Genossenschaft werden können.</p>
+
+
+<button class="responsivevoice-button" type="button" title="ResponsiveVoice Tap to Start/Stop Speech" data-rvtts-action="speak" data-rvtts-text="Norderstedt - Mit einem symbolischen Spatenstich haben die Baugenossenschaft ADLERSHORST und Norderstedts Oberbürgermeisterin Katrin Schmieder den Bau von 69 öffentlich geförderten Wohnungen im Liesel-Hünichen-Weg in Harksheide offiziell gestartet. Das Bauprojekt umfasst Zwei- bis Vierzimmerwohnungen mit Wohnflächen zwischen 58 und 91 Quadratmetern. Ergänzend entstehen 65 Stellplätze in einer Tiefgarage. Für den Neubau investiert ADLERSHORST rund 21 Millionen Euro inklusive Grundstück. Mit dem Projekt wächst der Wohnungsbestand der Genossenschaft in Norderstedt von 2.198 auf 2.267 Wohnungen. „Menschen suchen bezahlbaren Wohnraum und haben auch einen Anspruch auf geförderten Wohnungsbau. Es ist verwaltungsseitig und politisch unser Wille, bestmöglichst viele geförderte Wohnungen anbieten zu können. Wir sehen ja, was Wohnungen heute kosten. Schnell liegt die Kaltmiete bei 20 Euro pro Quadratmeter. Das können immer weniger Menschen bezahlen“, sagte Norderstedts Oberbürgermeisterin Katrin Schmieder. Die Wohnungen entstehen im ersten und zweiten Förderweg. Die Fertigstellung ist für das vierte Quartal 2027 geplant. Bereits im zweiten Quartal 2027 soll die Vermietung beginnen. Zunächst werden die Wohnungen an Mitglieder der Genossenschaft vergeben. Anschließend können sich auch weitere Interessenten bewerben, die mit Anmietung einer Wohnung Mitglied der Genossenschaft werden können." data-rvtts-voice="Deutsch Female" data-rvtts-rate="1" data-rvtts-pitch="1.2" data-rvtts-volume="0.8" data-rvtts-brand-url="https://responsivevoice.org/?utm_source=wordpress-plugin&amp;utm_medium=referral&amp;utm_campaign=powered-by" data-rvtts-brand-label="Powered by ResponsiveVoice"><svg class="rvtts-icon" width="22" height="22" viewBox="0 0 22 22" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M11 0C4.92345 0 0 4.92345 0 11C0 13.2683 0.690345 15.3772 1.86621 17.1221L0.811724 21.0517L4.70345 20.0124C6.48621 21.2641 8.65586 22 11 22C17.0766 22 22 17.0766 22 11C22 4.92345 17.0766 0 11 0ZM3.99793 9.99862C3.99793 9.44483 4.44552 8.99724 4.99931 8.99724C5.5531 8.99724 6.00069 9.44483 6.00069 9.99862V12.0014C6.00069 12.5552 5.5531 13.0028 4.99931 13.0028C4.44552 13.0028 3.99793 12.5552 3.99793 12.0014V9.99862ZM8.99724 13.9966C8.99724 14.5503 8.54966 14.9979 7.99586 14.9979C7.44207 14.9979 6.99448 14.5503 6.99448 13.9966V7.99586C6.99448 7.44207 7.44207 6.99448 7.99586 6.99448C8.54966 6.99448 8.99724 7.44207 8.99724 7.99586V13.9966ZM12.0014 17.0007C12.0014 17.5545 11.5538 18.0021 11 18.0021C10.4462 18.0021 9.99862 17.5545 9.99862 17.0007V4.99931C9.99862 4.44552 10.4462 3.99793 11 3.99793C11.5538 3.99793 12.0014 4.44552 12.0014 4.99931V17.0007ZM14.9979 13.9966C14.9979 14.5503 14.5503 14.9979 13.9966 14.9979C13.4428 14.9979 12.9952 14.5503 12.9952 13.9966V7.99586C12.9952 7.44207 13.4428 6.99448 13.9966 6.99448C14.5503 6.99448 14.9979 7.44207 14.9979 7.99586V13.9966ZM18.0021 12.0014C18.0021 12.5552 17.5545 13.0028 17.0007 13.0028C16.4469 13.0028 15.9993 12.5552 15.9993 12.0014V9.99862C15.9993 9.44483 16.4469 8.99724 17.0007 8.99724C17.5545 8.99724 18.0021 9.44483 18.0021 9.99862V12.0014Z"/></svg><span class="responsivevoice-button__label">Beitrag vorlesen lassen</span></button>
+
+
+<!--[googlesitekit-end-of-content]-->
+
+		</div><!-- .the_content -->
+			</article><!-- #post-13879 -->
+</div><!-- .content-entry -->
+
+	<nav class="navigation post-navigation" aria-label="Beiträge">
+		<h2 class="screen-reader-text">Beitragsnavigation</h2>
+		<div class="nav-links"><div class="nav-previous"><a href="https://www.noa4.de/mehr-als-700-figuren-der-drachenlord-von-norderstedt/" rel="prev"><span class="cm-post-nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg></span>Zurück</a></div><div class="nav-next"><a href="https://www.noa4.de/pender-kandidiert-fuer-cdu-ortsvorsitz-ich-bin-bereit/" rel="next">Weiter<span class="cm-post-nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg></span></a></div></div>
+	</nav>	<section class="cm_related_post_container">
+		<div class="section_inner">
+						<div class="row">
+									<div class="cm-col-lg-6 cm-col-md-6 cm-col-12">
+						<div class="card">
+															<div class="post_thumb">
+											<a href="https://www.noa4.de/neno-gewinnt-1-000-euro-vom-hamburger-flughafen/">
+			<figure class="imghover">
+				<img width="800" height="450" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAHCAQMAAAAtrT+LAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAENJREFUGBntwYEAAAAAw6D7U0/hANUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4BsYoAATS2EiQAAAAASUVORK5CYII=" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image lazyload ewww_webp_lazy_load" alt="NeNo gewinnt: 1.000 Euro vom Hamburger Flughafen" decoding="async" data-src="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-800x450.jpg" data-srcset="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026.jpg 1920w" data-max-width="800" data-sizes="auto" data-eio-rwidth="800" data-eio-rheight="450" data-src-webp="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-800x450.jpg.webp" data-srcset-webp="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-800x450.jpg.webp 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-300x169.jpg.webp 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-1024x576.jpg.webp 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-768x432.jpg.webp 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-1536x864.jpg.webp 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026.jpg.webp 1920w" /><noscript><img width="800" height="450" src="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-800x450.jpg" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image" alt="NeNo gewinnt: 1.000 Euro vom Hamburger Flughafen" decoding="async" srcset="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026.jpg 1920w" sizes="(max-width: 800px) 100vw, 800px" data-eio="l" /></noscript>			</figure>
+		</a>
+										</div><!-- .post_thumb.imghover -->
+															<div class="card_content">
+																<div class="post_title">
+									<h2><a href="https://www.noa4.de/neno-gewinnt-1-000-euro-vom-hamburger-flughafen/">NeNo gewinnt: 1.000 Euro vom Hamburger Flughafen</a></h2>
+								</div><!-- .post_title -->
+											<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/neno-gewinnt-1-000-euro-vom-hamburger-flughafen/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-11-19T14:18:57+01:00">19.11.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+				 
+							</div><!-- .card_content -->
+						</div><!-- .card -->
+					</div><!-- .col -->
+										<div class="cm-col-lg-6 cm-col-md-6 cm-col-12">
+						<div class="card">
+															<div class="post_thumb">
+											<a href="https://www.noa4.de/nach-sitzungs-marathon-nachtragshaushalt-beschlossen/">
+			<figure class="imghover">
+				<img width="800" height="450" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAHCAQMAAAAtrT+LAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAENJREFUGBntwYEAAAAAw6D7U0/hANUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4BsYoAATS2EiQAAAAASUVORK5CYII=" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image lazyload ewww_webp_lazy_load" alt="Nach Sitzungs-Marathon: Nachtragshaushalt beschlossen" decoding="async" data-src="https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-800x450.jpg" data-srcset="https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1.jpg 1920w" data-max-width="800" data-sizes="auto" data-eio-rwidth="800" data-eio-rheight="450" data-src-webp="https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-800x450.jpg.webp" data-srcset-webp="https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-800x450.jpg.webp 800w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-300x169.jpg.webp 300w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-1024x576.jpg.webp 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-768x432.jpg.webp 768w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-1536x864.jpg.webp 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1.jpg.webp 1920w" /><noscript><img width="800" height="450" src="https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-800x450.jpg" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image" alt="Nach Sitzungs-Marathon: Nachtragshaushalt beschlossen" decoding="async" srcset="https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Nachtragshaushalt2627_1.10.1.jpg 1920w" sizes="(max-width: 800px) 100vw, 800px" data-eio="l" /></noscript>			</figure>
+		</a>
+										</div><!-- .post_thumb.imghover -->
+															<div class="card_content">
+																<div class="post_title">
+									<h2><a href="https://www.noa4.de/nach-sitzungs-marathon-nachtragshaushalt-beschlossen/">Nach Sitzungs-Marathon: Nachtragshaushalt beschlossen</a></h2>
+								</div><!-- .post_title -->
+											<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/nach-sitzungs-marathon-nachtragshaushalt-beschlossen/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-11-18T17:21:48+01:00">18.11.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+				 
+							</div><!-- .card_content -->
+						</div><!-- .card -->
+					</div><!-- .col -->
+										<div class="cm-col-lg-6 cm-col-md-6 cm-col-12">
+						<div class="card">
+															<div class="post_thumb">
+											<a href="https://www.noa4.de/bauarbeiten-auf-der-ulze-vor-weihnachten-wieder-freie-fahrt/">
+			<figure class="imghover">
+				<img width="800" height="450" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAHCAQMAAAAtrT+LAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAENJREFUGBntwYEAAAAAw6D7U0/hANUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4BsYoAATS2EiQAAAAASUVORK5CYII=" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image lazyload ewww_webp_lazy_load" alt="Bauarbeiten auf der Ulze: Vor Weihnachten wieder freie Fahrt" decoding="async" data-src="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-800x450.jpg" data-srcset="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2.jpg 1920w" data-max-width="800" data-sizes="auto" data-eio-rwidth="800" data-eio-rheight="450" data-src-webp="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-800x450.jpg.webp" data-srcset-webp="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-800x450.jpg.webp 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-300x169.jpg.webp 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-1024x576.jpg.webp 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-768x432.jpg.webp 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-1536x864.jpg.webp 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2.jpg.webp 1920w" /><noscript><img width="800" height="450" src="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-800x450.jpg" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image" alt="Bauarbeiten auf der Ulze: Vor Weihnachten wieder freie Fahrt" decoding="async" srcset="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-2.jpg 1920w" sizes="(max-width: 800px) 100vw, 800px" data-eio="l" /></noscript>			</figure>
+		</a>
+										</div><!-- .post_thumb.imghover -->
+															<div class="card_content">
+																<div class="post_title">
+									<h2><a href="https://www.noa4.de/bauarbeiten-auf-der-ulze-vor-weihnachten-wieder-freie-fahrt/">Bauarbeiten auf der Ulze: Vor Weihnachten wieder freie Fahrt</a></h2>
+								</div><!-- .post_title -->
+											<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/bauarbeiten-auf-der-ulze-vor-weihnachten-wieder-freie-fahrt/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-11-18T15:40:25+01:00">18.11.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+				 
+							</div><!-- .card_content -->
+						</div><!-- .card -->
+					</div><!-- .col -->
+										<div class="cm-col-lg-6 cm-col-md-6 cm-col-12">
+						<div class="card">
+															<div class="post_thumb">
+											<a href="https://www.noa4.de/mega-stau-droht-am-wochenende-a7-voll-gesperrt/">
+			<figure class="imghover">
+				<img width="800" height="450" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAHCAQMAAAAtrT+LAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAENJREFUGBntwYEAAAAAw6D7U0/hANUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4BsYoAATS2EiQAAAAASUVORK5CYII=" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image lazyload ewww_webp_lazy_load" alt="Mega-Stau droht am Wochenende: A7 voll gesperrt" decoding="async" data-src="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-800x450.jpg" data-srcset="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1.jpg 1920w" data-max-width="800" data-sizes="auto" data-eio-rwidth="800" data-eio-rheight="450" data-src-webp="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-800x450.jpg.webp" data-srcset-webp="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-800x450.jpg.webp 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-300x169.jpg.webp 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-1024x576.jpg.webp 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-768x432.jpg.webp 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-1536x864.jpg.webp 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1.jpg.webp 1920w" /><noscript><img width="800" height="450" src="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-800x450.jpg" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image" alt="Mega-Stau droht am Wochenende: A7 voll gesperrt" decoding="async" srcset="https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Hintersetzer_2026_Restart-1.jpg 1920w" sizes="(max-width: 800px) 100vw, 800px" data-eio="l" /></noscript>			</figure>
+		</a>
+										</div><!-- .post_thumb.imghover -->
+															<div class="card_content">
+																<div class="post_title">
+									<h2><a href="https://www.noa4.de/mega-stau-droht-am-wochenende-a7-voll-gesperrt/">Mega-Stau droht am Wochenende: A7 voll gesperrt</a></h2>
+								</div><!-- .post_title -->
+											<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/mega-stau-droht-am-wochenende-a7-voll-gesperrt/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-11-18T15:32:33+01:00">18.11.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+				 
+							</div><!-- .card_content -->
+						</div><!-- .card -->
+					</div><!-- .col -->
+										<div class="cm-col-lg-6 cm-col-md-6 cm-col-12">
+						<div class="card">
+															<div class="post_thumb">
+											<a href="https://www.noa4.de/taeter-auf-der-flucht-gefasst-einbruch-am-langen-kamp/">
+			<figure class="imghover">
+				<img width="800" height="450" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAHCAQMAAAAtrT+LAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAENJREFUGBntwYEAAAAAw6D7U0/hANUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4BsYoAATS2EiQAAAAASUVORK5CYII=" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image lazyload ewww_webp_lazy_load" alt="Täter auf der Flucht gefasst: Einbruch am Langen Kamp" decoding="async" data-src="https://www.noa4.de/wp-content/uploads/2026/11/burglar-dressed-all-black-stands-with-his-back-camera-modern-apartment-generate-ai-800x450.jpg" data-eio-rwidth="800" data-eio-rheight="450" data-src-webp="https://www.noa4.de/wp-content/uploads/2026/11/burglar-dressed-all-black-stands-with-his-back-camera-modern-apartment-generate-ai-800x450.jpg.webp" /><noscript><img width="800" height="450" src="https://www.noa4.de/wp-content/uploads/2026/11/burglar-dressed-all-black-stands-with-his-back-camera-modern-apartment-generate-ai-800x450.jpg" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image" alt="Täter auf der Flucht gefasst: Einbruch am Langen Kamp" decoding="async" data-eio="l" /></noscript>			</figure>
+		</a>
+										</div><!-- .post_thumb.imghover -->
+															<div class="card_content">
+																<div class="post_title">
+									<h2><a href="https://www.noa4.de/taeter-auf-der-flucht-gefasst-einbruch-am-langen-kamp/">Täter auf der Flucht gefasst: Einbruch am Langen Kamp</a></h2>
+								</div><!-- .post_title -->
+											<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/taeter-auf-der-flucht-gefasst-einbruch-am-langen-kamp/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-11-17T16:38:48+01:00">17.11.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+				 
+							</div><!-- .card_content -->
+						</div><!-- .card -->
+					</div><!-- .col -->
+										<div class="cm-col-lg-6 cm-col-md-6 cm-col-12">
+						<div class="card">
+															<div class="post_thumb">
+											<a href="https://www.noa4.de/weihnachtsfeier-fuer-senioren-200-kostenlose-tickets/">
+			<figure class="imghover">
+				<img width="800" height="450" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAHCAQMAAAAtrT+LAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAENJREFUGBntwYEAAAAAw6D7U0/hANUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG4BsYoAATS2EiQAAAAASUVORK5CYII=" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image lazyload ewww_webp_lazy_load" alt="Weihnachtsfeier für Senioren: 200 kostenlose Tickets" decoding="async" data-src="https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-800x450.jpg" data-srcset="https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier.jpg 1920w" data-max-width="800" data-sizes="auto" data-eio-rwidth="800" data-eio-rheight="450" data-src-webp="https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-800x450.jpg.webp" data-srcset-webp="https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-800x450.jpg.webp 800w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-300x169.jpg.webp 300w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-1024x576.jpg.webp 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-768x432.jpg.webp 768w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-1536x864.jpg.webp 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier.jpg.webp 1920w" /><noscript><img width="800" height="450" src="https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-800x450.jpg" class="attachment-cream-magazine-thumbnail-2 size-cream-magazine-thumbnail-2 wp-post-image" alt="Weihnachtsfeier für Senioren: 200 kostenlose Tickets" decoding="async" srcset="https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-800x450.jpg 800w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-300x169.jpg 300w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-1024x576.jpg 1024w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-768x432.jpg 768w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier-1536x864.jpg 1536w, https://www.noa4.de/wp-content/uploads/2026/11/Seniorenweihnachtsfeier.jpg 1920w" sizes="(max-width: 800px) 100vw, 800px" data-eio="l" /></noscript>			</figure>
+		</a>
+										</div><!-- .post_thumb.imghover -->
+															<div class="card_content">
+																<div class="post_title">
+									<h2><a href="https://www.noa4.de/weihnachtsfeier-fuer-senioren-200-kostenlose-tickets/">Weihnachtsfeier für Senioren: 200 kostenlose Tickets</a></h2>
+								</div><!-- .post_title -->
+											<div class="cm-post-meta">
+				<ul class="post_meta">
+											<li class="posted_date">
+							<a href="https://www.noa4.de/weihnachtsfeier-fuer-senioren-200-kostenlose-tickets/">
+								<span class="cm-meta-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l352 0 0 256c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256z"/></svg>
+								</span>
+								<time class="entry-date published" datetime="2026-11-17T16:36:48+01:00">17.11.2026</time>							</a>
+						</li><!-- .posted_date -->
+										</ul><!-- .post_meta -->
+			</div><!-- .meta -->
+				 
+							</div><!-- .card_content -->
+						</div><!-- .card -->
+					</div><!-- .col -->
+								</div><!-- .row -->
+		</div><!-- .section_inner -->
+	</section><!-- .cm-post-widget-three -->
+								</div><!-- .col -->
+							<div class="cm-col-lg-4 cm-col-12 sticky_portion cm-order-2-mobile-tablet">
+	<aside id="secondary" class="sidebar-widget-area">
+		<div id="block-5" class="widget widget_block">    <div class="srs-player-wrapper">
+        <video id="srs-player-aGDvcx4YMDcKY873DmEhFl7rqsb2IuiX"  controls=controls autoplay=autoplay muted=muted></video>
+        <script>(function($) { new SrsPlayer("#srs-player-aGDvcx4YMDcKY873DmEhFl7rqsb2IuiX", "https://hls1.wtnet.de/noa4/apple/wifi.m3u8").play(); })(jQuery);</script>
+    </div>
+    <style>#srs-player-aGDvcx4YMDcKY873DmEhFl7rqsb2IuiX { width: 100%; } </style>
+<b>Livestream</b></div><div id="adrotate_widgets-2" class="widget adrotate_widgets"><div class="g g-1"><div class="g-single a-18"><a class="gofollow" data-track="MTgsMSw2MA==" href="https://www.stadtwerke-norderstedt.de/app/" target="_blank"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAD6AQMAAAAho+iwAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAACBJREFUGBntwQENAAAAwiD7p34PBwwAAAAAAAAAAIAjASYWAAEtl28LAAAAAElFTkSuQmCC" data-src="https://www.noa4.de/wp-content/uploads/2025/05/SWN_Noa4-Banner_300x250.png" decoding="async" class="lazyload ewww_webp_lazy_load" data-eio-rwidth="300" data-eio-rheight="250" data-src-webp="https://www.noa4.de/wp-content/uploads/2025/05/SWN_Noa4-Banner_300x250.png.webp" /><noscript><img src="https://www.noa4.de/wp-content/uploads/2025/05/SWN_Noa4-Banner_300x250.png" data-eio="l" /></noscript></a></div></div></div><div id="category-posts-2" class="widget cat-post-widget"><div class="widget-title"><h2>Kurz &#038; knapp</h2></div><ul id="category-posts-2-internal" class="category-posts-internal">
+<li class="cat-post-item"><a class="cat-post-everything-is-link" href="https://www.noa4.de/kleider-markt-beim-drk/" title=""><div class="cpwp-wrap-text-stage cpwp-wrap-text"><div><h5 class="widget-title"><span class="cat-post-title">Kleider-Markt beim DRK</span></h5>
+<p class="cpwp-excerpt-text">Beim Deutschen Roten Kreuz in Norderstedt gibt es derzeit mehr gut erhaltene Kleidung, als an Bedürftige ausgegeben werden kann. Deshalb veranstaltet das DRK einen Kleidermarkt. Am kommenden Sonntag können alle Interessierten Kleidung und weitere Textilien gegen eine freiwillige Spende bekommen. Willkommen sind ausdrücklich alle – nicht nur Menschen mit kleinem Geldbeutel. Der Erlös kommt der Arbeit des Roten Kreuzes zugute. Auch Kaffee und Kuchen werden angeboten. Der Kleidermarkt findet am 22. November von 14 bis 17 Uhr beim DRK in der Ochsenzoller Straße 124 statt.</p></div></div></a></li><li class="cat-post-item"><a class="cat-post-everything-is-link" href="https://www.noa4.de/vogelgrippe-weitet-sich-aus/" title=""><div class="cpwp-wrap-text-stage cpwp-wrap-text"><div><h5 class="widget-title"><span class="cat-post-title">Vogelgrippe weitet sich aus</span></h5>
+<p class="cpwp-excerpt-text">Die Vogelgrippe breitet sich weiter aus, auch im Kreis Segeberg sind die ersten Fälle nachgewiesen. Ab Montag müssen daher Geflügelhalter mit mindestens 50 Tieren ihre Hühner, Enten und Gänse vorerst im Stall oder in einer geschützten Voliere unterbringen. Das betrifft rund 1,15 Millionen Tiere im Kreisgebiet. Deshalb sind Geflügelmärkte und Ausstellungen ab sofort verboten. Wer bei seinen Tieren Anzeichen der Vogelgrippe entdeckt, muss sofort das Veterinäramt informieren.</p></div></div></a></li><li class="cat-post-item"><a class="cat-post-everything-is-link" href="https://www.noa4.de/erste-glaetteunfaelle-auf-der-a7/" title=""><div class="cpwp-wrap-text-stage cpwp-wrap-text"><div><h5 class="widget-title"><span class="cat-post-title">Erste Glätteunfälle auf der A7</span></h5>
+<p class="cpwp-excerpt-text">Am Donnerstag hat es die ersten Glätteunfälle gegeben. Auf der A7 bei Quickborn hat es gestern Abend gleich mehrfach gekracht: Drei Autos waren beteiligt, ein Mann wurde leicht verletzt. Gegen 19.40 Uhr verlor zunächst ein 47-jähriger Autofahrer in Richtung Süden die Kontrolle über seinen Wagen. Er prallte gegen beide Leitplanken. Fast zeitgleich geriet auf der Gegenfahrbahn ein weiterer Autofahrer ins Schleudern. Sein Wagen stieß gegen die Mittelleitplanke und blieb auf der Fahrbahn stehen. Ein nachfolgender 20-Jähriger konnte nicht mehr ausweichen und krachte gegen das Auto und die Außenleitplanke. Der 62-jährige Fahrer wurde leicht verletzt. Die Polizei warnt: Autofahrer sollten ihre Geschwindigkeit an die Straßenverhältnisse anpassen und Winterreifen aufziehen.</p></div></div></a></li></ul>
+</div><div  class="tribe-compatibility-container" >
+	<div
+		 class="tribe-common tribe-events tribe-events-view tribe-events-view--widget-events-list tribe-events-widget" 		data-js="tribe-events-view"
+		data-view-rest-url="https://www.noa4.de/wp-json/tribe/views/v2/html"
+		data-view-manage-url="1"
+							data-view-breakpoint-pointer="82331e7a-ce17-4f15-9b6b-3b848aa95e64"
+			>
+		<div class="tribe-events-widget-events-list">
+
+			<script type="application/ld+json">
+[{"@context":"http://schema.org","@type":"Event","name":"Themennachmittag \u00fcber zivile Verteidigung und Bev\u00f6lkerungsschutz","description":"&lt;p&gt;F\u00fcr ein sicheres Morgen: Seniorenbeirat und Stadt Norderstedt laden zum Themennachmittag \u00fcber zivile Verteidigung und Bev\u00f6lkerungsschutz ein Norderstedt. Wie gut&lt;/p&gt;\\n","url":"https://www.noa4.de/event/themennachmittag-ueber-zivile-verteidigung-und-bevoelkerungsschutz/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","startDate":"2026-11-19T14:00:00+01:00","endDate":"2026-11-19T16:00:00+01:00","location":{"@type":"Place","name":"Rathaus","description":"","url":"","address":{"@type":"PostalAddress","streetAddress":"Rathausallee 50","addressLocality":"Norderstedt","addressRegion":"Schleswig-Holstein","postalCode":"22846","addressCountry":"Germany"},"telephone":"","sameAs":""},"performer":"Organization"},{"@context":"http://schema.org","@type":"Event","name":"Lesung mit Akono Schmidt","description":"&lt;p&gt;Lesung mit Musik: Am 19. November ab 17:30 Uhr stellt Akono Schmidt (\u201eHinterm Ochsenzoll geht\u00b4s weiter\u201c) sein neues Buch vor:&lt;/p&gt;\\n","url":"https://www.noa4.de/event/lesung-mit-akono-schmidt/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","startDate":"2026-11-19T17:30:00+01:00","endDate":"2026-11-19T19:00:00+01:00","location":{"@type":"Place","name":"Herold-Center","description":"","url":"","address":{"@type":"PostalAddress","streetAddress":"Berliner Allee 40b","addressLocality":"Norderstedt","addressRegion":"Schleswig-Holstein","postalCode":"22850","addressCountry":"Germany"},"telephone":"","sameAs":""},"performer":"Organization"},{"@context":"http://schema.org","@type":"Event","name":"Connolly Hayes","description":"&lt;p&gt;Connolly Hayes \u2013 die mitrei\u00dfenden Nominierten der UK Blues Awards 2025 in den Kategorien \u201eUK Band des Jahres\u201c und \u201eAlbum&lt;/p&gt;\\n","url":"https://www.noa4.de/event/connolly-hayes-2/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","startDate":"2026-11-19T20:00:00+01:00","endDate":"2026-11-19T22:00:00+01:00","location":{"@type":"Place","name":"Music Star","description":"","url":"","address":{"@type":"PostalAddress","streetAddress":"Marktplatz 11","addressLocality":"Norderstedt","addressRegion":"Schleswig-Holstein","postalCode":"22844","addressCountry":"Germany"},"telephone":"","sameAs":""},"performer":"Organization"},{"@context":"http://schema.org","@type":"Event","name":"Kleider-Markt beim DRK","description":"&lt;p&gt;Beim Deutschen Roten Kreuz in Norderstedt gibt es derzeit mehr gut erhaltene Kleidung, als an Bed\u00fcrftige ausgegeben werden kann. Deshalb&lt;/p&gt;\\n","url":"https://www.noa4.de/event/kleider-markt-beim-drk/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","startDate":"2026-11-22T14:00:00+01:00","endDate":"2026-11-22T17:00:00+01:00","location":{"@type":"Place","name":"DRK Haus Ochsenzoller Stra\u00dfe","description":"","url":"","address":{"@type":"PostalAddress","streetAddress":"Ochsenzoller Stra\u00dfe 124","addressLocality":"Norderstedt","addressRegion":"Schleswig-Holstein","postalCode":"22848","addressCountry":"Germany"},"telephone":"","sameAs":""},"performer":"Organization"},{"@context":"http://schema.org","@type":"Event","name":"\u201eAls fl\u00f6ge sie nach Haus\u201c","description":"&lt;p&gt;Um Leben, Tod und die Hoffnung danach geht es bei einem besonderen Nachmittag am Ewigkeitssonntag. Unter dem Titel \u201eAls fl\u00f6ge&lt;/p&gt;\\n","url":"https://www.noa4.de/event/als-floege-sie-nach-haus/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","startDate":"2026-11-22T14:30:00+01:00","endDate":"2026-11-22T17:00:00+01:00","location":{"@type":"Place","name":"Paul-Gerhardt-Kirche","description":"","url":"","address":{"@type":"PostalAddress","streetAddress":"Altes Buckh\u00f6rner Moor 16","addressLocality":"Norderstedt","addressRegion":"Schleswig-Holstein","postalCode":"22846","addressCountry":"Germany"},"telephone":"","sameAs":""},"performer":"Organization"}]
+</script>
+			<script data-js="tribe-events-view-data" type="application/json">
+	{"slug":"widget-events-list","prev_url":"","next_url":"https:\/\/www.noa4.de\/?post_type=tribe_events&eventDisplay=widget-events-list&paged=2","view_class":"Tribe\\Events\\Views\\V2\\Views\\Widgets\\Widget_List_View","view_slug":"widget-events-list","view_label":"View","view":null,"should_manage_url":true,"id":null,"alias-slugs":null,"title":"Spatenstich f\u00fcr 69 gef\u00f6rderte Wohnungen in Norderstedt","limit":"5","no_upcoming_events":true,"featured_events_only":false,"jsonld_enable":true,"tribe_is_list_widget":false,"admin_fields":{"title":{"label":"Titel:","type":"text","parent_classes":"","classes":"","dependency":"","id":"widget-tribe-widget-events-list-2-title","name":"widget-tribe-widget-events-list[2][title]","options":[],"placeholder":"","value":null},"limit":{"label":"Anzeige:","type":"number","default":5,"min":1,"max":10,"step":1,"parent_classes":"","classes":"","dependency":"","id":"widget-tribe-widget-events-list-2-limit","name":"widget-tribe-widget-events-list[2][limit]","options":[],"placeholder":"","value":null},"no_upcoming_events":{"label":"Blende dieses Widget aus, wenn es keine bevorstehenden Veranstaltungen gibt.","type":"checkbox","parent_classes":"","classes":"","dependency":"","id":"widget-tribe-widget-events-list-2-no_upcoming_events","name":"widget-tribe-widget-events-list[2][no_upcoming_events]","options":[],"placeholder":"","value":null},"featured_events_only":{"label":"Nur auf hervorgehobene Veranstaltungen beschr\u00e4nken","type":"checkbox","parent_classes":"","classes":"","dependency":"","id":"widget-tribe-widget-events-list-2-featured_events_only","name":"widget-tribe-widget-events-list[2][featured_events_only]","options":[],"placeholder":"","value":null},"jsonld_enable":{"label":"JSON-LD-Daten generieren","type":"checkbox","parent_classes":"","classes":"","dependency":"","id":"widget-tribe-widget-events-list-2-jsonld_enable","name":"widget-tribe-widget-events-list[2][jsonld_enable]","options":[],"placeholder":"","value":null}},"events":[15756,15754,15725,15784,15734],"url":"https:\/\/www.noa4.de\/?post_type=tribe_events&eventDisplay=widget-events-list","url_event_date":false,"bar":{"keyword":"","date":""},"today":"2026-11-19 00:00:00","now":"2026-11-19 15:30:44","home_url":"https:\/\/www.noa4.de","rest_url":"https:\/\/www.noa4.de\/wp-json\/tribe\/views\/v2\/html","rest_method":"GET","rest_nonce":"","today_url":"https:\/\/www.noa4.de\/?post_type=tribe_events&eventDisplay=widget-events-list&name=spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt","today_title":"Klicke, um das heutige Datum auszuw\u00e4hlen","today_label":"Heute","prev_label":"","next_label":"","date_formats":{"compact":"d.m.Y","month_and_year_compact":"m.Y","month_and_year":"F Y","time_range_separator":" bis  ","date_time_separator":" um "},"messages":[],"start_of_week":"1","header_title":"","header_title_element":"h1","content_title":"","show_content_title":false,"breadcrumbs":[],"backlink":false,"before_events":"","after_events":"\n<!--\nThis calendar is powered by The Events Calendar.\nhttp:\/\/evnt.is\/18wn\n-->\n","display_events_bar":false,"disable_event_search":false,"live_refresh":true,"ical":{"display_link":true,"link":{"url":"https:\/\/www.noa4.de\/?post_type=tribe_events&#038;eventDisplay=widget-events-list&#038;ical=1","text":"Veranstaltungen als iCal exportieren","title":"Diese Funktion verwenden, um Kalenderdaten mit Google Kalender, Apple iCal und kompatiblen Apps zu teilen"}},"container_classes":["tribe-common","tribe-events","tribe-events-view","tribe-events-view--widget-events-list","tribe-events-widget"],"container_data":[],"is_past":false,"breakpoints":{"xsmall":500,"medium":768,"full":960},"breakpoint_pointer":"82331e7a-ce17-4f15-9b6b-3b848aa95e64","is_initial_load":true,"public_views":{"list":{"view_class":"Tribe\\Events\\Views\\V2\\Views\\List_View","view_url":"https:\/\/www.noa4.de\/events\/liste\/","view_label":"Liste","aria_label":"Zeige Veranstaltungen in der Liste Ansicht"},"month":{"view_class":"Tribe\\Events\\Views\\V2\\Views\\Month_View","view_url":"https:\/\/www.noa4.de\/events\/monat\/","view_label":"Monat","aria_label":"Zeige Veranstaltungen in der Monat Ansicht"}},"show_latest_past":false,"past":false,"compatibility_classes":["tribe-compatibility-container"],"view_more_text":"Kalender anzeigen","view_more_title":"Weitere Veranstaltungen anzeigen.","view_more_link":"https:\/\/www.noa4.de\/events\/","widget_title":"Anstehende Veranstaltungen","hide_if_no_upcoming_events":true,"display":[],"subscribe_links":{"gcal":{"label":"Google\u00a0Kalender","single_label":"Zu Google Kalender hinzuf\u00fcgen","visible":true,"block_slug":"hasGoogleCalendar"},"ical":{"label":"iCalendar","single_label":"Zu iCalendar hinzuf\u00fcgen","visible":true,"block_slug":"hasiCal"},"outlook-365":{"label":"Outlook 365","single_label":"Outlook 365","visible":true,"block_slug":"hasOutlook365"},"outlook-live":{"label":"Outlook Live","single_label":"Outlook Live","visible":true,"block_slug":"hasOutlookLive"}},"_context":{"slug":"widget-events-list"}}</script>
+
+							<header class="tribe-events-widget-events-list__header">
+					<h2 class="tribe-events-widget-events-list__header-title tribe-common-h6 tribe-common-h--alt">
+						Anstehende Veranstaltungen					</h2>
+				</header>
+			
+			
+				<div class="tribe-events-widget-events-list__events">
+											<div  class="tribe-common-g-row tribe-events-widget-events-list__event-row" >
+
+	<div class="tribe-events-widget-events-list__event-date-tag tribe-common-g-col">
+	<time class="tribe-events-widget-events-list__event-date-tag-datetime" datetime="2026-11-19">
+		<span class="tribe-events-widget-events-list__event-date-tag-month">
+			Nov.		</span>
+		<span class="tribe-events-widget-events-list__event-date-tag-daynum tribe-common-h2 tribe-common-h4--min-medium">
+			19		</span>
+	</time>
+</div>
+
+	<div class="tribe-events-widget-events-list__event-wrapper tribe-common-g-col">
+		<article  class="tribe-events-widget-events-list__event post-15756 tribe_events type-tribe_events status-publish hentry tribe_events_cat-workshop" >
+			<div class="tribe-events-widget-events-list__event-details">
+
+				<header class="tribe-events-widget-events-list__event-header">
+					<div class="tribe-events-widget-events-list__event-datetime-wrapper tribe-common-b2 tribe-common-b3--min-medium">
+		<time class="tribe-events-widget-events-list__event-datetime" datetime="2026-11-19">
+		<span class="tribe-event-date-start">14:00</span> bis  <span class="tribe-event-time">16:00</span>	</time>
+	</div>
+					<h3 class="tribe-events-widget-events-list__event-title tribe-common-h7">
+	<a
+		href="https://www.noa4.de/event/themennachmittag-ueber-zivile-verteidigung-und-bevoelkerungsschutz/"
+		title="Themennachmittag über zivile Verteidigung und Bevölkerungsschutz"
+		rel="bookmark"
+		class="tribe-events-widget-events-list__event-title-link tribe-common-anchor-thin"
+	>
+		Themennachmittag über zivile Verteidigung und Bevölkerungsschutz	</a>
+</h3>
+				</header>
+
+				
+			</div>
+		</article>
+	</div>
+
+</div>
+											<div  class="tribe-common-g-row tribe-events-widget-events-list__event-row" >
+
+	<div class="tribe-events-widget-events-list__event-date-tag tribe-common-g-col">
+	<time class="tribe-events-widget-events-list__event-date-tag-datetime" datetime="2026-11-19">
+		<span class="tribe-events-widget-events-list__event-date-tag-month">
+			Nov.		</span>
+		<span class="tribe-events-widget-events-list__event-date-tag-daynum tribe-common-h2 tribe-common-h4--min-medium">
+			19		</span>
+	</time>
+</div>
+
+	<div class="tribe-events-widget-events-list__event-wrapper tribe-common-g-col">
+		<article  class="tribe-events-widget-events-list__event post-15754 tribe_events type-tribe_events status-publish hentry tribe_events_cat-lesung" >
+			<div class="tribe-events-widget-events-list__event-details">
+
+				<header class="tribe-events-widget-events-list__event-header">
+					<div class="tribe-events-widget-events-list__event-datetime-wrapper tribe-common-b2 tribe-common-b3--min-medium">
+		<time class="tribe-events-widget-events-list__event-datetime" datetime="2026-11-19">
+		<span class="tribe-event-date-start">17:30</span> bis  <span class="tribe-event-time">19:00</span>	</time>
+	</div>
+					<h3 class="tribe-events-widget-events-list__event-title tribe-common-h7">
+	<a
+		href="https://www.noa4.de/event/lesung-mit-akono-schmidt/"
+		title="Lesung mit Akono Schmidt"
+		rel="bookmark"
+		class="tribe-events-widget-events-list__event-title-link tribe-common-anchor-thin"
+	>
+		Lesung mit Akono Schmidt	</a>
+</h3>
+				</header>
+
+				
+			</div>
+		</article>
+	</div>
+
+</div>
+											<div  class="tribe-common-g-row tribe-events-widget-events-list__event-row" >
+
+	<div class="tribe-events-widget-events-list__event-date-tag tribe-common-g-col">
+	<time class="tribe-events-widget-events-list__event-date-tag-datetime" datetime="2026-11-19">
+		<span class="tribe-events-widget-events-list__event-date-tag-month">
+			Nov.		</span>
+		<span class="tribe-events-widget-events-list__event-date-tag-daynum tribe-common-h2 tribe-common-h4--min-medium">
+			19		</span>
+	</time>
+</div>
+
+	<div class="tribe-events-widget-events-list__event-wrapper tribe-common-g-col">
+		<article  class="tribe-events-widget-events-list__event post-15725 tribe_events type-tribe_events status-publish hentry tribe_events_cat-konzert" >
+			<div class="tribe-events-widget-events-list__event-details">
+
+				<header class="tribe-events-widget-events-list__event-header">
+					<div class="tribe-events-widget-events-list__event-datetime-wrapper tribe-common-b2 tribe-common-b3--min-medium">
+		<time class="tribe-events-widget-events-list__event-datetime" datetime="2026-11-19">
+		<span class="tribe-event-date-start">20:00</span> bis  <span class="tribe-event-time">22:00</span>	</time>
+	</div>
+					<h3 class="tribe-events-widget-events-list__event-title tribe-common-h7">
+	<a
+		href="https://www.noa4.de/event/connolly-hayes-2/"
+		title="Connolly Hayes"
+		rel="bookmark"
+		class="tribe-events-widget-events-list__event-title-link tribe-common-anchor-thin"
+	>
+		Connolly Hayes	</a>
+</h3>
+				</header>
+
+				
+			</div>
+		</article>
+	</div>
+
+</div>
+											<div  class="tribe-common-g-row tribe-events-widget-events-list__event-row" >
+
+	<div class="tribe-events-widget-events-list__event-date-tag tribe-common-g-col">
+	<time class="tribe-events-widget-events-list__event-date-tag-datetime" datetime="2026-11-22">
+		<span class="tribe-events-widget-events-list__event-date-tag-month">
+			Nov.		</span>
+		<span class="tribe-events-widget-events-list__event-date-tag-daynum tribe-common-h2 tribe-common-h4--min-medium">
+			22		</span>
+	</time>
+</div>
+
+	<div class="tribe-events-widget-events-list__event-wrapper tribe-common-g-col">
+		<article  class="tribe-events-widget-events-list__event post-15784 tribe_events type-tribe_events status-publish hentry tribe_events_cat-flohmarkt tribe_events_cat-veranstaltung" >
+			<div class="tribe-events-widget-events-list__event-details">
+
+				<header class="tribe-events-widget-events-list__event-header">
+					<div class="tribe-events-widget-events-list__event-datetime-wrapper tribe-common-b2 tribe-common-b3--min-medium">
+		<time class="tribe-events-widget-events-list__event-datetime" datetime="2026-11-22">
+		<span class="tribe-event-date-start">14:00</span> bis  <span class="tribe-event-time">17:00</span>	</time>
+	</div>
+					<h3 class="tribe-events-widget-events-list__event-title tribe-common-h7">
+	<a
+		href="https://www.noa4.de/event/kleider-markt-beim-drk/"
+		title="Kleider-Markt beim DRK"
+		rel="bookmark"
+		class="tribe-events-widget-events-list__event-title-link tribe-common-anchor-thin"
+	>
+		Kleider-Markt beim DRK	</a>
+</h3>
+				</header>
+
+				
+			</div>
+		</article>
+	</div>
+
+</div>
+											<div  class="tribe-common-g-row tribe-events-widget-events-list__event-row" >
+
+	<div class="tribe-events-widget-events-list__event-date-tag tribe-common-g-col">
+	<time class="tribe-events-widget-events-list__event-date-tag-datetime" datetime="2026-11-22">
+		<span class="tribe-events-widget-events-list__event-date-tag-month">
+			Nov.		</span>
+		<span class="tribe-events-widget-events-list__event-date-tag-daynum tribe-common-h2 tribe-common-h4--min-medium">
+			22		</span>
+	</time>
+</div>
+
+	<div class="tribe-events-widget-events-list__event-wrapper tribe-common-g-col">
+		<article  class="tribe-events-widget-events-list__event post-15734 tribe_events type-tribe_events status-publish hentry tribe_events_cat-konzert tribe_events_cat-lesung tribe_events_cat-vortrag" >
+			<div class="tribe-events-widget-events-list__event-details">
+
+				<header class="tribe-events-widget-events-list__event-header">
+					<div class="tribe-events-widget-events-list__event-datetime-wrapper tribe-common-b2 tribe-common-b3--min-medium">
+		<time class="tribe-events-widget-events-list__event-datetime" datetime="2026-11-22">
+		<span class="tribe-event-date-start">14:30</span> bis  <span class="tribe-event-time">17:00</span>	</time>
+	</div>
+					<h3 class="tribe-events-widget-events-list__event-title tribe-common-h7">
+	<a
+		href="https://www.noa4.de/event/als-floege-sie-nach-haus/"
+		title="„Als flöge sie nach Haus“"
+		rel="bookmark"
+		class="tribe-events-widget-events-list__event-title-link tribe-common-anchor-thin"
+	>
+		„Als flöge sie nach Haus“	</a>
+</h3>
+				</header>
+
+				
+			</div>
+		</article>
+	</div>
+
+</div>
+									</div>
+
+				<div class="tribe-events-widget-events-list__view-more tribe-common-b1 tribe-common-b2--min-medium">
+	<a
+		href="https://www.noa4.de/events/"
+		class="tribe-events-widget-events-list__view-more-link tribe-common-anchor-thin"
+		title="Weitere Veranstaltungen anzeigen."
+	>
+		Kalender anzeigen	</a>
+</div>
+
+					</div>
+	</div>
+</div>
+<script class="tribe-events-breakpoints">
+	( function () {
+		var completed = false;
+
+		function initBreakpoints() {
+			if ( completed ) {
+				// This was fired already and completed no need to attach to the event listener.
+				document.removeEventListener( 'DOMContentLoaded', initBreakpoints );
+				return;
+			}
+
+			if ( 'undefined' === typeof window.tribe ) {
+				return;
+			}
+
+			if ( 'undefined' === typeof window.tribe.events ) {
+				return;
+			}
+
+			if ( 'undefined' === typeof window.tribe.events.views ) {
+				return;
+			}
+
+			if ( 'undefined' === typeof window.tribe.events.views.breakpoints ) {
+				return;
+			}
+
+			if ( 'function' !== typeof (window.tribe.events.views.breakpoints.setup) ) {
+				return;
+			}
+
+			var container = document.querySelectorAll( '[data-view-breakpoint-pointer="82331e7a-ce17-4f15-9b6b-3b848aa95e64"]' );
+			if ( ! container ) {
+				return;
+			}
+
+			window.tribe.events.views.breakpoints.setup( container );
+			completed = true;
+			// This was fired already and completed no need to attach to the event listener.
+			document.removeEventListener( 'DOMContentLoaded', initBreakpoints );
+		}
+
+		// Try to init the breakpoints right away.
+		initBreakpoints();
+		document.addEventListener( 'DOMContentLoaded', initBreakpoints );
+	})();
+</script>
+<script data-js='tribe-events-view-nonce-data' type='application/json'>{"tvn1":"daa3ea3c8c","tvn2":""}</script>	</aside><!-- #secondary -->
+</div><!-- .col.sticky_portion -->
+						</div><!-- .row -->
+					</div><!-- .single-container -->
+				</div><!-- .cm_post_page_lay_wrap -->
+			</main><!-- #main.site-main -->
+		</div><!-- #primary.content-area -->
+	</div><!-- .inner-page-wrapper -->
+</div><!-- .cm-container -->
+</div><!-- #content.site-content -->
+		<footer class="footer">
+			<div class="footer_inner">
+				<div class="cm-container">
+				<div class="row footer-widget-container">
+				<div class="cm-col-lg-4 cm-col-12">
+			<div class="blocks">
+				<div id="nav_menu-7" class="widget widget_nav_menu"><div class="menu-footer-menue-1-container"><ul id="menu-footer-menue-1" class="menu"><li id="menu-item-182" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-182"><a href="https://www.noa4.de/ueber-uns/">Über uns</a></li>
+<li id="menu-item-348" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-348"><a href="https://www.noa4.de/impressum/">Impressum</a></li>
+</ul></div></div>			</div><!-- .blocks -->
+		</div><!-- .cm-col-->
+				<div class="cm-col-lg-4 cm-col-12">
+			<div class="blocks">
+				<div id="nav_menu-8" class="widget widget_nav_menu"><div class="menu-footer-menue-2-container"><ul id="menu-footer-menue-2" class="menu"><li id="menu-item-351" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-privacy-policy menu-item-351"><a rel="privacy-policy" href="https://www.noa4.de/datenschutzerklaerung/">Datenschutzerklärung</a></li>
+<li id="menu-item-352" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-352"><a href="https://www.noa4.de/cookie-richtlinie/">Cookie-Richtlinie</a></li>
+</ul></div></div>			</div><!-- .blocks -->
+		</div><!-- .cm-col-->
+				<div class="cm-col-lg-4 cm-col-12">
+			<div class="blocks">
+				<div id="nav_menu-6" class="widget widget_nav_menu"><div class="menu-footer-menue-3-container"><ul id="menu-footer-menue-3" class="menu"><li id="menu-item-349" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-349"><a href="https://www.noa4.de/werbung/">Werbung</a></li>
+<li id="menu-item-350" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-350"><a href="https://www.noa4.de/kontakt/">Kontakt</a></li>
+</ul></div></div>			</div><!-- .blocks -->
+		</div><!-- .cm-col-->
+				</div><!-- .row -->
+				<div class="copyright_section">
+		<div class="row">
+				<div class="cm-col-lg-7 cm-col-md-6 cm-col-12">
+			<div class="copyrights">
+				<p>
+					Copyright &copy; 2026 noa4. Alle Rechte vorbehalten.				</p>
+			</div>
+		</div><!-- .col -->
+				<div class="cm-col-lg-5 cm-col-md-6 cm-col-12">
+			<div class="footer_nav">
+							</div><!-- .footer_nav -->
+		</div><!-- .col -->
+				</div><!-- .row -->
+		</div><!-- .copyright_section -->
+				</div><!-- .cm-container -->
+		</div><!-- .footer_inner -->
+		</footer><!-- .footer -->
+				</div><!-- .page_wrap -->
+					<div class="backtoptop">
+				<button id="toTop" class="btn btn-info">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="14" width="14"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
+				</button>
+			</div><!-- ./ backtoptop -->
+			<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":["/wp-*.php","/wp-admin/*","/wp-content/uploads/*","/wp-content/*","/wp-content/plugins/*","/wp-content/themes/cream-magazine/*","/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script>
+              (function(e){
+                  var el = document.createElement('script');
+                  el.setAttribute('data-account', 'B4EVMnqL2E');
+                  el.setAttribute('src', 'https://cdn.userway.org/widget.js');
+                  document.body.appendChild(el);
+                })();
+              </script>		<script>
+		( function ( body ) {
+			'use strict';
+			body.className = body.className.replace( /\btribe-no-js\b/, 'tribe-js' );
+		} )( document.body );
+		</script>
+		<script type="application/ld+json" id="slim-seo-schema">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://www.noa4.de/#website","url":"https://www.noa4.de/","name":"noa4","description":"Fernsehen für Norderstedt & Hamburg","inLanguage":"de","potentialAction":{"@id":"https://www.noa4.de/#searchaction"},"publisher":{"@id":"https://www.noa4.de/#organization"}},{"@type":"SearchAction","@id":"https://www.noa4.de/#searchaction","target":"https://www.noa4.de/?s={search_term_string}","query-input":"required name=search_term_string"},{"@type":"BreadcrumbList","name":"Breadcrumbs","@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#breadcrumblist","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.noa4.de/"},{"@type":"ListItem","position":2,"name":"Lokal","item":"https://www.noa4.de/category/lokal/"},{"@type":"ListItem","position":3,"name":"Spatenstich für 69 geförderte Wohnungen in Norderstedt"}]},{"@type":"WebPage","@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#webpage","url":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/","inLanguage":"de","name":"Spatenstich für 69 geförderte Wohnungen in Norderstedt","description":"Die Fertigstellung ist für das vierte Quartal 2027 geplant.","datePublished":"2026-08-06T16:19:06+02:00","dateModified":"2026-08-06T16:43:40+02:00","isPartOf":{"@id":"https://www.noa4.de/#website"},"breadcrumb":{"@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#breadcrumblist"},"potentialAction":{"@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#readaction"}},{"@type":"ReadAction","@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#readaction","target":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/"},{"@type":"Organization","@id":"https://www.noa4.de/#organization","url":"https://www.noa4.de/","name":"noa4"},{"@type":"Article","@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#article","url":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/","headline":"Spatenstich für 69 geförderte Wohnungen in Norderstedt","datePublished":"2026-08-06T16:19:06+02:00","dateModified":"2026-08-06T16:43:40+02:00","wordCount":193,"keywords":["Harksheide","Wohnraum","Wohnungen"],"articleSection":["Lokal"],"isPartOf":{"@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#webpage"},"mainEntityOfPage":{"@id":"https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/#webpage"},"publisher":{"@id":"https://www.noa4.de/#organization"},"author":{"@id":"https://www.noa4.de/#/schema/person/7db16a4ce881aecec2bfeb3e0c741888"}},{"@type":"Person","@id":"https://www.noa4.de/#/schema/person/7db16a4ce881aecec2bfeb3e0c741888","url":"https://noa4.de","name":"Marvin Hinrichsen","givenName":"Marvin","familyName":"Hinrichsen","image":"https://secure.gravatar.com/avatar/f689e3b072898521f2efb82543e9a3ea9cf58da9d9781cddddeea63b44c14b2a?s=96&d=mm&r=g"}]}</script><script> /* <![CDATA[ */var tribe_l10n_datatables = {"aria":{"sort_ascending":": activate to sort column ascending","sort_descending":": activate to sort column descending"},"length_menu":"Show _MENU_ entries","empty_table":"No data available in table","info":"Showing _START_ to _END_ of _TOTAL_ entries","info_empty":"Showing 0 to 0 of 0 entries","info_filtered":"(filtered from _MAX_ total entries)","zero_records":"No matching records found","search":"Search:","all_selected_text":"All items on this page were selected. ","select_all_link":"Select all pages","clear_selection":"Clear Selection.","pagination":{"all":"All","next":"Next","previous":"Previous"},"select":{"rows":{"0":"","_":": Selected %d rows","1":": Selected 1 row"}},"datepicker":{"dayNames":["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"],"dayNamesShort":["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."],"dayNamesMin":["S","M","D","M","D","F","S"],"monthNames":["Januar","Februar","M\u00e4rz","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"],"monthNamesShort":["Januar","Februar","M\u00e4rz","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"],"monthNamesMin":["Jan.","Feb.","M\u00e4rz","Apr.","Mai","Juni","Juli","Aug.","Sep.","Okt.","Nov.","Dez."],"nextText":"Next","prevText":"Prev","currentText":"Today","closeText":"Done","today":"Today","clear":"Clear"}};/* ]]> */ </script><link rel='stylesheet' id='tec-variables-skeleton-css' href='https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/css/variables-skeleton.css?ver=6.14.1' media='all' />
+<link rel='stylesheet' id='tribe-common-skeleton-style-css' href='https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/css/common-skeleton.css?ver=6.14.1' media='all' />
+<link rel='stylesheet' id='tribe-events-widgets-v2-events-list-skeleton-css' href='https://www.noa4.de/wp-content/plugins/the-events-calendar/build/css/widget-events-list-skeleton.css?ver=6.18.4' media='all' />
+<link rel='stylesheet' id='tec-variables-full-css' href='https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/css/variables-full.css?ver=6.14.1' media='all' />
+<link rel='stylesheet' id='tribe-common-full-style-css' href='https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/css/common-full.css?ver=6.14.1' media='all' />
+<link rel='stylesheet' id='tribe-events-widgets-v2-events-list-full-css' href='https://www.noa4.de/wp-content/plugins/the-events-calendar/build/css/widget-events-list-full.css?ver=6.18.4' media='all' />
+<script defer data-cfasync="false" src="https://www.noa4.de/wp-content/uploads/01cc768f9a/dist/1999545375.js?ver=6dc2a9d865513c2ba28f1998a3c479f5"></script>
+<script id="eio-lazy-load-js-before">
+const eio_lazy_vars = {"bg_min_dpr":1.1,"exactdn_domain":"","safe_paths":["\/wp-content\/plugins","\/wp-content\/themes","\/wp-includes\/"],"safe_domains":["www.noa4.de","noa4.de"],"skip_autoscale":0,"threshold":0,"use_dpr":1};Object.freeze(eio_lazy_vars);
+//# sourceURL=eio-lazy-load-js-before
+</script>
+<script async data-wp-strategy="async" id="eio-lazy-load-js" src="https://www.noa4.de/wp-content/plugins/ewww-image-optimizer/includes/lazysizes.min.js?ver=892"></script>
+<script id="tec-user-agent-js" src="https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/js/user-agent.js?ver=da75d0bdea6dde3898df"></script>
+<script id="adrotate-clicker-js-extra">
+var click_object = {"ajax_url":"https://www.noa4.de/wp-admin/admin-ajax.php"};
+//# sourceURL=adrotate-clicker-js-extra
+</script>
+<script id="adrotate-clicker-js" src="https://www.noa4.de/wp-content/plugins/adrotate/library/jquery.clicker.js"></script>
+<script id="wp-hooks-js" src="https://www.noa4.de/wp-includes/js/dist/hooks.min.js?ver=f0f188028580e8dc1255"></script>
+<script id="wp-i18n-js" src="https://www.noa4.de/wp-includes/js/dist/i18n.min.js?ver=1dfe7db3940c23ea9216"></script>
+<script id="wp-i18n-js-after">
+wp.i18n.setLocaleData( { 'text direction\u0004ltr': [ 'ltr' ] } );
+//# sourceURL=wp-i18n-js-after
+</script>
+<script id="swv-js" src="https://www.noa4.de/wp-content/plugins/contact-form-7/includes/swv/js/index.js?ver=6.2.5"></script>
+<script id="contact-form-7-js-translations">
+( function( domain, translations ) {
+	var localeData = translations.locale_data[ domain ] || translations.locale_data.messages;
+	localeData[""].domain = domain;
+	wp.i18n.setLocaleData( localeData, domain );
+} )( "contact-form-7", {"translation-revision-date":"2026-10-26 14:55:04+0000","generator":"GlotPress\/4.1.0","domain":"messages","locale_data":{"messages":{"":{"domain":"messages","plural-forms":"nplurals=2; plural=n != 1;","lang":"de"},"This contact form is placed in the wrong place.":["Dieses Kontaktformular wurde an der falschen Stelle platziert."],"Error:":["Fehler:"]}},"comment":{"reference":"includes\/js\/index.js"}} );
+//# sourceURL=contact-form-7-js-translations
+</script>
+<script id="contact-form-7-js-before">
+var wpcf7 = {
+    "api": {
+        "root": "https:\/\/www.noa4.de\/wp-json\/",
+        "namespace": "contact-form-7\/v1"
+    },
+    "cached": 1
+};
+//# sourceURL=contact-form-7-js-before
+</script>
+<script id="contact-form-7-js" src="https://www.noa4.de/wp-content/plugins/contact-form-7/includes/js/index.js?ver=6.2.5"></script>
+<script id="responsivevoice-js" src="https://code.responsivevoice.org/responsivevoice.js?key=SUyc6gIj"></script>
+<script id="rvtts-frontend-js" src="https://www.noa4.de/wp-content/plugins/responsivevoice-text-to-speech/build/frontend.js?ver=bf77387ca8046cd2c7da"></script>
+<script id="cream-magazine-bundle-js-extra">
+var cream_magazine_script_obj = {"show_search_icon":"1","show_news_ticker":"","show_banner_slider":"1","show_to_top_btn":"1","enable_sticky_sidebar":"1","enable_sticky_menu_section":""};
+//# sourceURL=cream-magazine-bundle-js-extra
+</script>
+<script id="cream-magazine-bundle-js" src="https://www.noa4.de/wp-content/themes/cream-magazine/assets/dist/js/bundle.min.js?ver=2.1.12"></script>
+<script id="universal-google-adsense-and-ads-manager-js" src="https://www.noa4.de/wp-content/plugins/universal-google-adsense-and-ads-manager/public/assets/build/js/ugaam-public.min.js?ver=1.1.8"></script>
+<script id="googlesitekit-events-provider-contact-form-7-js" src="https://www.noa4.de/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-contact-form-7-3ac287af84a753cfbaa5.js" defer></script>
+<script id="googlesitekit-events-provider-content-events-js-before">
+window._googlesitekit = window._googlesitekit || {};
+window._googlesitekit.contentEvents = {"postID":13879,"isReadableSinglePost":true,"hasVimeoEmbed":false,"wordCount":180,"estimatedReadTimeSeconds":45,"isLastPageOfMultiPagePost":true,"readTimeThresholdPercent":85,"minimumReadTimeSeconds":5};
+//# sourceURL=googlesitekit-events-provider-content-events-js-before
+</script>
+<script id="googlesitekit-events-provider-content-events-js" src="https://www.noa4.de/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-content-events-90bacb156ab34fa090db.js" defer></script>
+<script id="tribe-common-js" src="https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/js/tribe-common.js?ver=9c44e11f3503a33e9540"></script>
+<script id="tribe-query-string-js" src="https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/js/utils/query-string.js?ver=694b0604b0c8eafed657"></script>
+<script src='https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/js/underscore-before.js'></script>
+<script id="underscore-js" src="https://www.noa4.de/wp-includes/js/underscore.min.js?ver=1.13.8"></script>
+<script src='https://www.noa4.de/wp-content/plugins/the-events-calendar/common/build/js/underscore-after.js'></script>
+<script defer id="tribe-events-views-v2-manager-js" src="https://www.noa4.de/wp-content/plugins/the-events-calendar/build/js/views/manager.js?ver=76866c0f9c1f9f397a02"></script>
+<script id="tribe-events-views-v2-breakpoints-js" src="https://www.noa4.de/wp-content/plugins/the-events-calendar/build/js/views/breakpoints.js?ver=4208de2df2852e0b91ec"></script>
+<script id="wp-emoji-settings" type="application/json">
+{"baseUrl":"https://s.w.org/images/core/emoji/17.0.2/72x72/","ext":".png","svgUrl":"https://s.w.org/images/core/emoji/17.0.2/svg/","svgExt":".svg","source":{"concatemoji":"https://www.noa4.de/wp-includes/js/wp-emoji-release.min.js?ver=44a44f472282d54e9256e956c311e050"}}
+</script>
+<script type="module">
+/*! This file is auto-generated */
+var e="script#wp-emoji-settings",t=document.querySelector(e);if(!(t instanceof HTMLScriptElement))throw new Error("Element missing: "+e);const r=JSON.parse(t.text),s=(window._wpemojiSettings=r,"wpEmojiSettingsSupports"),o=["flag","emoji"];function i(e){try{var t={supportTests:e,timestamp:(new Date).valueOf()};sessionStorage.setItem(s,JSON.stringify(t))}catch(e){}}function c(e,t,n){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);t=new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data);e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(n,0,0);const r=new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data);return t.every((e,t)=>e===r[t])}function p(e,t){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);var n=e.getImageData(16,16,1,1);for(let e=0;e<n.data.length;e++)if(0!==n.data[e])return!1;return!0}function u(e,t,n,r){switch(t){case"flag":return n(e,"\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f","\ud83c\udff3\ufe0f\u200b\u26a7\ufe0f")?!1:!n(e,"\ud83c\udde8\ud83c\uddf6","\ud83c\udde8\u200b\ud83c\uddf6")&&!n(e,"\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f","\ud83c\udff4\u200b\udb40\udc67\u200b\udb40\udc62\u200b\udb40\udc65\u200b\udb40\udc6e\u200b\udb40\udc67\u200b\udb40\udc7f");case"emoji":return!r(e,"\ud83e\u1fac8")}return!1}function f(e,t,n,r){let a;const s=(a="undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?new OffscreenCanvas(300,150):document.createElement("canvas")).getContext("2d",{willReadFrequently:!0}),o=(s.textBaseline="top",s.font="600 32px Arial",{});return e.forEach(e=>{o[e]=t(s,e,n,r)}),o}function a(e){var t=document.createElement("script");t.src=e,t.defer=!0,document.head.appendChild(t)}r.supports={everything:!0,everythingExceptFlag:!0},new Promise(t=>{let n=function(){try{var e=JSON.parse(sessionStorage.getItem(s));if("object"==typeof e&&"number"==typeof e.timestamp&&(new Date).valueOf()<e.timestamp+604800&&"object"==typeof e.supportTests)return e.supportTests}catch(e){}return null}();if(!n){if("undefined"!=typeof Worker&&"undefined"!=typeof OffscreenCanvas&&"undefined"!=typeof URL&&URL.createObjectURL&&"undefined"!=typeof Blob)try{var e="postMessage("+f.toString()+"("+[JSON.stringify(o),u.toString(),c.toString(),p.toString()].join(",")+"));",r=new Blob([e],{type:"text/javascript"});const a=new Worker(URL.createObjectURL(r),{name:"wpTestEmojiSupports"});return void(a.onmessage=e=>{i(n=e.data),a.terminate(),t(n)})}catch(e){}i(n=f(o,u,c,p))}t(n)}).then(e=>{for(const n in e)r.supports[n]=e[n],r.supports.everything=r.supports.everything&&r.supports[n],"flag"!==n&&(r.supports.everythingExceptFlag=r.supports.everythingExceptFlag&&r.supports[n]);var t;r.supports.everythingExceptFlag=r.supports.everythingExceptFlag&&!r.supports.flag,r.supports.everything||((t=r.source||{}).concatemoji?a(t.concatemoji):t.wpemoji&&t.twemoji&&(a(t.twemoji),a(t.wpemoji)))});
+//# sourceURL=https://www.noa4.de/wp-includes/js/wp-emoji-loader.min.js
+</script>
+        <script type='text/javascript'>
+			(function() {
+				'use strict';
+				
+				/**
+				 * Listen to the global player events.
+				 */
+				window.addEventListener( 'message', function( event ) {
+					if ( event.origin != window.location.origin ) {
+						return false;
+					}
+
+					if ( ! event.data.hasOwnProperty( 'message' ) ) {
+						return false;
+					}
+
+					const iframes = document.querySelectorAll( '.aiovg-player iframe' );
+
+					for ( let i = 0; i < iframes.length; i++ ) {
+						const iframe = iframes[ i ];
+						
+						if ( event.source == iframe.contentWindow ) {
+							continue;
+						}
+
+						if ( event.data.message == 'aiovg-cookie-consent' ) {
+							iframe.contentWindow.postMessage({
+								message: 'aiovg-cookie-consent'
+							}, window.location.origin );
+						}
+
+						if ( event.data.message == 'aiovg-email-captured' ) {
+							iframe.contentWindow.postMessage({
+								message: 'aiovg-email-captured',
+								// Forwarded as sent. An empty key means "once per visitor",
+								// where one capture clears every player on the page.
+								capture_key: event.data.capture_key || ''
+							}, window.location.origin );
+						}
+
+						if ( event.data.message == 'aiovg-video-playing' ) {
+							iframe.contentWindow.postMessage({
+								message: 'aiovg-video-pause'
+							}, window.location.origin );
+						}
+					}
+				});
+
+			})();
+		</script>
+        		<script type="text/javascript">
+			if (typeof jQuery !== 'undefined') {
+
+				var cat_posts_namespace              = window.cat_posts_namespace || {};
+				cat_posts_namespace.layout_wrap_text = cat_posts_namespace.layout_wrap_text || {};
+				cat_posts_namespace.layout_img_size  = cat_posts_namespace.layout_img_size || {};
+
+				cat_posts_namespace.layout_wrap_text = {
+					
+					add : function(_this){
+						var _that  = jQuery(_this),
+							_text  = _that.find('p.cpwp-excerpt-text'),
+							_stage = _text.closest('.cpwp-wrap-text-stage');
+
+						if ( 0 === _text.length ) {
+							return;
+						}
+						
+						_stage.removeClass( "cpwp-wrap-text" );
+						_text.addClass( "cpwp-wrap-text" );
+
+						if (_text.height() < _that.find('.cat-post-thumbnail').height()) { 
+							return; 
+						}
+						
+						_text.removeClass( "cpwp-wrap-text" );
+						_stage.addClass( "cpwp-wrap-text" );
+						return;
+					},
+					
+					handleLazyLoading : function(_this) {
+						var width = jQuery(_this).find('img').width();
+						
+						if( 0 !== width ){
+							cat_posts_namespace.layout_wrap_text.add(_this);
+						} else {
+							jQuery(_this).find('img').one("load", function(){
+								cat_posts_namespace.layout_wrap_text.add(_this);
+							});
+						}
+						return;
+					},
+					
+					setClass : function (widget) {
+						// var _widget = jQuery(widget);
+						jQuery(widget).find('.cat-post-item').each(function(){
+							cat_posts_namespace.layout_wrap_text.handleLazyLoading(this);
+						});
+						return;
+					}
+				}
+				cat_posts_namespace.layout_img_size = {
+					
+					replace : function(_this){
+						var _that = jQuery(_this),
+						orig_w = _that.data('cat-posts-width'),
+						orig_h = _that.data('cat-posts-height');
+
+						if( ! orig_w || ! orig_h ){
+							return;
+						}
+						
+						_that.css( { 'aspect-ratio' : orig_w + ' / ' + orig_h, 'height' : 'auto' } );
+						return;
+					},
+					setHeight : function (widget) {
+						jQuery(widget).find('.cat-post-item img').each(function(){
+							cat_posts_namespace.layout_img_size.replace(this);
+						});
+						return;
+					}
+				}
+
+				let widget = jQuery('#category-posts-2-internal');
+
+								
+				const observer = new MutationObserver(function () {
+					let widget = jQuery('#category-posts-2-internal');
+					if (widget.length) {
+						cat_posts_namespace.layout_wrap_text.setClass(widget);
+					}
+				});
+
+				observer.observe(document.body, {
+					childList: true,
+					subtree: true,
+					characterData: true
+				});
+				
+
+				
+				jQuery( document ).ready(function () {
+										cat_posts_namespace.layout_wrap_text.setClass(widget);
+					
+					
+					
+						cat_posts_namespace.layout_img_size.setHeight(widget);
+					
+				});
+
+				jQuery(window).on('load resize', function() {
+										cat_posts_namespace.layout_wrap_text.setClass(widget);
+					
+					
+					
+						cat_posts_namespace.layout_img_size.setHeight(widget);
+					
+				});
+
+				// low-end mobile
+								cat_posts_namespace.layout_wrap_text.setClass(widget);
+				
+				
+				
+					cat_posts_namespace.layout_img_size.setHeight(widget);
+				
+
+			}
+		</script>
+				</body>
+		</html>
+		
+<!-- WP Optimize page cache - https://teamupdraft.com/wp-optimize/ - page NOT cached -->

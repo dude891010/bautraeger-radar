@@ -4,10 +4,13 @@ Referenz: noa4.de, Rubrik "Lokal" (WordPress-Feed, live geprüft am 20.11.2026, 
 `<item>` mit `title`, `link`, `pubDate`, mehreren `category` (oft auch der Ortsname), `guid` "https://.../?p=<ID>"
 und einer `description` mit nur ~160 Zeichen Anriss. 10 Artikel je Seite, ältere Seiten über `?paged=<n>`.
 
-Schritt 1 (dieser Stand): Titel + Anriss + Kategorien werden als `Dokument.text` übernommen (wie bei bv-hh.de,
-kein Download) und laufen durch Vorfilter und KI-Auswertung wie Ratsunterlagen. Der volle Artikeltext folgt in
-Schritt 2. Urheberrecht: der Text wird nur intern ausgewertet, im Dashboard erscheinen höchstens Titel, Link und
-ein kurzes Zitat (`evidenz` ≤ 200 Zeichen).
+Schritt 1: Titel + Anriss + Kategorien werden als `Dokument.text` übernommen (wie bei bv-hh.de, kein PDF) und
+laufen durch Vorfilter und KI-Auswertung wie Ratsunterlagen. Schritt 2: ist `artikel_selektor` gesetzt,
+wird für jeden *passenden* Artikel die Artikelseite geladen und deren Haupttext statt des Anrisses verwendet (bei noa4
+`article.post-detail .the_content` - die Seite enthält sechs `article`-Elemente, fünf davon sind Verweise auf
+andere Artikel). Findet der Selektor nichts, ist das ein Layoutwechsel (`SourceLayoutError`, fail loud); der
+Scraper isoliert das je Artikel. Urheberrecht: der Text wird nur intern ausgewertet, im Dashboard erscheinen
+höchstens Titel, Link und ein kurzes Zitat (`evidenz` ≤ 200 Zeichen).
 
 Je Artikel eine `Sitzung` (Gremium `gremium`, Standard "Presseartikel", Datum = Veröffentlichung in deutscher
 Zeit) mit genau einem `Dokument`. Gelistet werden nur Artikel, deren Titel/Anriss/Kategorien zu `titel_muster`
@@ -19,6 +22,7 @@ Optionen (`options` in config/sources.yaml):
   titel_muster  Regex-Liste (Groß-/Kleinschreibung egal), mindestens eine muss passen; leer = alle
   ort_muster    Regex-Liste, mindestens eine muss passen (z. B. Ortsname); leer = keine Ortsprüfung
   max_seiten    höchstens so viele Feed-Seiten je Lauf (Standard 5 = 50 Artikel); ältere Artikel holt Schritt 3
+  artikel_selektor  CSS-Selektor für den Artikeltext auf der Artikelseite; leer = nur Anriss (Schritt 1)
   gremium       Name für das Feld Gremium (Standard "Presseartikel")
 """
 
@@ -60,7 +64,10 @@ class Artikel:
 
     @property
     def text(self) -> str:
-        teile = [self.titel, self.anriss]
+        return self.text_mit(self.anriss)
+
+    def text_mit(self, inhalt: str) -> str:
+        teile = [self.titel, inhalt]
         if self.kategorien:
             teile.append("Schlagworte: " + ", ".join(self.kategorien))
         return "\n\n".join(t for t in teile if t)
@@ -79,6 +86,7 @@ class RssAdapter(SourceAdapter):
         self._ort_re = [re.compile(m, re.IGNORECASE) for m in opt.get("ort_muster", [])]
         self._max_seiten = int(opt.get("max_seiten", 5))
         self._gremium = opt.get("gremium", STANDARD_GREMIUM)
+        self._artikel_selektor = opt.get("artikel_selektor")
         self._artikel: dict[str, Artikel] = {}
         # Bis wohin der letzte list_sessions()-Aufruf wirklich gelesen hat. Endet das Blättern an `max_seiten`,
         # bevor der Fensterbeginn erreicht ist, ist das Fenster NICHT vollständig - der Scraper vermerkt dann nur
@@ -117,6 +125,7 @@ class RssAdapter(SourceAdapter):
 
     def list_documents(self, sitzung: Sitzung) -> list[Dokument]:
         a = self._artikel[sitzung.external_id]
+        text = a.text_mit(self._lade_volltext(a)) if self._artikel_selektor else a.text
         return [
             Dokument(
                 source_id=self.source.id,
@@ -127,9 +136,22 @@ class RssAdapter(SourceAdapter):
                 vorlage_external_id=f"artikel-{a.artikel_id}",
                 vorlage_nr=f"Artikel {a.artikel_id}",
                 typ="presseartikel",
-                text=a.text,
+                text=text,
             )
         ]
+
+    def _lade_volltext(self, a: Artikel) -> str:
+        soup = BeautifulSoup(self.http.get(a.url).text, "lxml")
+        bereich = soup.select_one(self._artikel_selektor)
+        if bereich is None:
+            raise SourceLayoutError(
+                f"{self.source.id}: Artikeltext nicht gefunden ({self._artikel_selektor}) in {a.url} - Layoutwechsel?"
+            )
+        absaetze = [normalize(e.get_text(" ", strip=True)) for e in bereich.find_all(["p", "h2", "h3", "li"])]
+        text = "\n".join(t for t in absaetze if t) or normalize(bereich.get_text(" ", strip=True))
+        if not text:
+            raise SourceLayoutError(f"{self.source.id}: Artikeltext leer in {a.url}")
+        return text
 
     # -- intern -------------------------------------------------------------------------------
     def _passt(self, a: Artikel) -> bool:

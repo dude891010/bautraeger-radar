@@ -78,7 +78,8 @@ def test_echte_artikel_ohne_wohnbau_werden_nicht_gelistet(quelle):
 
 
 def test_wohnbau_artikel_wird_sitzung_mit_textdokument(quelle):
-    adapter = RssAdapter(quelle, _FakeHttp({"category/lokal/feed/": _feed(WOHNBAU_ITEM)}))
+    seiten = {"category/lokal/feed/": _feed(WOHNBAU_ITEM), LIESEL_URL: ARTIKEL_LIESEL}
+    adapter = RssAdapter(quelle, _FakeHttp(seiten))
     (sitzung,) = adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))
     assert (sitzung.external_id, sitzung.gremium, sitzung.datum) == ("14000", "Presseartikel", date(2026, 8, 6))
     (dok,) = adapter.list_documents(sitzung)
@@ -154,3 +155,52 @@ def test_scraper_vermerkt_nur_abgedeckten_zeitraum(monkeypatch, tmp_path, quelle
         assert database.quellen_zeitraum(conn, "noa4")[0] == date(2026, 11, 6)
     finally:
         conn.close()
+
+
+# -- Schritt 2: Volltext von der Artikelseite (20.11.2026) ------------------------------------------------
+
+ARTIKEL_LIESEL = (FIXTURES / "artikel_liesel_huenichen.html").read_text(encoding="utf-8")
+ARTIKEL_MODELL = (FIXTURES / "artikel_norderstedter_modell.html").read_text(encoding="utf-8")
+LIESEL_URL = "https://www.noa4.de/spatenstich-fuer-69-gefoerderte-wohnungen-in-norderstedt/"
+
+
+def test_volltext_aus_echter_artikelseite(quelle):
+    http = _FakeHttp({"category/lokal/feed/": _feed(WOHNBAU_ITEM), LIESEL_URL: ARTIKEL_LIESEL})
+    adapter = RssAdapter(quelle, http)
+    (sitzung,) = adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))
+    (dok,) = adapter.list_documents(sitzung)
+    assert http.abrufe.count(LIESEL_URL) == 1  # Artikelseite nur für den passenden Artikel
+    assert all(u == LIESEL_URL or u.startswith("category/lokal/feed/") for u in http.abrufe)
+    assert dok.text.startswith("Spatenstich für 69 geförderte Wohnungen in Norderstedt")
+    assert "ersten und zweiten Förderweg" in dok.text  # steht nur im Volltext, nicht im Anriss
+    assert "Fertigstellung ist für das vierte Quartal 2027" in dok.text
+    assert "Schlagworte:" in dok.text
+    # nur der Artikel selbst, nicht die fünf verlinkten Nachbarartikel
+    assert len(dok.text) < 2500
+
+
+def test_volltext_norderstedter_modell_nennt_we_zahl(quelle):
+    url = "https://www.noa4.de/norderstedter-modell-vorerst-auf-eis-gelegt/"
+    item = WOHNBAU_ITEM.replace(LIESEL_URL, url).replace("?p=14000", "?p=14100")
+    http = _FakeHttp({"category/lokal/feed/": _feed(item), url: ARTIKEL_MODELL})
+    adapter = RssAdapter(quelle, http)
+    (dok,) = adapter.list_documents(adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))[0])
+    assert "40 geförderten Wohnungen" in dok.text and "Hermann-Klingenberg-Ring" in dok.text
+
+
+def test_layoutwechsel_der_artikelseite_ist_laut(quelle):
+    http = _FakeHttp({"category/lokal/feed/": _feed(WOHNBAU_ITEM), LIESEL_URL: "<html><body><p>neu</p></body></html>"})
+    adapter = RssAdapter(quelle, http)
+    (sitzung,) = adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))
+    with pytest.raises(SourceLayoutError):
+        adapter.list_documents(sitzung)
+
+
+def test_ohne_selektor_bleibt_es_beim_anriss(quelle):
+    from dataclasses import replace
+
+    optionen = {k: v for k, v in quelle.options.items() if k != "artikel_selektor"}
+    http = _FakeHttp({"category/lokal/feed/": _feed(WOHNBAU_ITEM)})
+    adapter = RssAdapter(replace(quelle, options=optionen), http)
+    (dok,) = adapter.list_documents(adapter.list_sessions(date(2026, 8, 1), date(2026, 8, 31))[0])
+    assert LIESEL_URL not in http.abrufe and "Liesel-Hünichen-Weg" in dok.text

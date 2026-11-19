@@ -40,7 +40,7 @@ Informationsveranstaltung am 25. November“ (PM vom 13.11.2026) und die Auslegu
 | Schritt | Inhalt | Stand |
 |---|---|---|
 | 1 | RSS-Feed „Lokal“ lesen, Vorfilter auf Titel/Anriss, Text = Titel + Anriss | ✅ 20.11.2026 (Quelle `noa4`) |
-| 2 | Artikelseite laden, Volltext herauslösen | offen (~1,5–2 h) |
+| 2 | Artikelseite laden, Volltext herauslösen | ✅ 20.11.2026 (`artikel_selektor`) |
 | 3 | Ältere Artikel über die Sitemap nachladen | offen (~1,5–2 h) |
 | 4 | KI-freier Web-Fund für Spatenstich/Baubeginn | offen, optional (~2 h) |
 

@@ -907,8 +907,13 @@ Titel+Anriss+Kategorien). Je Artikel eine `Sitzung` (Gremium "Presseartikel", ID
 `abgedeckt_ab` melden; endet das Blättern am Seitenlimit vor dem Fensterbeginn, wird nur bis dorthin `erfasst_ab`
 vermerkt (sonst hätte der erste Lauf "ab 2024 vollständig" behauptet und das Sitemap-Nachladen verhindert).
 Erster Lauf: 50 Artikel, 2 Treffer - beide zum Hummel-Projekt Hermann-Klingenberg-Ring ("Norderstedter Modell"),
-`erfasst_ab` 17.09.2026. 10 neue Tests, 501 insgesamt. **Offen:** Schritt 2 Volltext der Artikelseite, Schritt 3
-Sitemap-Backfill (Liesel-Hünichen-Weg 08/2026), Schritt 4 KI-freier Web-Fund für Spatenstich/Baubeginn. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
+`erfasst_ab` 17.09.2026. 10 neue Tests, 501 insgesamt. Schritt 2 ✅ (20.11.2026): Option `artikel_selektor`
+(noa4: `article.post-detail .the_content` - die Seite hat sechs `article`-Elemente, fünf sind Nachbar-Artikel).
+Nur für *passende* Artikel wird die Seite geladen (2 s Pause), Text = Titel + Absätze + Schlagworte; Selektor ohne
+Treffer = `SourceLayoutError` (je Artikel isoliert). Fixtures: Artikel "Norderstedter Modell" (nennt erst im Volltext
+"40 geförderten Wohnungen") und Liesel-Hünichen-Weg. Ein geänderter Text ergibt wie bei PDFs einen neuen
+Vorlagen-Eintrag (anderer Hash) - die alten Anriss-Einträge bleiben ungenutzt liegen. 4 neue Tests, 505 insgesamt.
+**Offen:** Schritt 3 Sitemap-Backfill (Liesel-Hünichen-Weg 08/2026), Schritt 4 KI-freier Web-Fund für Baubeginn. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
