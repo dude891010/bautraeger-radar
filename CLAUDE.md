@@ -934,6 +934,18 @@ auf Eis" korrekt verworfen (Frühphase). **Achtung, Backslash-Falle:** beim Einf
 Backslash-b und Backslash-n mehrfach zu Steuerzeichen bzw. echten Zeilenumbrüchen - danach Dateien auf das Zeichen
 0x08 prüfen (`grep -c` mit `$'\x08'`) bzw. `ruff check` laufen lassen. 4 neue Tests, 512 insgesamt. noa4.de damit
 vollständig (Schritte 1-4).
+**Demo-Generalprobe (20.11.2026, Dashboard im Browser durchgeklickt; Startkonfiguration `generalprobe` in
+`.claude/launch.json`: Port 8502, `DASHBOARD_AUTH=extern` nur als Umgebungsvariable dieses lokalen Starts, `.env`
+unberührt).** Behoben: der Demo-Hinweis behauptete "synthetische Beispielprojekte, keine echten Daten", obwohl 15
+von 24 echt sind -> `app.demo_hinweis()`; der einzige echte Fund (Liesel-Hünichen-Weg, Web-Fund) fehlte im Tab
+"Kurzfristige Leads" -> `app.web_leads()` (Baubeginn/Baugenehmigung aus `web_funde`, eigener Abschnitt, zählt in
+KPI und Tab-Titel); Lead-Tabelle mit Spalte "Herkunft" und "–" statt "None" (`lead_view()`); abgeschnittene
+KPI-Titel gekürzt (Details im Hilfetext); Quellen-Monitoring zeigte Rohdaten (UTC-ISO, `letzter_lauf`) und im
+Demo-Modus überall "None" -> `app.quellen_view()` (deutsche Spalten, Ortszeit, Status in Worten, Zähler mit
+"(letzter Lauf)"), immer aus `data/radar.db`, Rohdaten im Aufklapper; "Choose options" -> `_multiselect()` mit
+Platzhalter "Alle"; "vor 0 Tagen" -> "heute"/"gestern"; Projektname im Projekte-Editor nach vorn; Web-Recherche-Text
+nennt die eigenen Presse-Quellen. Demo-Ablauf für den Chef: `docs/DEMO_ABLAUF.md`. 6 neue Tests
+(`tests/test_generalprobe.py`), 518 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

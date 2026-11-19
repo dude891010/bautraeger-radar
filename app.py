@@ -230,7 +230,75 @@ def lauf_hinweis(letzter_lauf: datetime | None, jetzt: datetime | None = None) -
             f"Letzter Lauf: {zeit} - vor {alter_tage} Tagen. Neue Sitzungen fehlen; bitte Lauf starten "
             "und den wöchentlichen Lauf (Scheduler/Aufgabenplanung) prüfen."
         )
-    return "info", f"Letzter Lauf: {zeit} (vor {alter_tage} Tag{'en' if alter_tage != 1 else ''})"
+    wann = "heute" if alter_tage == 0 else "gestern" if alter_tage == 1 else f"vor {alter_tage} Tagen"
+    return "info", f"Letzter Lauf: {zeit} ({wann})"
+
+
+def demo_hinweis(df: pd.DataFrame) -> str:
+    """Hinweis über den Tabellen im Demo-Modus: sagt ehrlich, wie viele Projekte echt (an der Quelle geprüft)
+    und wie viele erfunden sind - die frühere Fassung behauptete pauschal "synthetische Beispielprojekte",
+    obwohl seit 11/2026 die Mehrheit echte Norderstedter Projekte sind (Generalprobe 20.11.2026)."""
+    if df.empty or "quelle_id" not in df.columns:
+        return "Demo-Modus."
+    echt = int((df["quelle_id"] == demo_data.ECHTE_QUELLE_ID).sum())
+    erfunden = len(df) - echt
+    return (
+        f"Demo-Modus: {echt} echte, an der Quelle geprüfte Norderstedter Projekte ({HERKUNFT_ECHT}) und "
+        f"{erfunden} erfundene Beispiele aus anderen Regionen ({HERKUNFT_DEMO}) - Spalte 'Herkunft'."
+    )
+
+
+def quellen_view(rows: list, jetzt: datetime | None = None) -> pd.DataFrame:
+    """Quellen-Monitoring lesbar statt Rohdaten: deutsche Spaltennamen, Zeiten in deutscher Ortszeit, ein
+    Status in Worten ("✅ OK", "⚠ Fehler", "– noch nie gelaufen")."""
+    if not rows:
+        return pd.DataFrame()
+
+    def zeit(wert) -> str:
+        if not wert:
+            return "–"
+        t = datetime.fromisoformat(wert)
+        t = t.replace(tzinfo=UTC) if t.tzinfo is None else t
+        return t.astimezone(ZoneInfo("Europe/Berlin")).strftime("%d.%m.%Y %H:%M")
+
+    zeilen = []
+    for r in rows:
+        r = dict(r)
+        if not r.get("letzter_lauf"):
+            status = "– noch nie gelaufen"
+        elif r.get("letzter_fehler") and (not r.get("letzter_erfolg") or r["letzter_fehler"] > r["letzter_erfolg"]):
+            status = "⚠ Fehler beim letzten Lauf"
+        else:
+            status = "✅ OK"
+        zeilen.append({
+            "Quelle": r.get("name") or r.get("id"),
+            "Art": QUELLEN_ART.get(r.get("system"), r.get("system")),
+            "Status": status,
+            "Letzter Lauf": zeit(r.get("letzter_lauf")),
+            "Letzter Erfolg": zeit(r.get("letzter_erfolg")),
+            "Erfasst ab": datetime.fromisoformat(r["erfasst_ab"]).strftime("%d.%m.%Y") if r.get("erfasst_ab") else "–",
+            "Sitzungen/Meldungen (letzter Lauf)": r.get("anzahl_sitzungen"),
+            "Vorlagen (letzter Lauf)": r.get("anzahl_vorlagen"),
+            "Dokumente (letzter Lauf)": r.get("anzahl_dokumente"),
+        })
+    return pd.DataFrame(zeilen)
+
+
+QUELLEN_ART = {
+    "sessionnet": "Ratsinformationssystem",
+    "oparl": "Ratsinformationssystem (OParl)",
+    "allris": "Ratsinformationssystem (ALLRIS)",
+    "pressemitteilungen": "Pressemitteilungen",
+    "rss": "Lokalpresse (RSS)",
+    "hamburg_transparenz": "Transparenzportal",
+    "bv_hh": "Bezirksversammlung (bv-hh.de)",
+}
+
+
+def _multiselect(st, label, options, **kwargs):
+    """`st.multiselect` mit deutschem Platzhalter "Alle" statt Streamlits englischem "Choose options"."""
+    kwargs.setdefault("placeholder", "Alle")
+    return st.multiselect(label, options, **kwargs)
 
 
 def compute_kpis(df: pd.DataFrame) -> dict[str, int | None]:
@@ -419,6 +487,7 @@ LEAD_HINWEIS_SPALTEN = ["ausfuehrungszeitraum", "kurzfassung", "evidenz", "proje
 
 LEAD_SPALTEN = [
     "lead",
+    "herkunft",
     "projektbezeichnung",
     "strasse",
     "hausnummer",
@@ -477,8 +546,33 @@ def kurzfristige_leads(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def lead_view(df: pd.DataFrame) -> pd.DataFrame:
-    """Spaltenauswahl für die Lead-Tabelle - kompakter als `export_view()`, Badge vorne."""
-    return df[[s for s in LEAD_SPALTEN if s in df.columns]]
+    """Spaltenauswahl für die Lead-Tabelle - kompakter als `export_view()`, Badge vorne. Fehlende Texte als
+    "–" statt "None" (Generalprobe 20.11.2026); eine durchweg leere Herkunft (echter Betrieb) entfällt."""
+    spalten = [s for s in LEAD_SPALTEN if s in df.columns]
+    if "herkunft" in spalten and not (df["herkunft"].fillna("") != "").any():
+        spalten.remove("herkunft")
+    view = df[spalten].copy()
+    for spalte in view.columns:
+        if not pd.api.types.is_numeric_dtype(view[spalte]):  # Texte (object oder string), nie die WE-Zahlen
+            view[spalte] = view[spalte].astype(object).where(view[spalte].notna(), "–")
+    return view
+
+
+WEB_LEAD_PHASEN = {"BAUGENEHMIGUNG", "BAUBEGINN"}
+
+
+def web_leads(web_df: pd.DataFrame) -> pd.DataFrame:
+    """Baugenehmigungen und Baubeginne aus Presse/Web (Tabelle `web_funde`) für den Tab "Kurzfristige Leads" -
+    ein Baubeginn ist der kurzfristigste Lead überhaupt, stand aber bisher nur im Tab "Web-Recherche"
+    (Generalprobe 20.11.2026: der einzige echte Fund des Radars, Liesel-Hünichen-Weg, fehlte dort). Ohne
+    archivierte, Baubeginn vor Baugenehmigung, dann WE absteigend."""
+    if web_df.empty or "phase" not in web_df.columns:
+        return web_df.iloc[0:0] if not web_df.empty else pd.DataFrame()
+    leads = web_df[web_df["phase"].isin(WEB_LEAD_PHASEN)]
+    if "status" in leads.columns:
+        leads = leads[leads["status"] != "Archiviert"]
+    leads = leads.assign(_prio=(leads["phase"] != "BAUBEGINN").astype(int))
+    return leads.sort_values(["_prio", "we_anzahl"], ascending=[True, False], na_position="last").drop(columns="_prio")
 
 
 def _lead_highlight(row: pd.Series) -> list[str]:
@@ -873,8 +967,9 @@ def _web_recherche_tab(
 
     st.subheader(f"Phase 3 & 4 im Umkreis von {web_config.radius_km:.0f} km um {web_config.zentrum_name}")
     st.caption(
-        "Baugenehmigungen und Baubeginne aus Lokalpresse und Pressemitteilungen, gefunden per "
-        f"Such-API über {len(orte_im_radius(web_config))} Orte (config/web_recherche.yaml). "
+        "Baugenehmigungen und Baubeginne aus der Lokalpresse: aus den eigenen Presse-Quellen des Radars "
+        "(z. B. noa4.de, bei jedem Lauf) und - sobald eingeschaltet - per Such-API über "
+        f"{len(orte_im_radius(web_config))} Orte (config/web_recherche.yaml). "
         "Eingeordnet per Stichwort, ohne KI - WE-Zahlen nur, wenn sie wörtlich im Text stehen. "
         "Mehrere Artikel können dasselbe Vorhaben beschreiben."
     )
@@ -921,7 +1016,7 @@ def _web_recherche_tab(
 
     f1, f2, f3, f4 = st.columns([2, 2, 2, 1], gap="medium")
     with f1:
-        f_phasen = st.multiselect(
+        f_phasen = _multiselect(st,
             "Phase",
             [p.value for p in Phase],
             default=[p.value for p in Phase],
@@ -932,8 +1027,8 @@ def _web_recherche_tab(
         radius = int(web_config.radius_km)
         f_km = st.slider("Umkreis (km)", min_value=5, max_value=radius, value=radius, step=5, key="web_km")
     with f3:
-        f_orte = st.multiselect("Ort", sorted(web_df["ort"].dropna().unique()), key="web_ort")
-        f_wohnform = st.multiselect(
+        f_orte = _multiselect(st, "Ort", sorted(web_df["ort"].dropna().unique()), key="web_ort")
+        f_wohnform = _multiselect(st,
             "Wohnform",
             list(WEB_WOHNFORM_LABEL),
             format_func=lambda w: WEB_WOHNFORM_LABEL.get(w, w),
@@ -941,7 +1036,7 @@ def _web_recherche_tab(
             help=f"Reine Eigentumsprojekte erscheinen ab {web_config.eigentum_min_we} WE (Großprojekte sind "
             "B2B-relevant); kleinere werden bei der Recherche verworfen.",
         )
-        f_status = st.multiselect("Status", sorted(web_df["status"].dropna().unique()), key="web_status")
+        f_status = _multiselect(st, "Status", sorted(web_df["status"].dropna().unique()), key="web_status")
     with f4:
         f_nur_we = st.checkbox("nur mit WE-Zahl", key="web_nur_we")
 
@@ -1140,27 +1235,33 @@ def main() -> None:
     df = add_herkunft_und_stand(add_lead_badge(pruef_df), demo_modus=demo_modus)
 
     kpis = compute_kpis(df)
-    if not df.empty:
+    presse_leads = web_leads(web_df)
+    anzahl_leads = kpis["leads"] + len(presse_leads)
+    if not df.empty or not presse_leads.empty:
+        # Kurze Titel: längere wurden in den Kacheln abgeschnitten (Generalprobe 20.11.2026), Details per Hilfe.
         kpi_cols = st.columns(5, gap="medium")
         kpi_cols[0].metric("Projekte", kpis["projekte"])
         kpi_cols[1].metric(
-            "Wohneinheiten gesamt", kpis["we_gesamt"] if kpis["we_gesamt"] is not None else "–"
+            "WE gesamt", kpis["we_gesamt"] if kpis["we_gesamt"] is not None else "–",
+            help="Summe der Wohneinheiten aller Projekte mit bekannter WE-Zahl.",
         )
         kpi_cols[2].metric(
-            "davon gefördert", kpis["we_gefoerdert"] if kpis["we_gefoerdert"] is not None else "–"
+            "davon gefördert", kpis["we_gefoerdert"] if kpis["we_gefoerdert"] is not None else "–",
+            help="Summe der öffentlich geförderten Wohneinheiten, soweit als Zahl genannt.",
         )
-        kpi_cols[3].metric("Offen (Neu / In Prüfung)", kpis["offen"])
+        kpi_cols[3].metric("Offen", kpis["offen"], help="Projekte mit Status 'Neu' oder 'In Prüfung'.")
         kpi_cols[4].metric(
-            "Kurzfristige Leads",
-            kpis["leads"],
-            help="Baugenehmigungen und Bauanträge - siehe Tab 'Kurzfristige Leads'.",
+            "Leads",
+            anzahl_leads,
+            help="Kurzfristige Leads: Baugenehmigungen und Bauanträge aus Ratsunterlagen sowie Baubeginne und "
+            "Genehmigungen aus Presse/Web - siehe Tab 'Kurzfristige Leads'.",
         )
 
     # "Kurzfristige Leads" bewusst als ERSTER Tab (Streamlit öffnet immer den ersten): der
     # Vertrieb sieht konkrete Bauvorhaben sofort, ohne zu filtern (Kundenfeedback Hummel, 10/2026).
     tab_leads, tab_web, tab_projekte, tab_diagramme, tab_quellen = st.tabs(
         [
-            f"🏗️ Kurzfristige Leads ({kpis['leads']})",
+            f"🏗️ Kurzfristige Leads ({anzahl_leads})",
             f"🌐 Web-Recherche ({len(web_df)})",
             "Projekte",
             "Diagramme",
@@ -1170,7 +1271,7 @@ def main() -> None:
 
     with tab_leads:
         if demo_modus:
-            st.info("Demo-Modus: Es werden synthetische Beispielprojekte angezeigt, keine echten Daten.")
+            st.info(demo_hinweis(df))
         st.subheader("Konkrete Baugenehmigungen & Bauanträge")
         st.markdown(
             "".join(
@@ -1186,16 +1287,19 @@ def main() -> None:
             "unabhängig von den Filtern links (ohne archivierte)."
         )
         leads = kurzfristige_leads(df)
-        if leads.empty:
+        if leads.empty and presse_leads.empty:
             st.info(
-                "Aktuell keine Baugenehmigungen oder Bauanträge erkannt. Bebauungsplan-Verfahren "
+                "Aktuell keine Baugenehmigungen, Bauanträge oder Baubeginne erkannt. Bebauungsplan-Verfahren "
                 "stehen weiterhin im Tab 'Projekte'."
             )
+        elif leads.empty:
+            st.caption("Aus den Ratsunterlagen aktuell keine Baugenehmigung und kein Bauantrag.")
         else:
             st.dataframe(
                 lead_view(leads).style.apply(_lead_highlight, axis=1),
                 column_config={
                     "lead": st.column_config.TextColumn("Stand", width="medium"),
+                    "herkunft": "Herkunft",
                     "projektbezeichnung": "Projekt",
                     "strasse": "Straße",
                     "hausnummer": "Nr.",
@@ -1219,6 +1323,31 @@ def main() -> None:
                 file_name="kurzfristige_leads.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
+        if not presse_leads.empty:
+            st.subheader("Baubeginne & Genehmigungen aus Presse und Web")
+            st.caption(
+                "Vom Radar ohne KI erkannt: Artikel mit Spatenstich, Grundsteinlegung, Richtfest oder erteilter "
+                "Baugenehmigung im Umkreis - Details und Status im Tab 'Web-Recherche'."
+            )
+            st.dataframe(
+                presse_leads[[
+                    s for s in ("phase_label", "titel", "ort", "we_anzahl", "wohnform_label", "veroeffentlicht",
+                                "domain", "url", "hinweis") if s in presse_leads.columns
+                ]],
+                column_config={
+                    "phase_label": "Phase",
+                    "titel": st.column_config.TextColumn("Meldung", width="large"),
+                    "ort": "Ort",
+                    "we_anzahl": "WE",
+                    "wohnform_label": "Wohnform",
+                    "veroeffentlicht": "Datum",
+                    "domain": "Quelle",
+                    "url": st.column_config.LinkColumn("Link", display_text="öffnen"),
+                    "hinweis": "Herkunft",
+                },
+                hide_index=True,
+                use_container_width=True,
+            )
 
     with tab_web:
         web_aktiv = _web_recherche_tab(st, settings, active_settings, web_df, demo_modus=demo_modus)
@@ -1239,7 +1368,7 @@ def main() -> None:
 
     with tab_projekte:
         if demo_modus:
-            st.info("Demo-Modus: Es werden synthetische Beispielprojekte angezeigt, keine echten Daten.")
+            st.info(demo_hinweis(df))
         if df.empty:
             st.info("Noch keine Projekte in der Datenbank. Starte oben links einen Lauf.")
         else:
@@ -1249,12 +1378,12 @@ def main() -> None:
                     placeholder="Projekt, Straße, Ort, Bauherr ...",
                     help="Durchsucht Projektbezeichnung, Adresse, Kommune und Antragsteller.",
                 )
-                f_bundesland = st.multiselect("Bundesland", sorted(df["bundesland"].dropna().unique()))
-                f_ort = st.multiselect("Ort", sorted(df["ort"].dropna().unique()))
-                f_tier = st.multiselect("Tier", sorted(df["tier"].dropna().unique()))
-                f_wohnform = st.multiselect("Wohnform", sorted(df["wohnform"].dropna().unique()))
-                f_verfahrensstand = st.multiselect("Verfahrensstand", sorted(df["verfahrensstand"].dropna().unique()))
-                f_status = st.multiselect("Status", sorted(df["status"].dropna().unique()))
+                f_bundesland = _multiselect(st, "Bundesland", sorted(df["bundesland"].dropna().unique()))
+                f_ort = _multiselect(st, "Ort", sorted(df["ort"].dropna().unique()))
+                f_tier = _multiselect(st, "Tier", sorted(df["tier"].dropna().unique()))
+                f_wohnform = _multiselect(st, "Wohnform", sorted(df["wohnform"].dropna().unique()))
+                f_verfahrensstand = _multiselect(st, "Verfahrensstand", sorted(df["verfahrensstand"].dropna().unique()))
+                f_status = _multiselect(st, "Status", sorted(df["status"].dropna().unique()))
 
             gefiltert = apply_filters(
                 apply_search(df, suche),
@@ -1280,8 +1409,9 @@ def main() -> None:
                         for grund in zeile["pruefauftrag"].split(" · "):
                             st.markdown(f"- {grund}")
 
+            # Projektname vorn, langer Prüfauftrag nach hinten (Generalprobe 20.11.2026: der Name stand ganz rechts)
             nur_lesen = [
-                "id", "herkunft", "lead", "pruefen", "pruefauftrag", "projektbezeichnung", "stand", "ort", "we_anzeige",
+                "id", "projektbezeichnung", "herkunft", "lead", "stand", "ort", "we_anzeige", "pruefen", "pruefauftrag",
                 "quelle_url",
             ]
             if not (gefiltert["herkunft"] != "").any():
@@ -1293,6 +1423,7 @@ def main() -> None:
                 bearbeitbar,
                 disabled=nur_lesen,
                 column_config={
+                    "projektbezeichnung": st.column_config.TextColumn("Projekt", width="medium"),
                     "herkunft": st.column_config.TextColumn(
                         "Herkunft",
                         help="Vom Radar gefunden (leer), von Hand nachgetragen (geprüft) oder Demo-Beispiel",
@@ -1425,11 +1556,18 @@ def main() -> None:
                         st.caption("Kein Statusverlauf vorhanden.")
 
     with tab_quellen:
+        # Immer der echte Stand aus data/radar.db - auch im Demo-Modus: die Demo-Datenbank hat keine Läufe,
+        # dort stand sonst überall "None" (Generalprobe 20.11.2026).
+        if demo_modus:
+            with closing(database.connect(settings)) as conn:
+                quellen_rows = database.list_quellen(conn)
+            st.caption("Echter Stand der angebundenen Quellen (unabhängig vom Demo-Modus).")
         if not quellen_rows:
             st.info("Noch keine Quelle gelaufen.")
         else:
-            quellen_df = pd.DataFrame([dict(r) for r in quellen_rows])
-            st.dataframe(quellen_df, hide_index=True, use_container_width=True)
+            st.dataframe(quellen_view(quellen_rows), hide_index=True, use_container_width=True)
+            with st.expander("Technische Details (Fehlertexte, Rohdaten)"):
+                st.dataframe(pd.DataFrame([dict(r) for r in quellen_rows]), hide_index=True, use_container_width=True)
 
     if aktiv or web_aktiv:
         time.sleep(2)
