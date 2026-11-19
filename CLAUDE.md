@@ -898,7 +898,17 @@ verwarf korrekt 2 Schulbau-Meldungen (Campus Glashütte), 15 warten auf die KI. 
 (13.11.2026) - Mehrfamilienhaus Friedrich-Ebert-Straße/Friedrichsgaber Weg, Garstedt, teils gefördert, Infoabend
 25.11.2026, noch ohne WE-Zahl. Bekannte Eigenheit: Pressemitteilungs-"Sitzungen" haben nie eine Niederschrift und
 gelten für `aelteste_offene_sitzung()` als offen - das Fenster dieser Quelle reicht deshalb immer 6 Monate zurück
-(billig: eine Listenseite, PDFs im Cache). 9 neue Tests, 491 insgesamt. Quelle B (noa4.de) noch offen. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
+(billig: eine Listenseite, PDFs im Cache). 9 neue Tests, 491 insgesamt.
+**noa4.de in 4 Schritten (Nutzerwunsch: kürzere Etappen statt 6-8 h am Stück).** Schritt 1 ✅ (20.11.2026):
+allgemeiner Adapter-Typ `rss` (`radar/sources/rss.py`), Quelle `noa4` (Feed `category/lokal/feed/`, blättert mit
+`?paged=n` bis `max_seiten` 5, `ort_muster` Norderstedt + dieselben `titel_muster` wie die Pressemitteilungen, auf
+Titel+Anriss+Kategorien). Je Artikel eine `Sitzung` (Gremium "Presseartikel", ID aus `guid` `?p=<ID>`) mit einem
+`Dokument` ohne Download: `text` = Titel + Anriss (~160 Zeichen) + Schlagworte. Neu im Scraper: ein Adapter darf
+`abgedeckt_ab` melden; endet das Blättern am Seitenlimit vor dem Fensterbeginn, wird nur bis dorthin `erfasst_ab`
+vermerkt (sonst hätte der erste Lauf "ab 2024 vollständig" behauptet und das Sitemap-Nachladen verhindert).
+Erster Lauf: 50 Artikel, 2 Treffer - beide zum Hummel-Projekt Hermann-Klingenberg-Ring ("Norderstedter Modell"),
+`erfasst_ab` 17.09.2026. 10 neue Tests, 501 insgesamt. **Offen:** Schritt 2 Volltext der Artikelseite, Schritt 3
+Sitemap-Backfill (Liesel-Hünichen-Weg 08/2026), Schritt 4 KI-freier Web-Fund für Spatenstich/Baubeginn. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

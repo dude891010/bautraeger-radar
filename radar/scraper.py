@@ -415,7 +415,10 @@ def _collect_and_persist(
                 result.ohne_llm += 1
 
     result.vorlagen = len(vorlagen_ids)
-    result.vollstaendig_ab = start  # Kalender bis hierher ohne Abbruch durchlaufen
+    # Kalender bis hierher ohne Abbruch durchlaufen - außer der Adapter meldet, dass er nicht so weit kam
+    # (z. B. RSS-Feed mit Seitenlimit, radar/sources/rss.py).
+    abgedeckt = getattr(adapter, "abgedeckt_ab", None)
+    result.vollstaendig_ab = max(start, abgedeckt) if isinstance(abgedeckt, date) else start
 
 
 def run_source_full(

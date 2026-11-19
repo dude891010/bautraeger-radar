@@ -72,6 +72,34 @@ sources:
       Linktext. robots.txt erlaubt das (gesperrt nur /cache/, /output/, Suche, Weiterleitungen). Datum = Zeitstempel
       im Link (Hochlade-/Änderungszeit, Näherung). Jede Meldung ist eine "Sitzung" mit einem Dokument.
 
+  - id: noa4
+    name: "noa4 Norderstedt – Rubrik Lokal"
+    bundesland: SH
+    system: rss                        # radar/sources/rss.py, Konzept docs/KONZEPT_PRESSEQUELLEN.md (Quelle B)
+    base_url: "https://www.noa4.de/"
+    status: verified                   # Feed am 20.11.2026 live geprüft, Fixtures tests/fixtures/noa4/
+    enabled: true
+    tier: A
+    committees:
+      - '^Presseartikel$'
+    options:
+      feed_url: "category/lokal/feed/"
+      max_seiten: 5                    # 50 Artikel je Lauf; ältere Artikel kommen in Schritt 3 über die Sitemap
+      ort_muster:
+        - '\bNorderstedt'
+      titel_muster:                    # wie norderstedt_presse; einfache Anführungszeichen, sonst wird \b ein Steuerzeichen
+        - '\bWohn(raum|ungen|ung|ungsbau|bau|quartier|gebiet|anlage|einheiten|projekt)'
+        - '\bB-Plan'
+        - '\bBebauungsplan'
+        - '\bRahmenplan'
+        - '\bQuartier'
+        - 'Baugebiet'
+        - '\b(Spatenstich|Richtfest|Grundstein)'
+    notes: >
+      Lokaler Sender, frei zugänglich. robots.txt sperrt nur Admin und Suche; kein TDM-Vorbehalt (§ 44b UrhG) im
+      Impressum, keine tdmrep.json, kein tdm-reservation-Meta (geprüft 20.11.2026). Text nur intern auswerten, im
+      Dashboard höchstens Titel, Link und Kurzzitat. Feed liefert nur ~160 Zeichen Anriss (Volltext: Schritt 2).
+
   - id: uplengen
     name: "Gemeinde Uplengen"
     bundesland: NI

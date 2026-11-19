@@ -35,7 +35,14 @@ zur Weiterverbreitung gedacht. Gleicher Host wie die schon geprüften B-Plan-PDF
 Informationsveranstaltung am 25. November“ (PM vom 13.11.2026) und die Auslegungs-Meldungen zu B-Plänen
 (z. B. 319, 339, 343, 344, 347) früher als über die Sitzungsunterlagen.
 
-## Quelle B: noa4.de (lokaler Sender, Rubrik „Lokal“)
+## Quelle B: noa4.de (lokaler Sender, Rubrik „Lokal“) – in 4 Schritten
+
+| Schritt | Inhalt | Stand |
+|---|---|---|
+| 1 | RSS-Feed „Lokal“ lesen, Vorfilter auf Titel/Anriss, Text = Titel + Anriss | ✅ 20.11.2026 (Quelle `noa4`) |
+| 2 | Artikelseite laden, Volltext herauslösen | offen (~1,5–2 h) |
+| 3 | Ältere Artikel über die Sitemap nachladen | offen (~1,5–2 h) |
+| 4 | KI-freier Web-Fund für Spatenstich/Baubeginn | offen, optional (~2 h) |
 
 **Rechtlich/höflich (geprüft 20.11.2026):**
 - robots.txt sperrt nur Admin-Bereich und Suche; Artikel und Feeds sind erlaubt.
