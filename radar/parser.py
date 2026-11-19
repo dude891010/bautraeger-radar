@@ -178,10 +178,41 @@ class Textinhalt:
     text: str
 
 
+def _text_cache_pfad(path: Path) -> Path:
+    return path.with_name(path.name + ".seiten.json")
+
+
+def extract_pdf_text_gecacht(path: Path) -> ExtrahiertesPdf:
+    """Wie `extract_pdf_text()`, merkt sich den Text aber in `<pdf>.seiten.json` daneben. pdfplumber ist
+    langsam (Minuten bei großen Anlagen), und jeder Lauf liest alle Vorlagen erneut, deren Analyse noch
+    aussteht - ohne Cache dauerte ein Lauf über den Backfill (3.500 PDFs) mehrere Stunden, obwohl kein
+    einziges PDF neu war. Gültig nur bei gleicher Dateigröße und Änderungszeit; jedes Problem mit der
+    Cache-Datei führt einfach zum normalen Lesen (der Cache darf nie Ergebnisse verfälschen)."""
+    stat = path.stat()
+    merkmal = {"groesse": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+    cache = _text_cache_pfad(path)
+    try:
+        daten = json.loads(cache.read_text(encoding="utf-8"))
+        if daten.get("merkmal") == merkmal:
+            return ExtrahiertesPdf(pages=list(daten["pages"]), ocr_noetig=bool(daten["ocr_noetig"]))
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    ergebnis = extract_pdf_text(path)
+    try:
+        cache.write_text(
+            json.dumps({"merkmal": merkmal, "pages": ergebnis.pages, "ocr_noetig": ergebnis.ocr_noetig},
+                       ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except OSError:
+        logger.debug("Text-Cache nicht schreibbar: %s", cache)
+    return ergebnis
+
+
 def _lade_text(quelle: Path | Textinhalt) -> ExtrahiertesPdf:
     if isinstance(quelle, Textinhalt):
         return ExtrahiertesPdf(pages=[quelle.text], ocr_noetig=False)
-    return extract_pdf_text(quelle)
+    return extract_pdf_text_gecacht(quelle)
 
 
 # -- Stufe 1: Keyword-Vorfilter -------------------------------------------------------------------

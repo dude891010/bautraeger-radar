@@ -411,3 +411,50 @@ def test_etw_grenze_gilt_auch_fuer_cache_treffer_ohne_neuen_llm_aufruf(tmp_path,
     lockerer = replace(settings, filters=replace(settings.filters, eigentum_min_we=10))
     zweit = _analyze([text], FakeAnthropicClient([]), lockerer, tmp_path)  # keine Antworten -> kein Aufruf
     assert zweit.status is AnalyseStatus.RELEVANT and zweit.aus_cache
+
+
+# -- Text-Cache neben dem PDF (19.11.2026: Backfill-Läufe lasen jedes Mal alle PDFs neu) ------------
+
+
+def test_text_cache_liest_pdf_nur_einmal(tmp_path, monkeypatch):
+    from radar import parser
+    from tests.conftest import make_pdf
+
+    pdf = tmp_path / "123--abc.pdf"
+    pdf.write_bytes(make_pdf("Es entstehen 40 Wohneinheiten."))
+    original = parser.extract_pdf_text
+    aufrufe = []
+    monkeypatch.setattr(parser, "extract_pdf_text", lambda p: aufrufe.append(p) or original(p))
+
+    erst = parser.extract_pdf_text_gecacht(pdf)
+    zweit = parser.extract_pdf_text_gecacht(pdf)
+
+    assert len(aufrufe) == 1
+    assert zweit.pages == erst.pages and zweit.ocr_noetig == erst.ocr_noetig
+    assert "40 Wohneinheiten" in zweit.text
+    assert (tmp_path / "123--abc.pdf.seiten.json").exists()
+
+
+def test_text_cache_wird_bei_geaenderter_datei_neu_gelesen(tmp_path):
+    import os
+
+    from radar import parser
+    from tests.conftest import make_pdf
+
+    pdf = tmp_path / "d.pdf"
+    pdf.write_bytes(make_pdf("Alter Inhalt"))
+    assert "Alter" in parser.extract_pdf_text_gecacht(pdf).text
+    pdf.write_bytes(make_pdf("Neuer Inhalt mit anderer Laenge"))
+    st = pdf.stat()
+    os.utime(pdf, ns=(st.st_atime_ns, st.st_mtime_ns + 5_000_000_000))
+    assert "Neuer Inhalt" in parser.extract_pdf_text_gecacht(pdf).text
+
+
+def test_kaputter_text_cache_wird_ignoriert(tmp_path):
+    from radar import parser
+    from tests.conftest import make_pdf
+
+    pdf = tmp_path / "d.pdf"
+    pdf.write_bytes(make_pdf("Inhalt 18 Wohnungen"))
+    (tmp_path / "d.pdf.seiten.json").write_text("{kaputt", encoding="utf-8")
+    assert "18 Wohnungen" in parser.extract_pdf_text_gecacht(pdf).text

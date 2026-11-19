@@ -247,3 +247,37 @@ def test_list_documents_excludes_nonpublic_agenda_items(requests_mock, adapter):
     )
     documents = adapter.list_documents(sitzung)
     assert not any(d.external_id == "999999" for d in documents)
+
+
+# -- abgelaufene Cookie-Session (19.11.2026 live beobachtet) ------------------------------------------
+
+
+def _asv_sitzung():
+    from radar.sources.base import Sitzung
+
+    return Sitzung(
+        source_id="norderstedt", external_id="16868", gremium="Ausschuss für Stadtentwicklung und Verkehr",
+        datum=date(2026, 9, 3), url="si0057.php?__ksinr=16868",
+    )
+
+
+_OHNE_TAGESORDNUNG = '<html><head><meta name="sessionnet" content="V:050504.L:5"/></head><body>Fehler</body></html>'
+
+
+def test_list_documents_erneuert_session_bei_fehlender_tagesordnung(requests_mock, adapter):
+    _mock_common(requests_mock)
+    echt = (FIXTURES / "sitzung_16868_asv.html").read_text(encoding="utf-8")
+    requests_mock.get(BASE_URL + "si0057.php?__ksinr=16868", [{"text": _OHNE_TAGESORDNUNG}, {"text": echt}])
+
+    docs = adapter.list_documents(_asv_sitzung())
+
+    assert docs  # zweiter Versuch nach neuem Einstieg liefert die Tagesordnung
+    einstiege = [r for r in requests_mock.request_history if r.url.endswith("info.php")]
+    assert len(einstiege) == 2
+
+
+def test_list_documents_bleibt_laut_wenn_tagesordnung_dauerhaft_fehlt(requests_mock, adapter):
+    _mock_common(requests_mock)
+    requests_mock.get(BASE_URL + "si0057.php?__ksinr=16868", text=_OHNE_TAGESORDNUNG)
+    with pytest.raises(SourceLayoutError):
+        adapter.list_documents(_asv_sitzung())

@@ -854,6 +854,17 @@ Quellenfehler, deshalb blieb `letzter_erfolg` leer: jetzt eigene Ausnahme `http_
 Zähler "PDFs übersprungen (zu groß)" in der Zusammenfassung) - die Quelle gilt trotzdem als erfolgreich, die
 übrigen Dokumente der Vorlage werden ausgewertet. Die früher abgelehnten Anlagen holt nur ein erneuter Lauf über
 ihren Zeitraum (`scrape --von 2024-01-01`; alles andere liegt im Cache). 3 neue Tests, 473 insgesamt.
+**Text-Cache (19.11.2026):** Der Nachlade-Lauf brauchte trotz fast vollständigem PDF-Cache Stunden, weil
+`analyze_documents()` bei jedem Lauf alle noch offenen Vorlagen (bei ausgeschaltetem LLM: alle 369
+`BUDGET_ERSCHOEPFT`) neu mit pdfplumber liest. Jetzt `parser.extract_pdf_text_gecacht()`: Seitentext in
+`<pdf>.seiten.json` neben dem PDF, gültig nur bei gleicher Größe + Änderungszeit, jeder Lesefehler der Cache-Datei
+fällt auf normales Lesen zurück. `extract_pdf_text()` bleibt unverändert (ohne Cache). 3 neue Tests, 476 insgesamt.
+Nachlade-Lauf 19.11.2026 (Cache vorher parallel vorgefüllt, Lauf dann ~55 min): 13 der 15 noch fehlenden großen
+Anlagen geladen. Nicht mehr erreichbar: 205765 (Konzeption Meyers Mühle, 403) und 223732 - beide stehen auf keiner
+Sitzungsseite mehr, offenbar von der Stadt zurückgezogen. **Abgelaufene Cookie-Session:** 5 Sitzungen am Stück
+(Dez. 2024-Feb. 2025) lieferten nach ~20 min Laufzeit keine Tagesordnung, ein Einzelabruf danach war einwandfrei.
+`SessionNetAdapter.list_documents()` steigt jetzt bei fehlender Tagesordnung einmal neu ein (`info.php`) und
+wiederholt; fehlt sie dann noch, bleibt es ein `SourceLayoutError`. 2 neue Tests, 478 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

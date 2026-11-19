@@ -72,11 +72,18 @@ class SessionNetAdapter(SourceAdapter):
         if sitzung.url is None:
             return []  # keine Detailseite -> keine Unterlagen abrufbar (Normalfall)
         self._ensure_session()
-        response = self.http.get(sitzung.url)
-        soup = BeautifulSoup(response.text, "lxml")
-        self._verify_fingerprint(soup)
-
+        soup = self._lade_sitzungsseite(sitzung.url)
         top_table = soup.find("table", class_="smctablesitzung")
+        if top_table is None:
+            # Beobachtet am 19.11.2026: nach gut 20 Minuten Laufzeit lieferten mehrere Sitzungen am Stück
+            # keine Tagesordnung, ein Einzelabruf danach war wieder einwandfrei - die Cookie-Session des
+            # Servers war abgelaufen. Deshalb einmal neu einsteigen (info.php) und wiederholen; fehlt die
+            # Tabelle dann immer noch, ist es ein echter Layoutwechsel (fail loud).
+            logger.info("%s: Tagesordnung fehlt (%s), Session wird erneuert", self.source.id, sitzung.external_id)
+            self._session_ready = False
+            self._ensure_session()
+            soup = self._lade_sitzungsseite(sitzung.url)
+            top_table = soup.find("table", class_="smctablesitzung")
         if top_table is None:
             raise SourceLayoutError(
                 f"{self.source.id}: Tagesordnungstabelle nicht gefunden (si0057, {sitzung.external_id})"
@@ -122,6 +129,11 @@ class SessionNetAdapter(SourceAdapter):
         return documents
 
     # -- intern -------------------------------------------------------------------------------
+    def _lade_sitzungsseite(self, url: str) -> BeautifulSoup:
+        soup = BeautifulSoup(self.http.get(url).text, "lxml")
+        self._verify_fingerprint(soup)
+        return soup
+
     def _ensure_session(self) -> None:
         """`info.php` setzt das Session-Cookie; ohne vorherigen Aufruf liefert z. B. si0057.php
         eine SessionNet-Fehlermeldung statt Inhalt. Pro Adapter-Instanz nur einmal nötig."""
