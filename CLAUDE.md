@@ -880,8 +880,11 @@ Falkenkamp, Königsberger Str., Bahnhofstr./Schweriner Str. bewusst nicht einget
 ("✍️ manuell nachgetragen"), Echtprojekte "⭐ echtes Projekt · manuell nachgetragen". Recall: Quelle `echte_projekte`
 zählt nie (auch bei Standard-Herkunft); neue zweite Zahl `recall.messe_unterlagen()` = "Ratsunterlagen bereits
 geladen" über geprüfte Vorlagen-Nr. (`ratsvorlage` in der Fixture, 9 Projekte) - eine Volltextsuche zählte bloße
-Erwähnungen und kam auf 17 von 18, darunter Presse-Projekte. Stand: **0 von 18 gefunden, 9 von 18 Ratsunterlagen
-geladen**. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
+Erwähnungen und kam auf 17 von 18, darunter Presse-Projekte. Stand: **0 von 18 gefunden, 12 von 18 Ratsunterlagen
+geladen** (20.11.2026 ergänzt: B-Plan 319 -> B 25/0432 "ca. 26 zusätzliche Wohnungen", Grüne Heyde/SonnenHeyde ->
+B 25/0448 Rahmenplan "über 1.200 Wohneinheiten", Richtweg -> B 26/0024 = B-Plan 305 "Richtweg" mit Massenstudie
+"Garstedter Dreieck", BF1 ca. 63 / BF2 ca. 77 WE). Ohne geprüfte Vorlage: Glashütter Kirchenweg (keine WE-Zahl),
+Berliner Allee 4-12 (privat, nie im Rat), Bahnhofstr./Schweriner Str. (unklar, Rückfrage Hummel), 3 Presse-Projekte. Dashboard nicht im Browser geprüft (Passwort-Login). 4 neue Tests, 482 insgesamt.
 
 ## Arbeitsweise
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.

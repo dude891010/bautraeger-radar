@@ -198,7 +198,7 @@ def test_radar_findet_bekanntes_projekt(bekannt):
 
 def test_liste_hat_neun_gepruefte_ratsvorlagen():
     mit = {p.name: p.ratsvorlage for p in recall.lade_bekannte_projekte() if p.ratsvorlage}
-    assert len(mit) == 9
+    assert len(mit) == 12
     assert mit["Garstedter Tor (B-Plan 337)"] == "B 24/0295"
     assert not any(p.ratsvorlage for p in recall.lade_bekannte_projekte() if p.nur_presse)
 
