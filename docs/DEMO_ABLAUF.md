@@ -1,4 +1,4 @@
-# Demo-Ablauf für den Chef (Stand 20.11.2026, Generalprobe im Browser durchgeführt)
+# Demo-Ablauf für den Chef (Stand 23.11.2026, Generalprobe 20.11.2026, Tabs seit 23.11. vereinfacht)
 
 Dauer: ca. 15 Minuten. Ziel: zeigen, dass das Radar die richtigen Unterlagen **selbst** findet – und dass nur
 noch die KI-Auswertung (kleines Guthaben) fehlt, um daraus automatisch Projekte zu machen.
@@ -11,14 +11,14 @@ noch die KI-Auswertung (kleines Guthaben) fehlt, um daraus automatisch Projekte 
    kostet nichts – die KI bleibt aus).
 3. Zahlen für Schritt 5 bereitlegen: `.venv\Scripts\python.exe -m radar recall`.
 
-## 1. Was das Radar liest (2 Min) – Tab „Quellen-Monitoring“, Demo-Schalter **aus**
+## 1. Was das Radar liest (2 Min) – Tab „⚙️ Quellen“, Demo-Schalter **aus**
 
 - Drei Quellen, alle ✅ OK: Ratsinformationssystem Norderstedt (Ausschuss Stadtentwicklung, Hauptausschuss,
   Stadtvertretung), die Pressemitteilungen der Stadt und die Lokalpresse noa4.de.
 - „Erfasst ab 01.01.2024“: alles seit Anfang 2024 ist gelesen, jede Woche kommt Neues dazu.
 - Kernsatz: **„Das Radar liest jede Woche automatisch, was im Rathaus und in der Lokalpresse zu Wohnbau steht.“**
 
-## 2. Der erste echte Fund (2 Min) – Tab „Kurzfristige Leads“, Demo-Schalter **aus**
+## 2. Der erste echte Fund (2 Min) – Tab „🔥 Jetzt anrufen“, Demo-Schalter **aus**
 
 - Unten „Baubeginne & Genehmigungen aus Presse und Web“: **Liesel-Hünichen-Weg, ADLERSHORST, 69 geförderte
   Wohnungen, Spatenstich – Vermietung ab Q2 2027.**
@@ -28,8 +28,8 @@ noch die KI-Auswertung (kleines Guthaben) fehlt, um daraus automatisch Projekte 
 
 - Oben der Hinweis: 15 echte, geprüfte Norderstedter Projekte (⭐) und 9 erfundene Beispiele aus anderen
   Regionen. Ehrlich sagen: die ⭐-Projekte sind von Hand nachgetragen und zeigen, wie die KI-Ergebnisse aussehen.
-- Tab „Kurzfristige Leads“: Berliner Allee (198 WE, im Bau), Liesel-Hünichen-Weg (69 WE).
-- Tab „Projekte“: Garstedter Tor (250 WE, B-Plan beschlossen), Ohepark (200 WE), 7 Eichen (500 WE), Postgelände
+- Tab „🔥 Jetzt anrufen“: Berliner Allee (198 WE, im Bau), Liesel-Hünichen-Weg (69 WE).
+- Tab „📋 Alle Vorhaben“, Abschnitt „Aus Ratsunterlagen“: Garstedter Tor (250 WE, B-Plan beschlossen), Ohepark (200 WE), 7 Eichen (500 WE), Postgelände
   (100 % gefördert) … mit Spalte „Stand“ (wie weit vom Küchenbedarf entfernt) und „Prüfauftrag“ (was der
   Vertrieb klären muss). Link „Quelle“ öffnet das Originaldokument.
 - Export: „Leads als Excel herunterladen“ / PDF-Report für den Außendienst.

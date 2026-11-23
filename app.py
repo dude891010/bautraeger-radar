@@ -125,7 +125,7 @@ div[data-testid="stAlert"] {
     border-left: 4px solid var(--hummel-orange);
 }
 
-/* Lead-Badges (Legende im Tab "Kurzfristige Leads") */
+/* Lead-Badges (Legende im Tab "Jetzt anrufen") */
 .lead-badge {
     display: inline-block;
     padding: 0.15rem 0.65rem;
@@ -562,8 +562,8 @@ WEB_LEAD_PHASEN = {"BAUGENEHMIGUNG", "BAUBEGINN"}
 
 
 def web_leads(web_df: pd.DataFrame) -> pd.DataFrame:
-    """Baugenehmigungen und Baubeginne aus Presse/Web (Tabelle `web_funde`) für den Tab "Kurzfristige Leads" -
-    ein Baubeginn ist der kurzfristigste Lead überhaupt, stand aber bisher nur im Tab "Web-Recherche"
+    """Baugenehmigungen und Baubeginne aus Presse/Web (Tabelle `web_funde`) für den Tab "Jetzt anrufen" -
+    ein Baubeginn ist der kurzfristigste Lead überhaupt, stand aber bisher nur im Abschnitt "Aus der Presse"
     (Generalprobe 20.11.2026: der einzige echte Fund des Radars, Liesel-Hünichen-Weg, fehlte dort). Ohne
     archivierte, Baubeginn vor Baugenehmigung, dann WE absteigend."""
     if web_df.empty or "phase" not in web_df.columns:
@@ -957,7 +957,8 @@ def _login_gate(st) -> None:
 def _web_recherche_tab(
     st, settings: Settings, active_settings: Settings, web_df: pd.DataFrame, *, demo_modus: bool
 ) -> bool:
-    """Inhalt des Tabs "Web-Recherche". Liefert, ob gerade eine Recherche im Hintergrund läuft
+    """Abschnitt "Aus der Presse" im Tab "Alle Vorhaben" (bis 11/2026 eigener Tab "Web-Recherche").
+    Liefert, ob gerade eine Recherche im Hintergrund läuft
     (dann aktualisiert sich die Seite automatisch, wie beim Hauptlauf)."""
     try:
         web_config = load_web_config(settings)
@@ -965,7 +966,10 @@ def _web_recherche_tab(
         st.error(f"config/web_recherche.yaml fehlerhaft: {exc}")
         return False
 
-    st.subheader(f"Phase 3 & 4 im Umkreis von {web_config.radius_km:.0f} km um {web_config.zentrum_name}")
+    st.subheader("Aus der Presse")
+    st.markdown(
+        f"**Baugenehmigungen und Baubeginne im Umkreis von {web_config.radius_km:.0f} km um {web_config.zentrum_name}**"
+    )
     st.caption(
         "Baugenehmigungen und Baubeginne aus der Lokalpresse: aus den eigenen Presse-Quellen des Radars "
         "(z. B. noa4.de, bei jedem Lauf) und - sobald eingeschaltet - per Such-API über "
@@ -1254,18 +1258,21 @@ def main() -> None:
             "Leads",
             anzahl_leads,
             help="Kurzfristige Leads: Baugenehmigungen und Bauanträge aus Ratsunterlagen sowie Baubeginne und "
-            "Genehmigungen aus Presse/Web - siehe Tab 'Kurzfristige Leads'.",
+            "Genehmigungen aus Presse/Web - siehe Tab 'Jetzt anrufen'.",
         )
 
-    # "Kurzfristige Leads" bewusst als ERSTER Tab (Streamlit öffnet immer den ersten): der
-    # Vertrieb sieht konkrete Bauvorhaben sofort, ohne zu filtern (Kundenfeedback Hummel, 10/2026).
-    tab_leads, tab_web, tab_projekte, tab_diagramme, tab_quellen = st.tabs(
+    # "Jetzt anrufen" (bis 11/2026 "Kurzfristige Leads") bewusst als ERSTER Tab (Streamlit öffnet immer den
+    # ersten): der Vertrieb sieht konkrete Bauvorhaben sofort, ohne zu filtern (Kundenfeedback Hummel, 10/2026).
+    # Seit 23.11.2026 vier statt fünf Tabs: "Projekte" und "Web-Recherche" wirkten wie drei Ergebnislisten
+    # nebeneinander (Nutzerfeedback) und stehen jetzt als zwei Abschnitte im Tab "Alle Vorhaben" - bewusst
+    # getrennt statt einer gemeinsamen Tabelle, weil Status/Notizen in verschiedene Tabellen gehen
+    # (projekte bzw. web_funde).
+    tab_leads, tab_alle, tab_diagramme, tab_quellen = st.tabs(
         [
-            f"🏗️ Kurzfristige Leads ({anzahl_leads})",
-            f"🌐 Web-Recherche ({len(web_df)})",
-            "Projekte",
-            "Diagramme",
-            "Quellen-Monitoring",
+            f"🔥 Jetzt anrufen ({anzahl_leads})",
+            f"📋 Alle Vorhaben ({len(df) + len(web_df)})",
+            "📊 Diagramme",
+            "⚙️ Quellen",
         ]
     )
 
@@ -1290,7 +1297,7 @@ def main() -> None:
         if leads.empty and presse_leads.empty:
             st.info(
                 "Aktuell keine Baugenehmigungen, Bauanträge oder Baubeginne erkannt. Bebauungsplan-Verfahren "
-                "stehen weiterhin im Tab 'Projekte'."
+                "stehen im Tab 'Alle Vorhaben'."
             )
         elif leads.empty:
             st.caption("Aus den Ratsunterlagen aktuell keine Baugenehmigung und kein Bauantrag.")
@@ -1327,7 +1334,7 @@ def main() -> None:
             st.subheader("Baubeginne & Genehmigungen aus Presse und Web")
             st.caption(
                 "Vom Radar ohne KI erkannt: Artikel mit Spatenstich, Grundsteinlegung, Richtfest oder erteilter "
-                "Baugenehmigung im Umkreis - Details und Status im Tab 'Web-Recherche'."
+                "Baugenehmigung im Umkreis - Details und Status im Tab 'Alle Vorhaben', Abschnitt 'Aus der Presse'."
             )
             st.dataframe(
                 presse_leads[[
@@ -1349,9 +1356,6 @@ def main() -> None:
                 use_container_width=True,
             )
 
-    with tab_web:
-        web_aktiv = _web_recherche_tab(st, settings, active_settings, web_df, demo_modus=demo_modus)
-
     with tab_diagramme:
         if df.empty:
             st.info("Noch keine Projekte in der Datenbank. Starte oben links einen Lauf.")
@@ -1366,9 +1370,10 @@ def main() -> None:
                 st.subheader("Geplante Wohneinheiten nach Region")
                 st.altair_chart(chart_we_je_region(df), use_container_width=True)
 
-    with tab_projekte:
+    with tab_alle:
         if demo_modus:
             st.info(demo_hinweis(df))
+        st.subheader("Aus Ratsunterlagen")
         if df.empty:
             st.info("Noch keine Projekte in der Datenbank. Starte oben links einen Lauf.")
         else:
@@ -1436,7 +1441,7 @@ def main() -> None:
                         "Stand", help="Verfahrensstand im Klartext - wie weit ist das Vorhaben vom Küchenbedarf?"
                     ),
                     "lead": st.column_config.TextColumn(
-                        "Lead", help="Baugenehmigung/Bauantrag - siehe Tab 'Kurzfristige Leads'."
+                        "Lead", help="Baugenehmigung/Bauantrag - siehe Tab 'Jetzt anrufen'."
                     ),
                     "pruefen": st.column_config.TextColumn(
                         "⚠",
@@ -1554,6 +1559,9 @@ def main() -> None:
                         )
                     else:
                         st.caption("Kein Statusverlauf vorhanden.")
+
+        st.divider()
+        web_aktiv = _web_recherche_tab(st, settings, active_settings, web_df, demo_modus=demo_modus)
 
     with tab_quellen:
         # Immer der echte Stand aus data/radar.db - auch im Demo-Modus: die Demo-Datenbank hat keine Läufe,

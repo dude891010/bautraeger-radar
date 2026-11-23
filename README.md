@@ -76,7 +76,7 @@ senden" (Default: aus, damit normale Testläufe nicht den Vertrieb anmailen).
 
 Optional: Web-Recherche nach Phase 3 (Baugenehmigung) und Phase 4 (Baubeginn) im Umkreis von
 50 km um Norderstedt (`radar/web_recherche.py`) – `TAVILY_API_KEY` in `.env` eintragen, dann im
-Dashboard-Tab "Web-Recherche" starten oder `python -m radar web-recherche`. Orte, Suchbegriffe,
+Dashboard (Tab "Alle Vorhaben", Abschnitt "Aus der Presse") starten oder `python -m radar web-recherche`. Orte, Suchbegriffe,
 Umkreis und Kostenbremse stehen in `config/web_recherche.yaml`. Der `scheduler`-Dienst führt sie
 wöchentlich direkt nach dem Lauf aus (abschaltbar: `scheduler.web_recherche` in
 `config/settings.yaml`, ohne Key still übersprungen); neue Web-Funde stehen als eigener Abschnitt
@@ -119,7 +119,7 @@ Ergänzung für die frühen Verfahrensstufen der 7 Hamburger Bezirksversammlunge
 über `Dokument.text`/`Textinhalt`) – alle vier verifiziert gegen echte Live-Antworten. PDF-Text/
 Keyword-Vorfilter/LLM-Triage- und -Extraktion (`radar/parser.py`, Pydantic-validiert, Budget + Cache), die
 SQLite-Persistenz mit zweistufiger Dedup und Statuspflege (`radar/database.py`) und ein
-Streamlit-Dashboard (`app.py`: Tab "Kurzfristige Leads" mit Baugenehmigungen/Bauanträgen ganz vorn,
+Streamlit-Dashboard (`app.py`: Tab "Jetzt anrufen" mit Baugenehmigungen/Bauanträgen ganz vorn,
 Projekte filtern/bearbeiten, CSV-/Excel-Export, Quellen-Monitoring, Lauf
 per Knopfdruck im Hintergrund). `radar/scraper.py` verdrahtet alles zu einem vollständigen Lauf
 (`run_full()`) – `python -m radar.scraper` führt ihn direkt aus, `streamlit run app.py` startet ihn per

@@ -951,3 +951,8 @@ nennt die eigenen Presse-Quellen. Demo-Ablauf für den Chef: `docs/DEMO_ABLAUF.m
 - Nach jedem Schritt anhalten, Ergebnis zusammenfassen, offene Fragen stellen.
 - Vor Schritt 3 nach dem `ANTHROPIC_API_KEY` fragen; vor dem ersten Live-Abruf `SCRAPER_CONTACT` klären.
 - Fertig heißt: Tests grün, `ruff check` sauber, keine Secrets im Repo, README aktuell.
+**Tabs vereinfacht (23.11.2026, Nutzerfeedback: Leads/Web-Recherche/Projekte wirkten wie drei Ergebnislisten):** vier
+statt fünf Tabs - "🔥 Jetzt anrufen" (bisher "Kurzfristige Leads"), "📋 Alle Vorhaben" (oben "Aus Ratsunterlagen" =
+bisher "Projekte", darunter "Aus der Presse" = bisher "Web-Recherche", `_web_recherche_tab()`), "📊 Diagramme",
+"⚙️ Quellen" (bisher "Quellen-Monitoring"). Bewusst zwei Abschnitte statt einer gemeinsamen Tabelle: Status/Notizen
+gehen in verschiedene Tabellen (`projekte` bzw. `web_funde`). Keine Datenlogik geändert.
