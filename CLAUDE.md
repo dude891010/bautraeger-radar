@@ -956,3 +956,9 @@ statt fünf Tabs - "🔥 Jetzt anrufen" (bisher "Kurzfristige Leads"), "📋 All
 bisher "Projekte", darunter "Aus der Presse" = bisher "Web-Recherche", `_web_recherche_tab()`), "📊 Diagramme",
 "⚙️ Quellen" (bisher "Quellen-Monitoring"). Bewusst zwei Abschnitte statt einer gemeinsamen Tabelle: Status/Notizen
 gehen in verschiedene Tabellen (`projekte` bzw. `web_funde`). Keine Datenlogik geändert.
+**Handauswertung statt KI (24.11.2026, `docs/HANDAUSWERTUNG.md`):** die 451 wartenden Unterlagen (= 367 Vorlagen)
+von Claude im Chat ausgewertet: Grobsortierung nach Betreff, 22 neue Wohnbau-Vorhaben im Detail (Helfer-Agenten,
+`data/handauswertung/arbeit/AUFTRAG.md`), 11 relevant. `scripts/handauswertung_uebernehmen.py` übernimmt nur Einträge
+mit wörtlich gefundenem Zitat (`KORREKTUREN` für Handprüfungen, z. B. Kösliner Weg = "Nordlicht") nach
+`data/handauswertung/projekte.json`; `demo_data.handauswertung_projekte()` liest sie als `manuell_nachgetragen` in
+Demo-/Test-DB (nie `data/radar.db`, Recall unverändert). Demo: 35 Projekte, 26 echt. 520 Tests.

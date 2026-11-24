@@ -22,6 +22,7 @@ bewusst unklaren Falls (fehlende Förderzahl, `wohnform=UNKLAR`), der CLAUDE.mds
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import replace
 from datetime import date
@@ -409,6 +410,24 @@ _NACHGETRAGENE_PROJEKTE: list[dict] = [
 ]
 
 
+# Handauswertung (24.11.2026): Projekte, die Claude im Chat aus den vom Radar geladenen, aber mangels KI-Guthaben
+# nicht ausgewerteten Ratsunterlagen von Hand bewertet hat. Gleiches Format wie _NACHGETRAGENE_PROJEKTE, aber als
+# JSON-Datei, damit weitere Auswertungsrunden ohne Codeänderung dazukommen. `evidenz` ist je ein wörtliches Zitat aus
+# der genannten Unterlage (per Skript gegen den Seitentext geprüft). Herkunft immer 'manuell_nachgetragen'.
+HANDAUSWERTUNG_DATEI = Path(__file__).resolve().parent.parent / "data" / "handauswertung" / "projekte.json"
+
+
+def handauswertung_projekte(pfad: Path = HANDAUSWERTUNG_DATEI) -> list[dict]:
+    """Einträge aus der Handauswertung; fehlt die Datei, keine (die Demo funktioniert auch ohne)."""
+    try:
+        daten = json.loads(pfad.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    for eintrag in daten:
+        ProjektExtraktion(**eintrag["extraktion"])  # fail loud bei kaputten Einträgen, nicht erst beim Seed
+    return daten
+
+
 def seed_norderstedt_projekte(conn: sqlite3.Connection) -> None:
     """Die geprüften Norderstedter Projekte schreiben - die 5 vom 30.10.2026 und die 8 aus dem Hummel-Abgleich
     (idempotent über `upsert_projekt()`: gleiche Adresse = gleicher Datensatz). Quell-URL und Notiz nur setzen,
@@ -418,7 +437,7 @@ def seed_norderstedt_projekte(conn: sqlite3.Connection) -> None:
         (ECHTE_QUELLE_ID, "Geprüfte Echtprojekte (Projektseiten/Fachpresse)", "SH", "unknown"),
     )
     conn.commit()
-    for eintrag in _NORDERSTEDT_PROJEKTE + _NACHGETRAGENE_PROJEKTE:
+    for eintrag in _NORDERSTEDT_PROJEKTE + _NACHGETRAGENE_PROJEKTE + handauswertung_projekte():
         projekt_id, _ = database.upsert_projekt(
             conn,
             quelle_id=ECHTE_QUELLE_ID,
@@ -864,7 +883,7 @@ def ensure_demo_seeded(settings: Settings) -> Settings:
             seed(conn)
         if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_id = ?", (ECHTE_QUELLE_ID,)).fetchone()[0] == 0:
             seed_echte_projekte(conn)  # ältere Demo-Datenbanken bekommen sie nachträglich
-        soll = len(_NORDERSTEDT_PROJEKTE) + len(_NACHGETRAGENE_PROJEKTE)
+        soll = len(_NORDERSTEDT_PROJEKTE) + len(_NACHGETRAGENE_PROJEKTE) + len(handauswertung_projekte())
         if conn.execute("SELECT COUNT(*) FROM projekte WHERE quelle_url IS NOT NULL").fetchone()[0] < soll:
             # die geprüften Norderstedter Projekte (30.10. und 19.11.2026); ältere Demo-DBs bekommen neue nachträglich
             seed_norderstedt_projekte(conn)

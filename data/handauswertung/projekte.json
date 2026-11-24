@@ -1,0 +1,266 @@
+[
+ {
+  "extraktion": {
+   "projektbezeichnung": "B-Plan 8 Glashütte, 9. Änderung \"Glashütter Markt\" (Junges Wohnen / sozial geförderter Wohnungsbau)",
+   "adresse": {
+    "strasse": "Segeberger Chaussee / Mittelstraße",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": 112,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": 112,
+   "we_gefoerdert": true,
+   "quote_gefoerdert": 1.0,
+   "ausfuehrungszeitraum": "Satzungsbeschluss/Rechtskraft angestrebt Ende 1. Quartal 2027",
+   "antragsteller": null,
+   "kurzfassung": "Gemischt genutzter, ca. 155 m langer Gebäuderiegel mit 112 vollständig sozial geförderten Wohnungen (davon 38 für Junges Wohnen für Studierende/Auszubildende) und ca. 16 Gewerbeeinheiten. Entwurfs- und Veröffentlichungsbeschluss am 05.11.2026 im Ausschuss. Vorlage B 26/0432. (Handauswertung 24.11.2026)",
+   "wohnform": "GEFOERDERT",
+   "verfahrensstand": "AUSLEGUNG",
+   "konfidenz": 0.9,
+   "evidenz": "Insgesamt entstehen 112 Wohnungen, die vollständig als sozial geförderter",
+   "seite": 4
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=225216&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0432. Prüfen: Investor/Vorhabenträger im Text nicht genannt; Sonderwohnform Junges Wohnen (38 WE, möbliert/WG-ähnlich) - Relevanz mit Vertrieb klären; Küchenbedarf evtl. kleiner bei Wohnheimstruktur."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "B-Plan 352 \"Zwischen Altem Buckhörner Moor und Pappelstieg\" (Nachverdichtung)",
+   "adresse": {
+    "strasse": "Altes Buckhörner Moor / Pappelstieg / Heidbergstraße / Buchenweg",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": 100,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": null,
+   "antragsteller": null,
+   "kurzfassung": "Angebots-Bebauungsplan zur Nachverdichtung eines Wohnblocks (Doppel-/Reihenhäuser und 3-geschossige Mehrfamilienhäuser), Umsetzung durch viele private Eigentümer. Entwurfs- und Veröffentlichungsbeschluss am 17.09.2026; ca. 100 WE gesamt, rund 50 zusätzlich zum Bestand (Stand der Varianten 2024). Vorlage B 26/0299. (Handauswertung 24.11.2026)",
+   "wohnform": "UNKLAR",
+   "verfahrensstand": "AUSLEGUNG",
+   "konfidenz": 0.5,
+   "evidenz": "Beide Varianten ermöglichen insgesamt ca. 100 WE, sodass sich die Anzahl im Vergleich",
+   "seite": 4
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=203252&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0299. Prüfen: Kein Bauherr; kleinteilige Entwicklung durch private Grundstückseigentümer. WE-Zahl stammt aus den Varianten von 2024 (B 24/0330), im Entwurf 2026 nicht bestätigt; Anteil Mehrfamilienhäuser (ca. 6 MFH mit 6-12 WE) vs. Reihen-/Doppelhäuser und Miet-/Eigentumsform offen."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "Quartier Kösliner Weg = \"Nordlicht\" (Instone, B-Plan 341)",
+   "adresse": {
+    "strasse": "Kösliner Weg",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": 198,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": "Baubeginn erst nach ausreichendem Verkauf; Bereich 1 (gefördert) bereits im Bau",
+   "antragsteller": "Instone Real Estate Development GmbH",
+   "kurzfassung": "Umplanung des freifinanzierten Eigentumsbereichs von 171 auf 198 WE (mehr 2-Zimmer-Wohnungen); der geförderte Bereich 1 mit Kita wird von einem anderen Projektträger gebaut. Vorlage B 24/0397. (Handauswertung 24.11.2026)",
+   "wohnform": "EIGENTUM",
+   "verfahrensstand": "BAUANTRAG",
+   "konfidenz": 0.7,
+   "evidenz": "von bisher 171 auf 198 Wohneinheiten:",
+   "seite": 2
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=204229&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 24/0397. Prüfen: Dasselbe Projekt wie der Pressefund \"Nordlicht\" (198 Eigentumswohnungen, Grundstein gelegt) - nicht doppelt zählen."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "Wohnpark auf den Tarpenwiesen (westlich Kreuzweg Ecke Glashütter Damm)",
+   "adresse": {
+    "strasse": "Kreuzweg / Glashütter Damm / Ernst-Bader-Ring",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": 78,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": 39,
+   "we_gefoerdert": true,
+   "quote_gefoerdert": 0.5,
+   "ausfuehrungszeitraum": null,
+   "antragsteller": "Semmelhaack Wohnungsunternehmen, Elmshorn",
+   "kurzfassung": "Investorenkonzept mit 78 WE (8 Mehrfamilienhäuser, 3 Reihenhauszeilen, davon 50 % gefördert) plus Seniorenpflegeanlage mit ca. 93 Zimmern; Grundsatzbeschluss, Aufstellungsbeschluss soll folgen. Vorlage B 25/0333. (Handauswertung 24.11.2026)",
+   "wohnform": "GEMISCHT",
+   "verfahrensstand": "VORBERATUNG",
+   "konfidenz": 0.85,
+   "evidenz": "ca. 78 WE (davon 50 % gefördert):",
+   "seite": 4
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=213090&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 25/0333. Prüfen: Verwaltung hält leichte Reduzierung (je 1 WE in den drei 4er-Reihenhauszeilen) für möglich; Miet-/Eigentumsanteil der frei finanzierten WE nicht genannt; zusätzlich Pflegeheim (Sonderwohnform, 93 Zimmer) nicht in den 78 WE enthalten."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "B-Plan 364 Friedrich-Ebert-Straße / Friedrichsgaber Weg (Eckgrundstück)",
+   "adresse": {
+    "strasse": "Friedrich-Ebert-Straße / Friedrichsgaber Weg",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": 43,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": true,
+   "quote_gefoerdert": 0.5,
+   "ausfuehrungszeitraum": null,
+   "antragsteller": "FLUWOG",
+   "kurzfassung": "Geschosswohnungsbau (IV Geschosse, V-geschossiger Hochpunkt) mit etwa 43 Wohnungen, davon 50 % öffentlich gefördert, am Knoten Friedrich-Ebert-Straße/Friedrichsgaber Weg; Aufstellungsbeschluss 04.06.2026, frühzeitige Beteiligung ab Oktober 2026. Angrenzende Grundstücke zusätzlich mit 2-3 Geschossen nachverdichtbar (ohne WE-Zahl). Vorlage B 26/0359. (Handauswertung 24.11.2026)",
+   "wohnform": "GEMISCHT",
+   "verfahrensstand": "AUFSTELLUNGSBESCHLUSS",
+   "konfidenz": 0.85,
+   "evidenz": "Am Projektstandort sind etwa 43 Wohnungen vorgesehen. Davon sollen 50 %",
+   "seite": 7
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=224426&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0359. Prüfen: 43 WE sind ca.-Angabe; Baurecht fehlt noch (B-Plan im Frühstadium). Miet-/Eigentumsanteil des nicht geförderten Teils nicht genannt; Nachverdichtung der Nachbargrundstücke ohne WE-Zahl."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "B-Plan 325 Bebauung zwischen Europaallee und Willy-Brandt-Park",
+   "adresse": {
+    "strasse": "Europaallee / Lütjenmoor",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": null,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": null,
+   "antragsteller": "Land Schleswig-Holstein (Polizeiwache); Wohn-/Geschäftshaus: Wohnungsbaugesellschaft",
+   "kurzfassung": "Planung dient primär dem Polizeineubau; im Urbanen Gebiet wird Wohnnutzung in den Obergeschossen gesichert, auf dem alten Polizeigrundstück ist ein Wohn- und Geschäftshaus vorgesehen. Entwurfs-/Veröffentlichungsbeschluss 03.09.2026, keine WE-Zahl. Vorlage B 26/0314. (Handauswertung 24.11.2026)",
+   "wohnform": "UNKLAR",
+   "verfahrensstand": "AUSLEGUNG",
+   "konfidenz": 0.25,
+   "evidenz": "Zum heutigen Zeitpunkt ist noch kein Vorhaben",
+   "seite": 7
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=223260&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0314. Prüfen: Kein konkretes Wohnbauvorhaben und keine WE-Zahl; Seniorenbeirat regt geförderten Wohnungsbau auf altem Polizeigrundstück an, Eigentum/Bauherr offen. Wiedervorlage beobachten."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "Fläche EuropCar (Ulzburger Straße / Segeberger Chaussee)",
+   "adresse": {
+    "strasse": "Ulzburger Straße / Segeberger Chaussee / Kabels Stieg",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": null,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": "Ideenverfahren/Workshop folgt; kein Zeitplan für Bau",
+   "antragsteller": "Investor (ungenannt) mit EGNO und Stadt Norderstedt",
+   "kurzfassung": "Gemischt genutzte Blockrandbebauung mit Wohnbebauung im nördlichen und rückwärtigen Bereich; Stellplatzschlüssel 0,7 je WE beschlossen als Basis für das Auslobungsverfahren. Noch keine WE-Zahl. Vorlage B 26/0025. (Handauswertung 24.11.2026)",
+   "wohnform": "UNKLAR",
+   "verfahrensstand": "VORBERATUNG",
+   "konfidenz": 0.3,
+   "evidenz": "- Wohnbebauung im nördlichen Bereich des Plangebietes sowie im rückwärtigen Be-",
+   "seite": 2
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=217794&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0025. Prüfen: WE-Zahl, Wohnform und Investor unbekannt; frühe Phase (Ideenverfahren), Baubeginn noch weit."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "B-Plan 145 südl. Teilbereich 1. Änderung",
+   "adresse": {
+    "strasse": "Segeberger Chaussee 179-189",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": null,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": null,
+   "antragsteller": null,
+   "kurzfassung": "Leerstehendes ca. 1,2 ha Gewerbegrundstück soll teils zu Wohnbaufläche umgewandelt werden, entlang der Segeberger Chaussee lärmabschirmende Mischgebietsbebauung, höhere Dichte. Keine WE-Zahl. Vorlage B 26/0099. (Handauswertung 24.11.2026)",
+   "wohnform": "UNKLAR",
+   "verfahrensstand": "AUFSTELLUNGSBESCHLUSS",
+   "konfidenz": 0.35,
+   "evidenz": "Schaffung von Wohnbauflächen durch Umwandlung einer Mischgebietsfläche im",
+   "seite": 1
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=219113&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0099. Prüfen: WE-Zahl, Wohnform und Bauherr unbekannt; Aufstellungsbeschluss 19.03.2026, Küchenbedarf frühestens in einigen Jahren."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "Mehrfamilienhaus südwestliche Wiesenstraße",
+   "adresse": {
+    "strasse": "Wiesenstraße (südlich, zwischen Lütjenmoor und Kirchengemeinde)",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": null,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": "Antrag liegt vor, Grundsatzbeschluss 04.06.2026",
+   "antragsteller": null,
+   "kurzfassung": "Anfrage nach Bauturbo (§ 246e BauGB) für ein kleines Mehrfamilienhaus mit acht bis neun Wohnungen und II Vollgeschossen; Grundsatzbeschluss erlaubt Abweichung von I auf II Vollgeschosse unter Auflagen. Vorlage B 26/0218. (Handauswertung 24.11.2026)",
+   "wohnform": "UNKLAR",
+   "verfahrensstand": "BAUANTRAG",
+   "konfidenz": 0.6,
+   "evidenz": "acht bis neun Wohnungen im Antrag geplant. Vor dem Gebäude sind 8 Stellplätze vorgesehen.",
+   "seite": 2
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=221317&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0218. Prüfen: Genau 8 oder 9 WE und Miete/Eigentum unbekannt, Bauherr nicht genannt; konkreter Antrag, daher kurzfristiger Lead."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "Umrüstung Gemeinschaftsunterkunft zu geförderten Wohnungen",
+   "adresse": {
+    "strasse": "Segeberger Chaussee 237",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": null,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": "Beginn der Umrüstung spätestens Ende März 2027",
+   "antragsteller": "Stadt Norderstedt / Entwicklungsgesellschaft Norderstedt mbH",
+   "kurzfassung": "Bestandsgebäude von 2017 (Förderzusage 2016) wird nach 10 Jahren zu regulären, sozial geförderten Mietwohnungen umgerüstet (u. a. Gemeinschaftsraum zu zwei kleinen Wohnungen). Nutzungskonzept nennt 10+2+6+1 Wohneinheiten, bereits mit Küchenzeilen. Vorlage B 26/0430. (Handauswertung 24.11.2026)",
+   "wohnform": "GEFOERDERT",
+   "verfahrensstand": "UNKLAR",
+   "konfidenz": 0.5,
+   "evidenz": "10 Wohneinheiten mit je",
+   "seite": 1
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=225180&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 26/0430. Prüfen: Gesamt-WE nicht ausdrücklich genannt (Einzelposten 10, 2, 6, 1 plus 2 neue aus Gemeinschaftsraum); Küchenzeilen vorhanden, Küchenbedarf evtl. nur Ersatz/gering; Stadtvertretung 17.11.2026 entscheidet."
+ },
+ {
+  "extraktion": {
+   "projektbezeichnung": "19. Änderung FNP 2020 Östlich Meeschensee",
+   "adresse": {
+    "strasse": "Elfenhagen / Ulzburger Straße (L326), nördliche Stadtgrenze",
+    "ort": "Norderstedt"
+   },
+   "we_gesamt": null,
+   "we_miete": null,
+   "we_gefoerdert_anzahl": null,
+   "we_gefoerdert": null,
+   "quote_gefoerdert": null,
+   "ausfuehrungszeitraum": null,
+   "antragsteller": null,
+   "kurzfassung": "Aufstellungsbeschluss zur Darstellung des Gebiets als Wohnbaufläche im Flächennutzungsplan; weder WE-Zahl noch Bauherr genannt. Vorlage B 25/0355. (Handauswertung 24.11.2026)",
+   "wohnform": "UNKLAR",
+   "verfahrensstand": "AUFSTELLUNGSBESCHLUSS",
+   "konfidenz": 0.3,
+   "evidenz": "Darstellung als Wohnbaufläche",
+   "seite": 1
+  },
+  "quelle_url": "https://buergerinfo.norderstedt.de/ratsinfo/sessionnet/buergerinfo/getfile.php?id=212391&type=do",
+  "notiz": "Handauswertung 24.11.2026, Ratsinfo B 25/0355. Prüfen: Sehr früh (nur FNP-Ebene, B-Plan folgt noch); WE, Wohnform, Bauherr unbekannt."
+ }
+]

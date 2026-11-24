@@ -158,7 +158,7 @@ def test_echte_fruehphasen_projekte_stehen_sichtbar_in_der_demo(settings):
         echte = {p["projektbezeichnung"]: p for p in database.list_projekte(conn)
                  if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID}
     assert {"Richtweg / Garstedter Dreieck (Instone)", "SonnenHeyde (Manke)"} <= set(echte)
-    assert len(echte) == 15  # + 5 geprüfte Norderstedter Projekte (30.10.2026) + 8 aus dem Hummel-Abgleich (19.11.2026)
+    assert len(echte) == 15 + len(demo_data.handauswertung_projekte())  # 15 Echtprojekte + Handauswertung
     assert (echte["Richtweg / Garstedter Dreieck (Instone)"]["verfahrensstand"], echte[
         "Richtweg / Garstedter Dreieck (Instone)"]["we_gesamt"]) == ("AUFSTELLUNGSBESCHLUSS", 316)
     assert (echte["SonnenHeyde (Manke)"]["verfahrensstand"], echte["SonnenHeyde (Manke)"]["we_gesamt"]) == (
@@ -171,7 +171,7 @@ def test_echte_projekte_idempotent_und_reset_setzt_status_zurueck(settings):
         demo_data.seed_echte_projekte(conn)  # zweites Mal: keine Duplikate
         demo_data.seed_norderstedt_projekte(conn)
         echte = [p for p in database.list_projekte(conn) if p["quelle_id"] == demo_data.ECHTE_QUELLE_ID]
-        assert len(echte) == 15
+        assert len(echte) == 15 + len(demo_data.handauswertung_projekte())
         database.set_projekt_status(conn, echte[0]["id"], "Kontaktversuch")
     demo_data.reset_demo(settings)
     with closing(database.connect(demo)) as conn:
@@ -208,7 +208,7 @@ def _norderstedt_db(settings):
 
 def test_norderstedt_projekte_idempotent_mit_quelle_und_notiz(settings):
     projekte = _norderstedt_db(settings)
-    assert len(projekte) == 15  # 5 + 8 Norderstedter + Richtweg + SonnenHeyde
+    assert len(projekte) == 15 + len(demo_data.handauswertung_projekte())  # 15 Echtprojekte + Handauswertung
     garstedt = projekte["Berliner Allee – Quartier Garstedt"]
     assert (garstedt["we_gesamt"], garstedt["we_gefoerdert_anzahl"], garstedt["verfahrensstand"]) == (
         198, 60, "BAUGENEHMIGUNG")
@@ -255,7 +255,7 @@ def test_seed_skript_verweigert_echte_datenbank_und_schreibt_test_db(settings, m
     test_db = tmp_path / "test_radar.db"
     assert skript.main(["--norderstedt", "--db", str(test_db)]) == 0
     with closing(database.connect(replace(settings, database=DatabaseConfig(path=str(test_db))))) as conn:
-        assert len(database.list_projekte(conn)) == 15
+        assert len(database.list_projekte(conn)) == 15 + len(demo_data.handauswertung_projekte())
 
 
 def test_bplaene_ohne_belegte_wohnform_bekommen_pruefauftrag(settings):
@@ -264,7 +264,8 @@ def test_bplaene_ohne_belegte_wohnform_bekommen_pruefauftrag(settings):
     with closing(database.connect(settings)) as conn:
         demo_data.seed_norderstedt_projekte(conn)
         df = add_pruef_badge(build_projekte_df(database.list_projekte(conn), {})).set_index("projektbezeichnung")
-    bplaene = [n for n in df.index if n.startswith("B-Plan")]
+    hand = {e["extraktion"]["projektbezeichnung"] for e in demo_data.handauswertung_projekte()}
+    bplaene = [n for n in df.index if n.startswith("B-Plan") and n not in hand]  # die 3 vom 30.10.2026
     assert len(bplaene) == 3
     for name in bplaene:
         assert df.loc[name, "wohnform"] == "UNKLAR"
@@ -336,3 +337,21 @@ def test_badge_fuer_manuelle_projekte_ausserhalb_der_echtquelle(settings):
     df = add_herkunft_und_stand(add_lead_badge(df), demo_modus=False).set_index("projektbezeichnung")
     assert df.loc["Vom Radar", "herkunft"] == ""
     assert df.loc["Von Hand", "herkunft"] == HERKUNFT_MANUELL
+
+
+def test_handauswertung_projekte_fehlende_datei_und_gueltige_datei(tmp_path):
+    assert demo_data.handauswertung_projekte(tmp_path / "fehlt.json") == []
+    datei = tmp_path / "projekte.json"
+    datei.write_text(
+        '[{"extraktion": {"projektbezeichnung": "Test", "adresse": {"ort": "Norderstedt"}, "we_gesamt": 12, '
+        '"wohnform": "MIETE", "verfahrensstand": "AUSLEGUNG", "konfidenz": 0.8, "evidenz": "12 WE"}, '
+        '"quelle_url": "https://example.org", "notiz": "x"}]',
+        encoding="utf-8",
+    )
+    assert demo_data.handauswertung_projekte(datei)[0]["extraktion"]["we_gesamt"] == 12
+
+
+def test_handauswertung_datei_im_repo_ist_gueltig():
+    # data/handauswertung/projekte.json: jeder Eintrag muss ein gültiges ProjektExtraktion-Objekt ergeben
+    for eintrag in demo_data.handauswertung_projekte():
+        assert eintrag["quelle_url"].startswith("https://")

@@ -25,3 +25,4 @@ __pycache__/
 
 # Lokale Vorschau-Konfiguration der Claude-Desktop-App (enthält absolute Pfade)
 .claude/launch.json
+data/handauswertung/arbeit/
