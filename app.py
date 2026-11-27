@@ -35,6 +35,9 @@ from radar.web_recherche import PHASE_LABEL, VERIFIZIERTE_DEMO_URLS, Phase, load
 
 LOG_TAIL_CHARS = 4000
 MAX_NOTIZ_LAENGE = 2000
+# Ergebnistabellen in voller Höhe statt eines kleinen Scrollfelds (Nutzerwunsch 27.11.2026: man scrollt die
+# ganze Seite). Bei sehr vielen Projekten wieder begrenzen, z. B. auf eine feste Pixelhöhe wie 600.
+TABELLEN_HOEHE = "content"
 
 # Spalten aus `projekte`, die in der Datenbank NULLable INTEGER sind (CLAUDE.md: "flag" statt
 # Verwerfen bei fehlender WE-Zahl, also ein Normalfall, kein Rand). pandas' normales `int64`
@@ -1078,6 +1081,7 @@ def _web_recherche_tab(
         },
         hide_index=True,
         use_container_width=True,
+        height=TABELLEN_HOEHE,
         key="web_editor",
     )
     col_speichern, col_export = st.columns([1, 3])
@@ -1323,6 +1327,7 @@ def main() -> None:
                 },
                 hide_index=True,
                 use_container_width=True,
+                height=TABELLEN_HOEHE,
             )
             st.download_button(
                 "Leads als Excel herunterladen",
@@ -1354,6 +1359,7 @@ def main() -> None:
                 },
                 hide_index=True,
                 use_container_width=True,
+                height=TABELLEN_HOEHE,
             )
 
     with tab_diagramme:
@@ -1461,6 +1467,7 @@ def main() -> None:
                 },
                 hide_index=True,
                 use_container_width=True,
+                height=TABELLEN_HOEHE,
                 key="projekte_editor",
             )
 
@@ -1480,7 +1487,8 @@ def main() -> None:
             st.subheader("Alle Felder")
             alle_felder_df = export_view(gefiltert)
             st.dataframe(
-                alle_felder_df.style.apply(_row_highlight, axis=1), hide_index=True, use_container_width=True
+                alle_felder_df.style.apply(_row_highlight, axis=1), hide_index=True, use_container_width=True,
+                height=TABELLEN_HOEHE,
             )
 
             st.subheader("Export")
